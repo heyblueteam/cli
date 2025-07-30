@@ -1,25 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
 	"strings"
-	"time"
-
-	"github.com/joho/godotenv"
 )
-
-// GraphQL request structure
-type GraphQLRequest struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables,omitempty"`
-}
 
 // Project creation input
 type CreateProjectInput struct {
@@ -43,19 +29,8 @@ type CreatedProject struct {
 	Category    string `json:"category"`
 }
 
-type GraphQLResponse struct {
-	Data   map[string]CreatedProject `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
-}
-
-// Config holds API configuration
-type Config struct {
-	APIUrl    string
-	AuthToken string
-	ClientID  string
-	CompanyID string
+type CreateProjectResponse struct {
+	CreateProject CreatedProject `json:"createProject"`
 }
 
 // Available project categories
@@ -82,28 +57,8 @@ var projectIcons = []string{
 	"chart-line", "users", "cog", "calendar", "check-circle",
 }
 
-// Load configuration from .env
-func loadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	config := &Config{
-		APIUrl:    os.Getenv("API_URL"),
-		AuthToken: os.Getenv("AUTH_TOKEN"),
-		ClientID:  os.Getenv("CLIENT_ID"),
-		CompanyID: os.Getenv("COMPANY_ID"),
-	}
-
-	if config.APIUrl == "" || config.AuthToken == "" || config.ClientID == "" || config.CompanyID == "" {
-		return nil, fmt.Errorf("missing required environment variables")
-	}
-
-	return config, nil
-}
-
 // Execute GraphQL mutation
-func executeCreateProject(config *Config, input CreateProjectInput) (*CreatedProject, error) {
+func executeCreateProject(client *Client, input CreateProjectInput) (*CreatedProject, error) {
 	// Build the mutation
 	mutation := fmt.Sprintf(`
 		mutation CreateProject {
@@ -123,60 +78,13 @@ func executeCreateProject(config *Config, input CreateProjectInput) (*CreatedPro
 		}
 	`, input.Name, input.CompanyID, buildOptionalFields(input))
 
-	// Create request body
-	reqBody := GraphQLRequest{
-		Query: mutation,
+	// Execute mutation
+	var response CreateProjectResponse
+	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+		return nil, err
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request: %w", err)
-	}
-
-	// Create HTTP request
-	req, err := http.NewRequest("POST", config.APIUrl, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", config.ClientID)
-	req.Header.Set("X-Bloo-Token-Secret", config.AuthToken)
-	req.Header.Set("X-Bloo-Company-ID", config.CompanyID)
-
-	// Execute request
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error executing request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	// Parse response
-	var graphQLResp GraphQLResponse
-	if err := json.Unmarshal(body, &graphQLResp); err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
-	}
-
-	// Check for GraphQL errors
-	if len(graphQLResp.Errors) > 0 {
-		return nil, fmt.Errorf("GraphQL error: %s", graphQLResp.Errors[0].Message)
-	}
-
-	// Extract created project
-	project, ok := graphQLResp.Data["createProject"]
-	if !ok {
-		return nil, fmt.Errorf("no project in response")
-	}
-
-	return &project, nil
+	return &response.CreateProject, nil
 }
 
 // Build optional fields for the mutation
@@ -237,10 +145,13 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := loadConfig()
+	config, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+
+	// Create client
+	client := NewClient(config)
 
 	// Process color input
 	colorValue := *color
@@ -253,7 +164,7 @@ func main() {
 	// Create project input
 	input := CreateProjectInput{
 		Name:        *name,
-		CompanyID:   config.CompanyID,
+		CompanyID:   client.GetCompanyID(),
 		Description: *description,
 		Color:       colorValue,
 		Icon:        *icon,
@@ -262,9 +173,9 @@ func main() {
 	}
 
 	// Execute creation
-	fmt.Printf("Creating project '%s' in company '%s'...\n", input.Name, config.CompanyID)
+	fmt.Printf("Creating project '%s' in company '%s'...\n", input.Name, client.GetCompanyID())
 	
-	project, err := executeCreateProject(config, input)
+	project, err := executeCreateProject(client, input)
 	if err != nil {
 		log.Fatalf("Failed to create project: %v", err)
 	}

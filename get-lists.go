@@ -1,24 +1,10 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
-	"time"
-
-	"github.com/joho/godotenv"
 )
-
-// GraphQL request structure
-type GraphQLRequest struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables,omitempty"`
-}
 
 // List structures
 type TodoList struct {
@@ -37,112 +23,8 @@ type TodoList struct {
 	Deletable        bool    `json:"deletable"`
 }
 
-type GraphQLResponse struct {
-	Data   map[string]interface{} `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
-}
-
-// Config holds API configuration
-type Config struct {
-	APIUrl    string
-	AuthToken string
-	ClientID  string
-	CompanyID string
-}
-
-// Load configuration from .env
-func loadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	config := &Config{
-		APIUrl:    os.Getenv("API_URL"),
-		AuthToken: os.Getenv("AUTH_TOKEN"),
-		ClientID:  os.Getenv("CLIENT_ID"),
-		CompanyID: os.Getenv("COMPANY_ID"),
-	}
-
-	if config.APIUrl == "" || config.AuthToken == "" || config.ClientID == "" || config.CompanyID == "" {
-		return nil, fmt.Errorf("missing required environment variables")
-	}
-
-	return config, nil
-}
-
-// Execute GraphQL query
-func executeQuery(config *Config, query string) (*GraphQLResponse, error) {
-	// Create request body
-	reqBody := GraphQLRequest{
-		Query: query,
-	}
-
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request: %w", err)
-	}
-
-	// Create HTTP request
-	req, err := http.NewRequest("POST", config.APIUrl, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", config.ClientID)
-	req.Header.Set("X-Bloo-Token-Secret", config.AuthToken)
-	req.Header.Set("X-Bloo-Company-ID", config.CompanyID)
-
-	// Execute request
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error executing request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	// Parse response
-	var graphQLResp GraphQLResponse
-	if err := json.Unmarshal(body, &graphQLResp); err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
-	}
-
-	// Check for GraphQL errors
-	if len(graphQLResp.Errors) > 0 {
-		return nil, fmt.Errorf("GraphQL error: %s", graphQLResp.Errors[0].Message)
-	}
-
-	return &graphQLResp, nil
-}
-
-// Parse lists from response
-func parseLists(data map[string]interface{}) ([]TodoList, error) {
-	listsData, ok := data["todoLists"]
-	if !ok {
-		return nil, fmt.Errorf("no todoLists data in response")
-	}
-
-	// Marshal and unmarshal to convert to our struct
-	jsonData, err := json.Marshal(listsData)
-	if err != nil {
-		return nil, err
-	}
-
-	var lists []TodoList
-	if err := json.Unmarshal(jsonData, &lists); err != nil {
-		return nil, err
-	}
-
-	return lists, nil
+type TodoListsResponse struct {
+	TodoLists []TodoList `json:"todoLists"`
 }
 
 // Queries
@@ -187,10 +69,13 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := loadConfig()
+	config, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+
+	// Create client
+	client := NewClient(config)
 
 	// Select query based on flag
 	var query string
@@ -200,61 +85,19 @@ func main() {
 		query = detailedQuery
 	}
 
-	// Build request with variables
-	reqBody := GraphQLRequest{
-		Query: query,
-		Variables: map[string]interface{}{
-			"projectId": *projectID,
-		},
+	// Build variables
+	variables := map[string]interface{}{
+		"projectId": *projectID,
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		log.Fatalf("Error marshaling request: %v", err)
+	// Execute query
+	var response TodoListsResponse
+	if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
+		log.Fatalf("Failed to execute query: %v", err)
 	}
 
-	// Create HTTP request
-	req, err := http.NewRequest("POST", config.APIUrl, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", config.ClientID)
-	req.Header.Set("X-Bloo-Token-Secret", config.AuthToken)
-	req.Header.Set("X-Bloo-Company-ID", config.CompanyID)
-
-	// Execute request
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Error executing request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error reading response: %v", err)
-	}
-
-	// Parse response
-	var graphQLResp GraphQLResponse
-	if err := json.Unmarshal(body, &graphQLResp); err != nil {
-		log.Fatalf("Error parsing response: %v", err)
-	}
-
-	// Check for GraphQL errors
-	if len(graphQLResp.Errors) > 0 {
-		log.Fatalf("GraphQL error: %s", graphQLResp.Errors[0].Message)
-	}
-
-	// Parse lists data
-	lists, err := parseLists(graphQLResp.Data)
-	if err != nil {
-		log.Fatalf("Failed to parse lists: %v", err)
-	}
+	// Get lists
+	lists := response.TodoLists
 
 	// Display results
 	fmt.Printf("\n=== Lists in Project %s ===\n", *projectID)

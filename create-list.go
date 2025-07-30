@@ -1,25 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
 	"strings"
-	"time"
-
-	"github.com/joho/godotenv"
 )
-
-// GraphQL request structure
-type GraphQLRequest struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables,omitempty"`
-}
 
 // List creation input
 type CreateTodoListInput struct {
@@ -36,105 +22,36 @@ type CreatedTodoList struct {
 	Position float64 `json:"position"`
 }
 
-type GraphQLResponse struct {
-	Data   map[string]CreatedTodoList `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
+type CreateTodoListResponse struct {
+	CreateTodoList CreatedTodoList `json:"createTodoList"`
 }
 
-// Config holds API configuration
-type Config struct {
-	APIUrl    string
-	AuthToken string
-	ClientID  string
-	CompanyID string
-}
-
-// Load configuration from .env
-func loadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-
-	config := &Config{
-		APIUrl:    os.Getenv("API_URL"),
-		AuthToken: os.Getenv("AUTH_TOKEN"),
-		ClientID:  os.Getenv("CLIENT_ID"),
-		CompanyID: os.Getenv("COMPANY_ID"),
-	}
-
-	if config.APIUrl == "" || config.AuthToken == "" || config.ClientID == "" || config.CompanyID == "" {
-		return nil, fmt.Errorf("missing required environment variables")
-	}
-
-	return config, nil
+type MaxPositionResponse struct {
+	TodoLists []struct {
+		Position float64 `json:"position"`
+	} `json:"todoLists"`
 }
 
 // Get current max position for a project
-func getMaxPosition(config *Config, projectID string) (float64, error) {
+func getMaxPosition(client *Client, projectID string) (float64, error) {
 	query := `query GetProjectLists($projectId: String!) {
 		todoLists(projectId: $projectId) {
 			position
 		}
 	}`
 
-	reqBody := GraphQLRequest{
-		Query: query,
-		Variables: map[string]interface{}{
-			"projectId": projectID,
-		},
+	variables := map[string]interface{}{
+		"projectId": projectID,
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
+	var response MaxPositionResponse
+	if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
 		return 0, err
-	}
-
-	req, err := http.NewRequest("POST", config.APIUrl, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return 0, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", config.ClientID)
-	req.Header.Set("X-Bloo-Token-Secret", config.AuthToken)
-	req.Header.Set("X-Bloo-Company-ID", config.CompanyID)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
-
-	var response struct {
-		Data struct {
-			TodoLists []struct {
-				Position float64 `json:"position"`
-			} `json:"todoLists"`
-		} `json:"data"`
-		Errors []struct {
-			Message string `json:"message"`
-		} `json:"errors"`
-	}
-
-	if err := json.Unmarshal(body, &response); err != nil {
-		return 0, err
-	}
-
-	if len(response.Errors) > 0 {
-		return 0, fmt.Errorf("GraphQL error: %s", response.Errors[0].Message)
 	}
 
 	// Find the max position
 	maxPos := 0.0
-	for _, list := range response.Data.TodoLists {
+	for _, list := range response.TodoLists {
 		if list.Position > maxPos {
 			maxPos = list.Position
 		}
@@ -144,7 +61,7 @@ func getMaxPosition(config *Config, projectID string) (float64, error) {
 }
 
 // Execute GraphQL mutation to create a single list
-func createTodoList(config *Config, input CreateTodoListInput) (*CreatedTodoList, error) {
+func createTodoList(client *Client, input CreateTodoListInput) (*CreatedTodoList, error) {
 	mutation := fmt.Sprintf(`
 		mutation CreateTodoList {
 			createTodoList(input: {
@@ -160,52 +77,12 @@ func createTodoList(config *Config, input CreateTodoListInput) (*CreatedTodoList
 		}
 	`, input.ProjectID, input.Title, input.Position)
 
-	reqBody := GraphQLRequest{
-		Query: mutation,
+	var response CreateTodoListResponse
+	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+		return nil, err
 	}
 
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling request: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", config.APIUrl, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", config.ClientID)
-	req.Header.Set("X-Bloo-Token-Secret", config.AuthToken)
-	req.Header.Set("X-Bloo-Company-ID", config.CompanyID)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error executing request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	var graphQLResp GraphQLResponse
-	if err := json.Unmarshal(body, &graphQLResp); err != nil {
-		return nil, fmt.Errorf("error parsing response: %w", err)
-	}
-
-	if len(graphQLResp.Errors) > 0 {
-		return nil, fmt.Errorf("GraphQL error: %s", graphQLResp.Errors[0].Message)
-	}
-
-	list, ok := graphQLResp.Data["createTodoList"]
-	if !ok {
-		return nil, fmt.Errorf("no createTodoList in response")
-	}
-
-	return &list, nil
+	return &response.CreateTodoList, nil
 }
 
 func main() {
@@ -242,14 +119,17 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := loadConfig()
+	config, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	// Create client
+	client := NewClient(config)
+
 	// Get current max position
 	fmt.Printf("Getting current lists in project %s...\n", *projectID)
-	maxPos, err := getMaxPosition(config, *projectID)
+	maxPos, err := getMaxPosition(client, *projectID)
 	if err != nil {
 		log.Fatalf("Failed to get max position: %v", err)
 	}
@@ -281,7 +161,7 @@ func main() {
 
 		fmt.Printf("Creating list '%s' at position %.0f...\n", name, position)
 		
-		list, err := createTodoList(config, input)
+		list, err := createTodoList(client, input)
 		if err != nil {
 			log.Printf("Failed to create list '%s': %v", name, err)
 			continue
