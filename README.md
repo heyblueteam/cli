@@ -16,10 +16,18 @@ A collection of Go scripts for interacting with the Blue GraphQL API to create d
    ```
 3. Ensure `.env` file exists with your credentials (see Configuration section)
 
-## 📋 Available Scripts
+<!-- ─────────────────────────────────────────────────────────────── -->
+<!--                                                                -->
+<!--                📋   AVAILABLE SCRIPTS   📋                      -->
+<!--                                                                -->
+<!--  Use the scripts below to interact with the Blue API!           -->
+<!--  Each script is designed for a specific demo-building task.     -->
+<!--                                                                -->
+<!-- ─────────────────────────────────────────────────────────────── -->
+
 
 ### 1. List Projects (`list-projects.go`)
-Lists all projects in your Blue company.
+Lists projects in your Blue company (first 20 results).
 
 ```bash
 # List with full details
@@ -28,6 +36,8 @@ go run auth.go list-projects.go
 # List with just names and IDs
 go run auth.go list-projects.go -simple
 ```
+
+**Note:** Currently shows only the first 20 projects. Pagination support coming soon.
 
 ### 2. Create Project (`create-project.go`)
 Creates a new project in your Blue company.
@@ -165,6 +175,7 @@ go run auth.go get-lists.go -project PROJECT_ID -simple
 - Maximum 50 lists per project
 - Project names are automatically trimmed
 - All scripts require authentication
+- `list-projects.go` shows only first 20 projects (pagination not yet implemented)
 
 ## 🔮 Future Scripts
 - `create-records.go` - Create records/todos within lists
