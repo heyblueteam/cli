@@ -27,17 +27,39 @@ A collection of Go scripts for interacting with the Blue GraphQL API to create d
 
 
 ### 1. List Projects (`list-projects.go`)
-Lists projects in your Blue company (first 20 results).
+Lists projects in your Blue company with pagination, search, and filtering.
 
 ```bash
-# List with full details
+# List first 20 projects (default)
 go run auth.go list-projects.go
 
 # List with just names and IDs
 go run auth.go list-projects.go -simple
+
+# Search for projects by name
+go run auth.go list-projects.go -search "marketing"
+
+# Navigate through pages
+go run auth.go list-projects.go -page 2
+go run auth.go list-projects.go -page 3 -size 50
+
+# Include archived and template projects
+go run auth.go list-projects.go -archived    # Include archived
+go run auth.go list-projects.go -templates   # Include templates  
+go run auth.go list-projects.go -all         # Show everything
+
+# Combine options
+go run auth.go list-projects.go -search "CRM" -page 2 -simple
 ```
 
-**Note:** Currently shows only the first 20 projects. Pagination support coming soon.
+**Options:**
+- `-simple`: Show only basic information (name and ID)
+- `-page`: Page number to display (default: 1)
+- `-size`: Number of items per page (default: 20)
+- `-search`: Search projects by name
+- `-archived`: Include archived projects
+- `-templates`: Include template projects
+- `-all`: Show all projects including archived and templates
 
 ### 2. Create Project (`create-project.go`)
 Creates a new project in your Blue company.

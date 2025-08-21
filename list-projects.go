@@ -40,12 +40,11 @@ type ProjectListResponse struct {
 	ProjectList ProjectList `json:"projectList"`
 }
 
-// Queries
-const (
-	fullQuery = `query ProjectListQuery {
-		projectList(filter: { companyIds: ["%s"] }) {
-			items {
-				id
+// Build query with pagination and search
+func buildQuery(companyID string, simple bool, skip int, take int, search string, showArchived bool, showTemplates bool) string {
+	fields := "id name"
+	if !simple {
+		fields = `id
 				uid
 				slug
 				name
@@ -56,7 +55,30 @@ const (
 				createdAt
 				updatedAt
 				position
-				isTemplate
+				isTemplate`
+	}
+
+	// Build filter
+	filter := fmt.Sprintf(`companyIds: ["%s"]`, companyID)
+	if search != "" {
+		filter += fmt.Sprintf(`, search: "%s"`, search)
+	}
+	if !showArchived {
+		filter += `, archived: false`
+	}
+	if !showTemplates {
+		filter += `, isTemplate: false`
+	}
+
+	query := fmt.Sprintf(`query ProjectListQuery {
+		projectList(
+			filter: { %s }
+			skip: %d
+			take: %d
+			sort: [name_ASC]
+		) {
+			items {
+				%s
 			}
 			pageInfo {
 				totalPages
@@ -66,25 +88,22 @@ const (
 				hasNextPage
 				hasPreviousPage
 			}
+			totalCount
 		}
-	}`
+	}`, filter, skip, take, fields)
 
-	simpleQuery = `query ProjectListQuery {
-		projectList(filter: { companyIds: ["%s"] }) {
-			items {
-				id
-				name
-			}
-			pageInfo {
-				totalItems
-			}
-		}
-	}`
-)
+	return query
+}
 
 func main() {
 	// Parse command line flags
 	simple := flag.Bool("simple", false, "Show only project names and IDs")
+	page := flag.Int("page", 1, "Page number (default: 1)")
+	pageSize := flag.Int("size", 20, "Page size (default: 20)")
+	search := flag.String("search", "", "Search projects by name")
+	all := flag.Bool("all", false, "Show all projects (including archived and templates)")
+	showArchived := flag.Bool("archived", false, "Include archived projects")
+	showTemplates := flag.Bool("templates", false, "Include template projects")
 	flag.Parse()
 
 	// Load configuration
@@ -96,13 +115,18 @@ func main() {
 	// Create client
 	client := NewClient(config)
 
-	// Select query based on flag
-	var query string
-	if *simple {
-		query = fmt.Sprintf(simpleQuery, client.GetCompanyID())
-	} else {
-		query = fmt.Sprintf(fullQuery, client.GetCompanyID())
+	// Calculate skip value from page
+	skip := (*page - 1) * *pageSize
+	take := *pageSize
+
+	// Override archived/templates flags if -all is set
+	if *all {
+		*showArchived = true
+		*showTemplates = true
 	}
+
+	// Build and execute query
+	query := buildQuery(client.GetCompanyID(), *simple, skip, take, *search, *showArchived, *showTemplates)
 
 	// Execute query
 	var response ProjectListResponse
@@ -113,18 +137,33 @@ func main() {
 	// Get project list
 	projectList := response.ProjectList
 
+	// Display header
 	fmt.Printf("\n=== Projects in %s ===\n", client.GetCompanyID())
-	fmt.Printf("Total projects: %d\n\n", projectList.PageInfo.TotalItems)
+	if *search != "" {
+		fmt.Printf("Search: '%s'\n", *search)
+	}
+	fmt.Printf("Page %d of %d (showing %d of %d total)\n\n", 
+		*page, 
+		(projectList.PageInfo.TotalItems + *pageSize - 1) / *pageSize,
+		len(projectList.Items),
+		projectList.PageInfo.TotalItems)
+
+	if len(projectList.Items) == 0 {
+		fmt.Println("No projects found.")
+		return
+	}
 
 	if *simple {
 		// Simple output
+		startNum := skip + 1
 		for i, project := range projectList.Items {
-			fmt.Printf("%d. %s\n   ID: %s\n\n", i+1, project.Name, project.ID)
+			fmt.Printf("%d. %s\n   ID: %s\n\n", startNum+i, project.Name, project.ID)
 		}
 	} else {
 		// Detailed output
+		startNum := skip + 1
 		for i, project := range projectList.Items {
-			fmt.Printf("%d. %s\n", i+1, project.Name)
+			fmt.Printf("%d. %s\n", startNum+i, project.Name)
 			fmt.Printf("   ID: %s\n", project.ID)
 			fmt.Printf("   Slug: %s\n", project.Slug)
 			fmt.Printf("   Archived: %v\n", project.Archived)
@@ -144,11 +183,22 @@ func main() {
 		}
 	}
 
-	// Show pagination info if there are more pages
-	if projectList.PageInfo.HasNextPage {
-		fmt.Printf("\nNote: Showing page %d of %d. Total items: %d\n", 
-			projectList.PageInfo.Page, 
-			projectList.PageInfo.TotalPages, 
-			projectList.PageInfo.TotalItems)
+	// Show pagination help
+	if projectList.PageInfo.HasNextPage || *page > 1 {
+		fmt.Println("\n=== Navigation ===")
+		if *page > 1 {
+			fmt.Printf("Previous page: go run auth.go list-projects.go -page %d", *page-1)
+			if *search != "" {
+				fmt.Printf(" -search \"%s\"", *search)
+			}
+			fmt.Println()
+		}
+		if projectList.PageInfo.HasNextPage {
+			fmt.Printf("Next page: go run auth.go list-projects.go -page %d", *page+1)
+			if *search != "" {
+				fmt.Printf(" -search \"%s\"", *search)
+			}
+			fmt.Println()
+		}
 	}
 }
