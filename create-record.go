@@ -29,6 +29,7 @@ type CreateTodoResponse struct {
 }
 
 func main() {
+	var projectID = flag.String("project", "", "Project ID (required)")
 	var listID = flag.String("list", "", "List ID to create the record in (required)")
 	var title = flag.String("title", "", "Title of the record (required)")
 	var description = flag.String("description", "", "Description of the record")
@@ -38,10 +39,10 @@ func main() {
 
 	flag.Parse()
 
-	if *listID == "" || *title == "" {
-		fmt.Println("Error: Both -list and -title flags are required")
+	if *projectID == "" || *listID == "" || *title == "" {
+		fmt.Println("Error: -project, -list and -title flags are required")
 		fmt.Println("\nUsage:")
-		fmt.Println("  go run auth.go create-record.go -list LIST_ID -title \"Record Title\" [flags]")
+		fmt.Println("  go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title \"Record Title\" [flags]")
 		fmt.Println("\nFlags:")
 		flag.PrintDefaults()
 		return
@@ -54,9 +55,8 @@ func main() {
 
 	client := NewClient(config)
 	
-	// Set project context - for now, use User Research Template project
-	// In a real implementation, you might want to derive this from the list ID
-	client.SetProjectID("cm7im7fhw02gu2lvmbjtzeinf")
+	// Set project context from the provided flag
+	client.SetProjectID(*projectID)
 
 	input := CreateTodoInput{
 		TodoListID: *listID,
