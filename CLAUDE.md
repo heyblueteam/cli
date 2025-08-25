@@ -54,6 +54,11 @@ go run auth.go create-record.go -list LIST_ID -title "Task Name" -description "D
 # List/query records across projects with advanced filtering
 go run auth.go list-records.go -project PROJECT_ID -done false -assignee USER_ID -simple
 
+# Count records/todos in a project with optional filtering
+go run auth.go count-records.go -project PROJECT_ID
+go run auth.go count-records.go -project PROJECT_ID -done false
+go run auth.go count-records.go -project PROJECT_ID -list LIST_ID -archived false
+
 # Delete records/todos (requires confirmation for safety)
 go run auth.go delete-record.go -record RECORD_ID -confirm
 
@@ -117,6 +122,7 @@ Completed:
 - ✅ Create custom fields (24+ types including reference/lookup)
 - ✅ Create records/todos (simple: name + list + description)
 - ✅ Advanced record querying with filtering and sorting
+- ✅ Count records/todos in projects with filtering options
 - ✅ Delete records/todos with safety confirmation
 - ✅ Add tags to records/todos (by tag ID or title)
 - ✅ Edit/update project settings and toggle features (with intelligent feature merging)

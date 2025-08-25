@@ -345,7 +345,30 @@ go run auth.go list-records.go -project PROJECT_ID -simple
 - `-skip`: Number of records to skip (for pagination)
 - `-simple`: Show only basic record information
 
-### 12. Delete Record/Todo (`delete-record.go`)
+### 12. Count Records (`count-records.go`)
+Counts the total number of records/todos in a project with optional filtering.
+
+```bash
+# Count all records in a project
+go run auth.go count-records.go -project PROJECT_ID
+
+# Count only incomplete records
+go run auth.go count-records.go -project PROJECT_ID -done false
+
+# Count records in a specific list
+go run auth.go count-records.go -project PROJECT_ID -list LIST_ID
+
+# Count non-archived records
+go run auth.go count-records.go -project PROJECT_ID -archived false
+```
+
+**Options:**
+- `-project` (required): Project ID to count records
+- `-list`: Todo List ID to filter records (optional)
+- `-done`: Filter by completion status (true/false, optional)
+- `-archived`: Filter by archived status (true/false, optional)
+
+### 13. Delete Record/Todo (`delete-record.go`)
 Permanently deletes a record/todo from a project. Requires confirmation for safety.
 
 ```bash
@@ -400,6 +423,7 @@ demo-builder/
 ├── create-custom-field.go        # Create custom fields
 ├── create-record.go              # Create todos/records in lists
 ├── list-records.go               # Advanced record querying with filtering
+├── count-records.go              # Count records/todos in projects
 ├── delete-record.go              # Delete records/todos
 └── README.md                     # This file
 ```
@@ -447,6 +471,9 @@ go run auth.go list-todos.go -list LIST_ID -simple
 
 # 12. Query records across the project with filters
 go run auth.go list-records.go -project PROJECT_ID -done false -limit 10
+
+# 13. Count total records in the project
+go run auth.go count-records.go -project PROJECT_ID
 
 ## 🛠️ Technical Details
 
