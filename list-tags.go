@@ -1,16 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"os"
-
-	"github.com/joho/godotenv"
 )
 
 // Tag represents a tag in the system
@@ -23,108 +16,30 @@ type Tag struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
-// GraphQL request/response structures
-type GraphQLRequest struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables,omitempty"`
-}
-
-type GraphQLResponse struct {
-	Data   json.RawMessage `json:"data,omitempty"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors,omitempty"`
-}
-
-// BlueAPIClient implements GraphQL requests to Blue API
-type BlueAPIClient struct {
-	url   string
-	token string
-	http  *http.Client
-}
-
-func NewBlueAPIClient(url, token string) *BlueAPIClient {
-	return &BlueAPIClient{
-		url:   url,
-		token: token,
-		http:  &http.Client{},
-	}
-}
-
-func (c *BlueAPIClient) Query(ctx context.Context, query string, variables map[string]interface{}) (json.RawMessage, error) {
-	// Create request
-	reqBody := GraphQLRequest{
-		Query:     query,
-		Variables: variables,
-	}
-
-	jsonBody, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", c.url, bytes.NewBuffer(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Bloo-Token-ID", os.Getenv("CLIENT_ID"))
-	req.Header.Set("X-Bloo-Token-Secret", c.token)
-	req.Header.Set("X-Bloo-Company-ID", os.Getenv("COMPANY_ID"))
-
-	// Execute request
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	// Parse response
-	var graphQLResp GraphQLResponse
-	if err := json.Unmarshal(body, &graphQLResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	// Check for errors
-	if len(graphQLResp.Errors) > 0 {
-		return nil, fmt.Errorf("GraphQL error: %s", graphQLResp.Errors[0].Message)
-	}
-
-	return graphQLResp.Data, nil
-}
-
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+	var projectID string
+	flag.StringVar(&projectID, "project", "", "Project ID (required)")
+	flag.Parse()
+
+	if projectID == "" {
+		log.Fatal("Project ID is required. Use -project flag.")
 	}
 
-	apiURL := os.Getenv("API_URL")
-	authToken := os.Getenv("AUTH_TOKEN")
-
-	if apiURL == "" || authToken == "" {
-		log.Fatal("API_URL and AUTH_TOKEN must be set in .env file")
+	// Load configuration
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Create API client
-	client := NewBlueAPIClient(apiURL, authToken)
+	// Create client using shared auth
+	client := NewClient(config)
 
 	// GraphQL query for listing tags
-	projectID := "cmdpb3mfj247psf2jj8x5yg3g"
-	
-	query := `
+	query := fmt.Sprintf(`
 		query ListTags {
 			tagList(
 				filter: { 
-					projectIds: ["` + projectID + `"] 
+					projectIds: ["%s"] 
 				}
 				first: 50
 				orderBy: title_ASC
@@ -140,41 +55,33 @@ func main() {
 				totalCount
 			}
 		}
-	`
+	`, projectID)
 
 	// Variables
 	variables := map[string]interface{}{}
 
 	// Execute query
-	ctx := context.Background()
-	fmt.Printf("Listing tags for project ID: %s\n", projectID)
-	fmt.Println("==========================================")
+	fmt.Printf("=== Tags in Project %s ===\n", projectID)
 
-	data, err := client.Query(ctx, query, variables)
-	if err != nil {
-		log.Fatalf("Failed to query tags: %v", err)
-	}
-
-	// Parse response
-	var response struct {
+	// Execute query
+	var tagResponse struct {
 		TagList struct {
 			Items      []Tag `json:"items"`
 			TotalCount int   `json:"totalCount"`
 		} `json:"tagList"`
 	}
 
-	if err := json.Unmarshal(data, &response); err != nil {
-		log.Fatalf("Failed to parse response: %v", err)
+	if err := client.ExecuteQueryWithResult(query, variables, &tagResponse); err != nil {
+		log.Fatalf("Failed to query tags: %v", err)
 	}
 
 	// Display results
-	fmt.Printf("\nFound %d tags (Total: %d):\n", len(response.TagList.Items), response.TagList.TotalCount)
-	fmt.Println("------------------------------------------")
+	fmt.Printf("Total tags: %d\n\n", tagResponse.TagList.TotalCount)
 
-	if len(response.TagList.Items) == 0 {
+	if len(tagResponse.TagList.Items) == 0 {
 		fmt.Println("No tags found for this project.")
 	} else {
-		for i, tag := range response.TagList.Items {
+		for i, tag := range tagResponse.TagList.Items {
 			fmt.Printf("%d. %s\n", i+1, tag.Title)
 			fmt.Printf("   ID: %s\n", tag.ID)
 			fmt.Printf("   UID: %s\n", tag.UID)

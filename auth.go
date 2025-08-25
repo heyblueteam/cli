@@ -36,6 +36,7 @@ type GraphQLError struct {
 type Client struct {
 	config     *Config
 	httpClient *http.Client
+	projectID  string
 }
 
 // LoadConfig loads configuration from .env file
@@ -90,6 +91,11 @@ func (c *Client) ExecuteQuery(query string, variables map[string]interface{}) (m
 	req.Header.Set("X-Bloo-Token-ID", c.config.ClientID)
 	req.Header.Set("X-Bloo-Token-Secret", c.config.AuthToken)
 	req.Header.Set("X-Bloo-Company-ID", c.config.CompanyID)
+	
+	// Include project ID header if project context is set
+	if c.projectID != "" {
+		req.Header.Set("X-Bloo-Project-Id", c.projectID)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -140,6 +146,16 @@ func (c *Client) ExecuteQueryWithResult(query string, variables map[string]inter
 	}
 
 	return nil
+}
+
+// SetProjectID sets the project ID for requests that require project context
+func (c *Client) SetProjectID(projectID string) {
+	c.projectID = projectID
+}
+
+// GetProjectID returns the current project ID
+func (c *Client) GetProjectID() string {
+	return c.projectID
 }
 
 // GetCompanyID returns the configured company ID
