@@ -136,33 +136,33 @@ go run . read-project-custom-fields -project PROJECT_ID -simple -page 2 -size 25
 - `-project` (required): Project ID
 - `-simple`: Show only basic list information
 
-### 4. Read Todos in Project (`read-project-records`)
-Lists all todos across all lists in a project (project overview).
+### 4. Read Records in Project (`read-project-records`)
+Lists all records across all lists in a project (project overview).
 
 ```bash
-# List all todos in all lists of a project
+# List all records in all lists of a project
 go run . read-project-records -project PROJECT_ID
 ```
 
 **Options:**
 - `-project` (required): Project ID
 
-### 5. Read Todos in Specific List (`read-list-records`)
-Lists todos within a specific todo list with filtering and sorting options.
+### 5. Read REcords in Specific List (`read-list-records`)
+Lists records within a specific records list with filtering and sorting options.
 
 ```bash
-# List todos in a list with full details
+# List records in a list with full details
 go run . read-list-records -list LIST_ID
 
-# List todos with simple output
+# List records with simple output
 go run . read-list-records -list LIST_ID -simple
 
-# Search for specific todos
+# Search for specific records
 go run . read-list-records -list LIST_ID -search "bug fix"
 
 # Filter by completion status
-go run . read-list-records -list LIST_ID -done false  # Show only active todos
-go run . read-list-records -list LIST_ID -done true   # Show only completed todos
+go run . read-list-records -list LIST_ID -done false  # Show only active records
+go run . read-list-records -list LIST_ID -done true   # Show only completed records
 
 # Filter by assignee
 go run . read-list-records -list LIST_ID -assignee USER_ID
@@ -181,13 +181,13 @@ go run . read-list-records -list LIST_ID -limit 100
 
 **Options:**
 - `-list` (required): Todo List ID
-- `-simple`: Show only basic todo information
-- `-search`: Search todos by title or description
+- `-simple`: Show only basic record information
+- `-search`: Search records by title or description
 - `-assignee`: Filter by assignee ID
 - `-tags`: Filter by tag IDs (comma-separated)
 - `-done`: Filter by completion status (true/false)
 - `-order`: Order by field (position_ASC, position_DESC, title_ASC, title_DESC, createdAt_ASC, createdAt_DESC, duedAt_ASC, duedAt_DESC)
-- `-limit`: Maximum number of todos to return (default: 50)
+- `-limit`: Maximum number of records to return (default: 50)
 
 ### 6. Create Lists (`create-list`)
 Creates one or more lists in a project.
@@ -283,7 +283,7 @@ go run . create-custom-field -list
 > **💡 For comprehensive custom field documentation** including detailed examples, field type explanations, and troubleshooting, see [CUSTOM_FIELDS_README.md](CUSTOM_FIELDS_README.md).
 
 ### 10. Create Record/Todo (`create-record`)
-Creates todos (records) within todo lists.
+Creates records (records) within lists.
 
 ```bash
 # Create a basic record
@@ -308,7 +308,7 @@ go run . create-record -list LIST_ID -title "Task" -simple
 - `-simple`: Simple output format
 
 ### 11. Read Records (`read-records`)
-Advanced querying of records/todos across projects with filtering and sorting.
+Advanced querying of records across projects with filtering and sorting.
 
 ```bash
 # List records in a project
@@ -346,7 +346,7 @@ go run . read-records -project PROJECT_ID -simple
 - `-simple`: Show only basic record information
 
 ### 12. Count Records (`read-records-count`)
-Counts the total number of records/todos in a project with optional filtering.
+Counts the total number of records in a project with optional filtering.
 
 ```bash
 # Count all records in a project
@@ -369,7 +369,7 @@ go run . read-records-count -project PROJECT_ID -archived false
 - `-archived`: Filter by archived status (true/false, optional)
 
 ### 13. Delete Record/Todo (`delete-record`)
-Permanently deletes a record/todo from a project. Requires confirmation for safety.
+Permanently deletes a record from a project. Requires confirmation for safety.
 
 ```bash
 # Delete a record (confirmation required)
@@ -420,16 +420,16 @@ demo-builder/
 │   ├── create_list.go            # Create lists in a project
 │   ├── create_project.go         # Create new projects
 │   ├── create_record_tags.go     # Add tags to records
-│   ├── create_record.go          # Create todos/records in lists
+│   ├── create_record.go          # Create records in lists
 │   ├── create_tags.go            # Create tags in a project
 │   ├── delete_project.go         # Delete projects
-│   ├── delete_record.go          # Delete records/todos
-│   ├── read_list_records.go      # List todos within a specific list
+│   ├── delete_record.go          # Delete records
+│   ├── read_list_records.go      # List records within a specific list
 │   ├── read_lists.go             # Get lists in a project
 │   ├── read_project_custom_fields.go # List custom fields in a project
-│   ├── read_project_records.go   # List all todos in a project
+│   ├── read_project_records.go   # List all records in a project
 │   ├── read_projects.go          # List all projects
-│   ├── read_records_count.go     # Count records/todos in projects
+│   ├── read_records_count.go     # Count records in projects
 │   ├── read_records.go           # Advanced record querying with filtering
 │   ├── read_tags.go              # List tags in a project
 │   └── update_project.go         # Update project settings and features
@@ -467,7 +467,7 @@ go run . read-tags -project PROJECT_ID
 go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
 go run . create-tags -project PROJECT_ID -title "Feature" -color "blue"
 
-# 8. List all todos across all lists in the project
+# 8. List all records across all lists in the project
 go run . read-project-records -project PROJECT_ID
 
 # 9. Create some custom fields for the project
@@ -478,7 +478,7 @@ go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
 go run . create-record -list LIST_ID -title "Setup project structure" -description "Initialize project with basic structure"
 go run . create-record -list LIST_ID -title "Create user authentication" -placement "TOP"
 
-# 11. List todos in a specific list with detailed info
+# 11. List records in a specific list with detailed info
 go run . read-list-records -list LIST_ID -simple
 
 # 12. Query records across the project with filters
@@ -570,9 +570,6 @@ go run . e2e
 - All scripts require authentication
 - `list-projects` shows only first 20 projects (pagination not yet implemented)
 
-## 🔮 Future Scripts
-- `create-todos` - Create todos within lists
-- `bulk-demo` - Create complete demo projects from templates
 
 ## 🤝 Contributing
 When adding new scripts:
