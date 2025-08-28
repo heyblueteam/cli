@@ -34,9 +34,10 @@ type GraphQLError struct {
 
 // Client handles Blue API communication
 type Client struct {
-	config     *Config
-	httpClient *http.Client
-	projectID  string
+	config        *Config
+	httpClient    *http.Client
+	projectID     string
+	projectSlug   string
 }
 
 // LoadConfig loads configuration from .env file
@@ -92,9 +93,12 @@ func (c *Client) ExecuteQuery(query string, variables map[string]interface{}) (m
 	req.Header.Set("X-Bloo-Token-Secret", c.config.AuthToken)
 	req.Header.Set("X-Bloo-Company-ID", c.config.CompanyID)
 	
-	// Include project ID header if project context is set
+	// Include project context header if project context is set
+	// Use Project ID if available, otherwise use Project slug
 	if c.projectID != "" {
 		req.Header.Set("X-Bloo-Project-Id", c.projectID)
+	} else if c.projectSlug != "" {
+		req.Header.Set("X-Bloo-Project-Id", c.projectSlug)
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -151,11 +155,43 @@ func (c *Client) ExecuteQueryWithResult(query string, variables map[string]inter
 // SetProjectID sets the project ID for requests that require project context
 func (c *Client) SetProjectID(projectID string) {
 	c.projectID = projectID
+	c.projectSlug = "" // Clear slug when setting ID
+}
+
+// SetProjectSlug sets the project slug for requests that require project context
+func (c *Client) SetProjectSlug(projectSlug string) {
+	c.projectSlug = projectSlug
+	c.projectID = "" // Clear ID when setting slug
+}
+
+// SetProject sets the project ID or slug for requests that require project context
+// This method automatically detects whether the input is an ID or slug
+func (c *Client) SetProject(project string) {
+	// Simple heuristic: if it looks like a UUID/ID (contains hyphens), treat as ID
+	// Otherwise treat as slug
+	if len(project) > 20 && (project[8] == '-' || project[13] == '-' || project[18] == '-') {
+		c.SetProjectID(project)
+	} else {
+		c.SetProjectSlug(project)
+	}
 }
 
 // GetProjectID returns the current project ID
 func (c *Client) GetProjectID() string {
 	return c.projectID
+}
+
+// GetProjectSlug returns the current project slug
+func (c *Client) GetProjectSlug() string {
+	return c.projectSlug
+}
+
+// GetProjectContext returns the current project context (ID or slug)
+func (c *Client) GetProjectContext() string {
+	if c.projectID != "" {
+		return c.projectID
+	}
+	return c.projectSlug
 }
 
 // GetCompanyID returns the configured company ID

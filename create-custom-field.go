@@ -7,6 +7,18 @@ import (
 	"strings"
 )
 
+// Custom field option input for creating options after field creation
+type CustomFieldOptionInput struct {
+	Title string `json:"title"`
+	Color string `json:"color,omitempty"`
+}
+
+// Input for creating multiple custom field options
+type CreateCustomFieldOptionsInput struct {
+	CustomFieldID      string                    `json:"customFieldId"`
+	CustomFieldOptions []CustomFieldOptionInput `json:"customFieldOptions"`
+}
+
 // Custom field creation input
 type CreateCustomFieldInput struct {
 	Name                      string                    `json:"name"`
@@ -257,12 +269,70 @@ func buildLookupOptionInput(input *CustomFieldLookupOptionInput) string {
 	return strings.Join(fields, "\n\t\t\t\t\t")
 }
 
+// Parse options string into CustomFieldOptionInput slice
+func parseOptions(optionsStr string) ([]CustomFieldOptionInput, error) {
+	if optionsStr == "" {
+		return nil, nil
+	}
+
+	var options []CustomFieldOptionInput
+	pairs := strings.Split(optionsStr, ",")
+	
+	for _, pair := range pairs {
+		parts := strings.Split(strings.TrimSpace(pair), ":")
+		if len(parts) < 1 || parts[0] == "" {
+			continue
+		}
+		
+		option := CustomFieldOptionInput{
+			Title: parts[0],
+		}
+		
+		// Add color if provided
+		if len(parts) > 1 && parts[1] != "" {
+			option.Color = parts[1]
+		}
+		
+		options = append(options, option)
+	}
+	
+	return options, nil
+}
+
+// Create custom field options after field creation
+func createCustomFieldOptions(client *Client, customFieldID string, options []CustomFieldOptionInput) error {
+	if len(options) == 0 {
+		return nil
+	}
+
+	mutation := `
+		mutation CreateCustomFieldOptions($input: CreateCustomFieldOptionsInput!) {
+			createCustomFieldOptions(input: $input) {
+				id
+				title
+				color
+			}
+		}
+	`
+
+	variables := map[string]interface{}{
+		"input": CreateCustomFieldOptionsInput{
+			CustomFieldID:      customFieldID,
+			CustomFieldOptions: options,
+		},
+	}
+
+	var response map[string]interface{}
+	return client.ExecuteQueryWithResult(mutation, variables, &response)
+}
+
 func main() {
 	// Parse command line flags
 	name := flag.String("name", "", "Custom field name (required)")
 	fieldType := flag.String("type", "", "Custom field type (required)")
 	projectID := flag.String("project", "", "Project ID (required for project-level custom fields)")
 	description := flag.String("description", "", "Custom field description")
+	options := flag.String("options", "", "Options for SELECT fields (format: 'value1:color1,value2:color2')")
 	buttonType := flag.String("button-type", "", "Button type for BUTTON field type")
 	buttonConfirmText := flag.String("button-confirm-text", "", "Button confirmation text")
 	currencyFieldID := flag.String("currency-field-id", "", "Currency field ID for CURRENCY_CONVERSION type")
@@ -342,6 +412,12 @@ func main() {
 	// Set project context for the request
 	client.SetProjectID(*projectID)
 
+	// Parse options if provided
+	parsedOptions, err := parseOptions(*options)
+	if err != nil {
+		log.Fatalf("Failed to parse options: %v", err)
+	}
+
 	// Create custom field input
 	input := CreateCustomFieldInput{
 		Name:                   *name,
@@ -390,6 +466,28 @@ func main() {
 	fmt.Printf("  Type:        %s\n", customField.Type)
 	if customField.Description != "" {
 		fmt.Printf("  Description: %s\n", customField.Description)
+	}
+
+	// Create options if provided and field type supports them
+	if len(parsedOptions) > 0 && (*fieldType == "SELECT_SINGLE" || *fieldType == "SELECT_MULTI") {
+		fmt.Printf("\nCreating %d options for the field...\n", len(parsedOptions))
+		
+		if err := createCustomFieldOptions(client, customField.ID, parsedOptions); err != nil {
+			fmt.Printf("⚠️  Warning: Field created successfully but failed to create options: %v\n", err)
+			fmt.Printf("You can manually add options later.\n")
+		} else {
+			fmt.Printf("✅ Options created successfully!\n")
+			fmt.Printf("\nOptions created:\n")
+			for _, option := range parsedOptions {
+				if option.Color != "" {
+					fmt.Printf("  - %s (color: %s)\n", option.Title, option.Color)
+				} else {
+					fmt.Printf("  - %s\n", option.Title)
+				}
+			}
+		}
+	} else if len(parsedOptions) > 0 {
+		fmt.Printf("\n⚠️  Warning: Options provided but field type '%s' doesn't support options. Options were ignored.\n", *fieldType)
 	}
 	
 	fmt.Printf("\nYou can now use this custom field in your todos and projects.\n")
