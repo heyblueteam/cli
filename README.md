@@ -136,7 +136,7 @@ go run . read-project-custom-fields -project PROJECT_ID -simple -page 2 -size 25
 - `-project` (required): Project ID
 - `-simple`: Show only basic list information
 
-### 4. Read Records in Project (`read-project-records`)
+### 5. Read Records in Project (`read-project-records`)
 Lists all records across all lists in a project (project overview).
 
 ```bash
@@ -147,7 +147,7 @@ go run . read-project-records -project PROJECT_ID
 **Options:**
 - `-project` (required): Project ID
 
-### 5. Read REcords in Specific List (`read-list-records`)
+### 6. Read Records in Specific List (`read-list-records`)
 Lists records within a specific records list with filtering and sorting options.
 
 ```bash
@@ -189,7 +189,7 @@ go run . read-list-records -list LIST_ID -limit 100
 - `-order`: Order by field (position_ASC, position_DESC, title_ASC, title_DESC, createdAt_ASC, createdAt_DESC, duedAt_ASC, duedAt_DESC)
 - `-limit`: Maximum number of records to return (default: 50)
 
-### 6. Create Lists (`create-list`)
+### 7. Create Lists (`create-list`)
 Creates one or more lists in a project.
 
 ```bash
@@ -208,7 +208,7 @@ go run . create-list -project PROJECT_ID -names "Backlog"
 - `-names` (required): Comma-separated list names
 - `-reverse`: Create lists in reverse order
 
-### 7. Read Tags (`read-tags`)
+### 8. Read Tags (`read-tags`)
 Lists all tags within a specific project.
 
 ```bash
@@ -219,7 +219,7 @@ go run . read-tags -project PROJECT_ID
 **Options:**
 - `-project` (required): Project ID
 
-### 8. Create Tags (`create-tags`)
+### 9. Create Tags (`create-tags`)
 Creates tags within a specific project.
 
 ```bash
@@ -236,7 +236,7 @@ go run . create-tags -project PROJECT_ID -title "Urgent" -color "orange"
 - `-title` (required): Tag title/name
 - `-color` (required): Tag color (e.g., "red", "blue", "green", etc.)
 
-### 9. Create Custom Field (`create-custom-field`)
+### 10. Create Custom Field (`create-custom-field`)
 Creates custom fields for projects with support for 24+ field types.
 
 ```bash
@@ -282,7 +282,7 @@ go run . create-custom-field -list
 
 > **💡 For comprehensive custom field documentation** including detailed examples, field type explanations, and troubleshooting, see [CUSTOM_FIELDS_README.md](CUSTOM_FIELDS_README.md).
 
-### 10. Create Record/Todo (`create-record`)
+### 11. Create Record/Todo (`create-record`)
 Creates records (records) within lists.
 
 ```bash
@@ -307,7 +307,7 @@ go run . create-record -list LIST_ID -title "Task" -simple
 - `-assignees`: Comma-separated assignee IDs
 - `-simple`: Simple output format
 
-### 11. Read Records (`read-records`)
+### 12. Read Records (`read-records`)
 Advanced querying of records across projects with filtering and sorting.
 
 ```bash
@@ -345,7 +345,7 @@ go run . read-records -project PROJECT_ID -simple
 - `-skip`: Number of records to skip (for pagination)
 - `-simple`: Show only basic record information
 
-### 12. Count Records (`read-records-count`)
+### 13. Count Records (`read-records-count`)
 Counts the total number of records in a project with optional filtering.
 
 ```bash
@@ -368,7 +368,7 @@ go run . read-records-count -project PROJECT_ID -archived false
 - `-done`: Filter by completion status (true/false, optional)
 - `-archived`: Filter by archived status (true/false, optional)
 
-### 13. Delete Record/Todo (`delete-record`)
+### 14. Delete Record/Todo (`delete-record`)
 Permanently deletes a record from a project. Requires confirmation for safety.
 
 ```bash
@@ -384,6 +384,88 @@ go run . delete-record -record "clr2x3y4z5a6b7c8d9e0" -confirm
 - `-confirm` (required): Confirmation flag for safety (prevents accidental deletions)
 
 **⚠️ Warning:** This operation permanently deletes the record and cannot be undone.
+
+### 15. Add Tags to Records (`create-record-tags`)
+Adds tags to existing records/todos. Supports adding tags by either tag IDs or tag titles.
+
+```bash
+# Add tags using tag IDs
+go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2"
+
+# Add tags using tag titles (requires project context)
+go run . create-record-tags -record RECORD_ID -tag-titles "Bug,Priority" -project PROJECT_ID
+
+# Simple output
+go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
+```
+
+**Options:**
+- `-record` (required): Record/Todo ID to add tags to
+- `-tag-ids`: Comma-separated list of tag IDs to add
+- `-tag-titles`: Comma-separated list of tag titles to add (requires `-project`)
+- `-project`: Project ID (required when using `-tag-titles`)
+- `-simple`: Simple output format
+
+**Note:** You must provide either `-tag-ids` or `-tag-titles` (with `-project`), but not both.
+
+### 16. Update Project (`update-project`)
+Updates project settings and toggles feature flags. Supports intelligent feature merging.
+
+```bash
+# Update project name and description
+go run . update-project -project PROJECT_ID -name "New Name" -description "Updated description"
+
+# Change project color and icon
+go run . update-project -project PROJECT_ID -color "green" -icon "chart"
+
+# Toggle project features (merged with existing settings)
+go run . update-project -project PROJECT_ID -features "Chat:true,Files:false"
+
+# Update todo alias and visibility settings
+go run . update-project -project PROJECT_ID -todo-alias "Tasks" -hide-record-count true
+
+# Disable multiple features
+go run . update-project -project PROJECT_ID -features "Todo:false,People:false"
+
+# Simple output
+go run . update-project -project PROJECT_ID -name "Updated Name" -simple
+```
+
+**Options:**
+- `-project` (required): Project ID or slug to update
+- `-name`: New project name
+- `-description`: New project description
+- `-color`: New project color
+- `-icon`: New project icon
+- `-todo-alias`: Custom name for todos (e.g., "Tasks", "Items")
+- `-hide-record-count`: Hide record count in UI (true/false)
+- `-features`: Feature toggles in format "Feature:true/false,Feature2:true/false"
+- `-simple`: Simple output format
+
+**Available Features:**
+- `Activity`, `Todo`, `Wiki`, `Chat`, `Docs`, `Forms`, `Files`, `People`
+
+**Note:** Feature updates are merged with existing settings (partial updates supported).
+
+### 17. Delete Project (`delete-project`)
+Permanently deletes a project. Requires confirmation and special permissions.
+
+```bash
+# Delete a project (confirmation required)
+go run . delete-project -project PROJECT_ID -confirm
+
+# Example with project slug
+go run . delete-project -project "my-demo-project" -confirm
+```
+
+**Options:**
+- `-project` (required): Project ID or slug to delete
+- `-confirm` (required): Confirmation flag for safety (prevents accidental deletions)
+
+**⚠️ Warning:** 
+- This operation permanently deletes the project and ALL its data
+- Requires special permissions (may fail with authorization error)
+- Cannot be undone
 
 ## 🔧 Configuration
 
