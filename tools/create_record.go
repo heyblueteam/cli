@@ -151,7 +151,6 @@ func RunCreateRecord(args []string) error {
 	input := common.CreateTodoInput{
 		TodoListID: *listID,
 		Title:      *title,
-		ProjectID:  *projectID,
 	}
 
 	if *description != "" {

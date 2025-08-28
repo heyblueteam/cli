@@ -1,44 +1,44 @@
 package tools
 
 import (
+	"demo-builder/common"
 	"flag"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
-	"demo-builder/common"
 )
 
 // Edit project input
 type EditProjectInput struct {
-	ProjectID                 string                 `json:"projectId"`
-	Name                      string                 `json:"name,omitempty"`
-	Slug                      string                 `json:"slug,omitempty"`
-	Description               string                 `json:"description,omitempty"`
-	Color                     string                 `json:"color,omitempty"`
-	Icon                      string                 `json:"icon,omitempty"`
-	Category                  string                 `json:"category,omitempty"`
-	TodoAlias                 string                 `json:"todoAlias,omitempty"`
-	HideRecordCount           *bool                  `json:"hideRecordCount,omitempty"`
-	ShowTimeSpentInTodoList   *bool                  `json:"showTimeSpentInTodoList,omitempty"`
-	ShowTimeSpentInProject    *bool                  `json:"showTimeSpentInProject,omitempty"`
-	Features                  []common.ProjectFeatureInput  `json:"features,omitempty"`
+	ProjectID               string                       `json:"projectId"`
+	Name                    string                       `json:"name,omitempty"`
+	Slug                    string                       `json:"slug,omitempty"`
+	Description             string                       `json:"description,omitempty"`
+	Color                   string                       `json:"color,omitempty"`
+	Icon                    string                       `json:"icon,omitempty"`
+	Category                string                       `json:"category,omitempty"`
+	TodoAlias               string                       `json:"todoAlias,omitempty"`
+	HideRecordCount         *bool                        `json:"hideRecordCount,omitempty"`
+	ShowTimeSpentInTodoList *bool                        `json:"showTimeSpentInTodoList,omitempty"`
+	ShowTimeSpentInProject  *bool                        `json:"showTimeSpentInProject,omitempty"`
+	Features                []common.ProjectFeatureInput `json:"features,omitempty"`
 }
 
 // Response structures
 type EditedProject struct {
-	ID                        string           `json:"id"`
-	Name                      string           `json:"name"`
-	Slug                      string           `json:"slug"`
-	Description               string           `json:"description"`
-	Color                     string           `json:"color"`
-	Icon                      string           `json:"icon"`
-	Category                  string           `json:"category"`
-	TodoAlias                 string           `json:"todoAlias"`
-	HideRecordCount           bool             `json:"hideRecordCount"`
-	ShowTimeSpentInTodoList   bool             `json:"showTimeSpentInTodoList"`
-	ShowTimeSpentInProject    bool             `json:"showTimeSpentInProject"`
-	Features                  []common.ProjectFeature `json:"features"`
+	ID                      string                  `json:"id"`
+	Name                    string                  `json:"name"`
+	Slug                    string                  `json:"slug"`
+	Description             string                  `json:"description"`
+	Color                   string                  `json:"color"`
+	Icon                    string                  `json:"icon"`
+	Category                string                  `json:"category"`
+	TodoAlias               string                  `json:"todoAlias"`
+	HideRecordCount         bool                    `json:"hideRecordCount"`
+	ShowTimeSpentInTodoList bool                    `json:"showTimeSpentInTodoList"`
+	ShowTimeSpentInProject  bool                    `json:"showTimeSpentInProject"`
+	Features                []common.ProjectFeature `json:"features"`
 }
 
 type EditProjectResponse struct {
@@ -104,17 +104,17 @@ func mergeFeatures(existingFeatures []common.ProjectFeature, newFeatures []commo
 	for _, featureType := range featureTypes {
 		featureMap[featureType] = true
 	}
-	
+
 	// Apply existing feature states
 	for _, feature := range existingFeatures {
 		featureMap[feature.Type] = feature.Enabled
 	}
-	
+
 	// Apply user-specified changes
 	for _, feature := range newFeatures {
 		featureMap[feature.Type] = feature.Enabled
 	}
-	
+
 	// Convert back to array with all feature types
 	var result []common.ProjectFeatureInput
 	for _, featureType := range featureTypes {
@@ -123,7 +123,7 @@ func mergeFeatures(existingFeatures []common.ProjectFeature, newFeatures []commo
 			Enabled: featureMap[featureType],
 		})
 	}
-	
+
 	return result
 }
 
@@ -135,7 +135,7 @@ func executeEditProject(client *common.Client, input EditProjectInput) (*EditedP
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current project state: %v", err)
 		}
-		
+
 		// Merge features
 		input.Features = mergeFeatures(currentProject.Features, input.Features)
 	}
@@ -234,14 +234,14 @@ func parseFeatures(featuresStr string) []common.ProjectFeatureInput {
 
 	var features []common.ProjectFeatureInput
 	pairs := strings.Split(featuresStr, ",")
-	
+
 	for _, pair := range pairs {
 		parts := strings.Split(strings.TrimSpace(pair), ":")
 		if len(parts) != 2 {
 			log.Printf("Warning: Invalid feature format '%s', expected 'TYPE:true/false'", pair)
 			continue
 		}
-		
+
 		featureType := strings.TrimSpace(parts[0])
 		// Capitalize first letter to match expected format
 		if len(featureType) > 0 {
@@ -249,13 +249,13 @@ func parseFeatures(featuresStr string) []common.ProjectFeatureInput {
 		}
 		enabledStr := strings.TrimSpace(strings.ToLower(parts[1]))
 		enabled := enabledStr == "true" || enabledStr == "1" || enabledStr == "yes" || enabledStr == "on"
-		
+
 		features = append(features, common.ProjectFeatureInput{
 			Type:    featureType,
 			Enabled: enabled,
 		})
 	}
-	
+
 	return features
 }
 
@@ -275,7 +275,7 @@ func parseBoolPtr(value string) *bool {
 func RunUpdateProject(args []string) error {
 	// Create flagset for this tool
 	fs := flag.NewFlagSet("update-project", flag.ExitOnError)
-	
+
 	// Parse command line flags
 	projectID := fs.String("project", "", "Project ID to edit (required)")
 	name := fs.String("name", "", "New project name")
@@ -291,7 +291,7 @@ func RunUpdateProject(args []string) error {
 	featuresStr := fs.String("features", "", "Features to toggle (comma-separated, format: TYPE:true/false)")
 	listOptions := fs.Bool("list", false, "List available options")
 	simple := fs.Bool("simple", false, "Simple output format")
-	
+
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("failed to parse flags: %v", err)
 	}
@@ -317,7 +317,7 @@ func RunUpdateProject(args []string) error {
 
 	// Validate required parameters
 	if *projectID == "" {
-		return fmt.Errorf("Project ID is required. Use -project flag")
+		return fmt.Errorf("project ID is required. Use -project flag")
 	}
 
 	// Load configuration
@@ -335,25 +335,25 @@ func RunUpdateProject(args []string) error {
 
 	// Create edit input
 	input := EditProjectInput{
-		ProjectID:                 *projectID,
-		Name:                      *name,
-		Slug:                      *slug,
-		Description:               *description,
-		Color:                     *color,
-		Icon:                      *icon,
-		Category:                  *category,
-		TodoAlias:                 *todoAlias,
-		HideRecordCount:           parseBoolPtr(*hideRecordCount),
-		ShowTimeSpentInTodoList:   parseBoolPtr(*showTimeSpentInTodoList),
-		ShowTimeSpentInProject:    parseBoolPtr(*showTimeSpentInProject),
-		Features:                  features,
+		ProjectID:               *projectID,
+		Name:                    *name,
+		Slug:                    *slug,
+		Description:             *description,
+		Color:                   *color,
+		Icon:                    *icon,
+		Category:                *category,
+		TodoAlias:               *todoAlias,
+		HideRecordCount:         parseBoolPtr(*hideRecordCount),
+		ShowTimeSpentInTodoList: parseBoolPtr(*showTimeSpentInTodoList),
+		ShowTimeSpentInProject:  parseBoolPtr(*showTimeSpentInProject),
+		Features:                features,
 	}
 
 	// Execute edit
 	if !*simple {
 		fmt.Printf("Editing project %s...\n", *projectID)
 	}
-	
+
 	project, err := executeEditProject(client, input)
 	if err != nil {
 		return fmt.Errorf("failed to edit project: %v", err)
@@ -384,7 +384,7 @@ func RunUpdateProject(args []string) error {
 		fmt.Printf("  Hide Record Count:         %t\n", project.HideRecordCount)
 		fmt.Printf("  Show Time Spent (Lists):   %t\n", project.ShowTimeSpentInTodoList)
 		fmt.Printf("  Show Time Spent (Project): %t\n", project.ShowTimeSpentInProject)
-		
+
 		if len(project.Features) > 0 {
 			fmt.Printf("\nProject Features:\n")
 			for _, feature := range project.Features {

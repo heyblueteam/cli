@@ -25,13 +25,13 @@ func RunReadRecordsCount(args []string) error {
 
 	// Validate required parameters
 	if *projectID == "" {
-		return fmt.Errorf("Project ID is required. Use -project flag.")
+		return fmt.Errorf("project ID is required; use -project flag")
 	}
 
 	// Load configuration
 	config, err := common.LoadConfig()
 	if err != nil {
-		return fmt.Errorf("Failed to load configuration: %v", err)
+		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
@@ -48,18 +48,18 @@ func RunReadRecordsCount(args []string) error {
 
 	// Build filter variables
 	filter := make(map[string]interface{})
-	
+
 	// companyIds is required for TodosFilter
 	filter["companyIds"] = []string{}
-	
+
 	// Add project filter
 	filter["projectIds"] = []string{*projectID}
-	
+
 	// Add optional filters
 	if *todoListID != "" {
 		filter["todoListIds"] = []string{*todoListID}
 	}
-	
+
 	if *done != "" {
 		if *done == "true" {
 			filter["done"] = true
@@ -67,7 +67,7 @@ func RunReadRecordsCount(args []string) error {
 			filter["done"] = false
 		}
 	}
-	
+
 	if *archived != "" {
 		if *archived == "true" {
 			filter["archived"] = true
@@ -84,12 +84,12 @@ func RunReadRecordsCount(args []string) error {
 	// Execute query
 	var response CountResponse
 	if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
-		return fmt.Errorf("Failed to execute query: %v", err)
+		return fmt.Errorf("failed to execute query: %v", err)
 	}
 
 	// Display result
 	totalCount := response.Todos.TotalCount
-	
+
 	fmt.Printf("\n=== Record Count ===\n")
 	fmt.Printf("Project ID: %s\n", *projectID)
 	if *todoListID != "" {
