@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"strings"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Response structures - MutationResult is already in types.go
 type DeleteProjectResponse struct {
-	DeleteProject MutationResult `json:"deleteProject"`
+	DeleteProject common.MutationResult `json:"deleteProject"`
 }
 
 // Execute GraphQL mutation to delete project
-func executeDeleteProject(client *Client, projectID string) (*MutationResult, error) {
+func executeDeleteProject(client *common.Client, projectID string) (*common.MutationResult, error) {
 	// Set project context header
 	client.SetProjectID(projectID)
 	
@@ -63,13 +63,13 @@ func RunDeleteProject(args []string) error {
 	fmt.Printf("⚠️  WARNING: Deleting project '%s' (this action cannot be undone)\n", *projectID)
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Execute deletion
 	fmt.Printf("Deleting project '%s'...\n", *projectID)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Tag is already defined in common/types.go
@@ -28,13 +28,13 @@ func RunCreateTags(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client using shared auth
-	client := NewClient(config)
+	client := common.NewClient(config)
 	
 	// Set project context for tag creation
 	client.SetProjectID(*projectID)
@@ -65,7 +65,7 @@ func RunCreateTags(args []string) error {
 	fmt.Printf("=== Creating Tag ===\n")
 
 	var tagResponse struct {
-		CreateTag Tag `json:"createTag"`
+		CreateTag common.Tag `json:"createTag"`
 	}
 
 	if err := client.ExecuteQueryWithResult(mutation, variables, &tagResponse); err != nil {

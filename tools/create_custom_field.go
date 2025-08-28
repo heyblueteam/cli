@@ -1,60 +1,59 @@
 package tools
 
 import (
+	"demo-builder/common"
 	"flag"
 	"fmt"
 	"strings"
-	
-	. "demo-builder/common"
 )
 
 // CustomFieldOptionInput and CreateCustomFieldInput are already defined in common/types.go
 
 // Input for creating multiple custom field options
 type CreateCustomFieldOptionsInput struct {
-	CustomFieldID      string                    `json:"customFieldId"`
-	CustomFieldOptions []CustomFieldOptionInput `json:"customFieldOptions"`
+	CustomFieldID      string                   `json:"customFieldId"`
+	CustomFieldOptions []common.CustomFieldOptionInput `json:"customFieldOptions"`
 }
 
 // LocalCreateCustomFieldInput includes all fields needed for this tool
 type LocalCreateCustomFieldInput struct {
-	Name                      string                    `json:"name"`
-	Type                      string                    `json:"type"`
-	Description               string                    `json:"description,omitempty"`
-	ButtonType                string                    `json:"buttonType,omitempty"`
-	ButtonConfirmText         string                    `json:"buttonConfirmText,omitempty"`
-	CurrencyFieldID           string                    `json:"currencyFieldId,omitempty"`
-	ConversionDate            string                    `json:"conversionDate,omitempty"`
-	ConversionDateType        string                    `json:"conversionDateType,omitempty"`
-	Min                       *float64                  `json:"min,omitempty"`
-	Max                       *float64                  `json:"max,omitempty"`
-	Currency                  string                    `json:"currency,omitempty"`
-	Prefix                    string                    `json:"prefix,omitempty"`
-	IsDueDate                 *bool                     `json:"isDueDate,omitempty"`
-	Formula                   interface{}               `json:"formula,omitempty"`
-	Metadata                  interface{}               `json:"metadata,omitempty"`
-	TimeDurationDisplay       string                    `json:"timeDurationDisplay,omitempty"`
-	TimeDurationTargetTime    *float64                  `json:"timeDurationTargetTime,omitempty"`
-	TimeDurationStartInput    *CustomFieldTimeDurationInput `json:"timeDurationStartInput,omitempty"`
-	TimeDurationEndInput      *CustomFieldTimeDurationInput `json:"timeDurationEndInput,omitempty"`
-	ReferenceProjectID        string                    `json:"referenceProjectId,omitempty"`
-	ReferenceFilter           interface{}               `json:"referenceFilter,omitempty"`
-	ReferenceMultiple         *bool                    `json:"referenceMultiple,omitempty"`
-	LookupOption              *CustomFieldLookupOptionInput `json:"lookupOption,omitempty"`
-	UseSequenceUniqueID       *bool                    `json:"useSequenceUniqueId,omitempty"`
-	SequenceDigits            *int                     `json:"sequenceDigits,omitempty"`
-	SequenceStartingNumber    *int                     `json:"sequenceStartingNumber,omitempty"`
+	Name                   string                        `json:"name"`
+	Type                   string                        `json:"type"`
+	Description            string                        `json:"description,omitempty"`
+	ButtonType             string                        `json:"buttonType,omitempty"`
+	ButtonConfirmText      string                        `json:"buttonConfirmText,omitempty"`
+	CurrencyFieldID        string                        `json:"currencyFieldId,omitempty"`
+	ConversionDate         string                        `json:"conversionDate,omitempty"`
+	ConversionDateType     string                        `json:"conversionDateType,omitempty"`
+	Min                    *float64                      `json:"min,omitempty"`
+	Max                    *float64                      `json:"max,omitempty"`
+	Currency               string                        `json:"currency,omitempty"`
+	Prefix                 string                        `json:"prefix,omitempty"`
+	IsDueDate              *bool                         `json:"isDueDate,omitempty"`
+	Formula                interface{}                   `json:"formula,omitempty"`
+	Metadata               interface{}                   `json:"metadata,omitempty"`
+	TimeDurationDisplay    string                        `json:"timeDurationDisplay,omitempty"`
+	TimeDurationTargetTime *float64                      `json:"timeDurationTargetTime,omitempty"`
+	TimeDurationStartInput *CustomFieldTimeDurationInput `json:"timeDurationStartInput,omitempty"`
+	TimeDurationEndInput   *CustomFieldTimeDurationInput `json:"timeDurationEndInput,omitempty"`
+	ReferenceProjectID     string                        `json:"referenceProjectId,omitempty"`
+	ReferenceFilter        interface{}                   `json:"referenceFilter,omitempty"`
+	ReferenceMultiple      *bool                         `json:"referenceMultiple,omitempty"`
+	LookupOption           *CustomFieldLookupOptionInput `json:"lookupOption,omitempty"`
+	UseSequenceUniqueID    *bool                         `json:"useSequenceUniqueId,omitempty"`
+	SequenceDigits         *int                          `json:"sequenceDigits,omitempty"`
+	SequenceStartingNumber *int                          `json:"sequenceStartingNumber,omitempty"`
 }
 
 // Custom field time duration input
 type CustomFieldTimeDurationInput struct {
-	Type              string   `json:"type"`
-	Condition         string   `json:"condition"`
-	CustomFieldID     string   `json:"customFieldId,omitempty"`
+	Type                 string   `json:"type"`
+	Condition            string   `json:"condition"`
+	CustomFieldID        string   `json:"customFieldId,omitempty"`
 	CustomFieldOptionIDs []string `json:"customFieldOptionIds,omitempty"`
-	TodoListID        string   `json:"todoListId,omitempty"`
-	TagID             string   `json:"tagId,omitempty"`
-	AssigneeID        string   `json:"assigneeId,omitempty"`
+	TodoListID           string   `json:"todoListId,omitempty"`
+	TagID                string   `json:"tagId,omitempty"`
+	AssigneeID           string   `json:"assigneeId,omitempty"`
 }
 
 // Custom field lookup option input
@@ -101,13 +100,13 @@ var timeDurationConditions = []string{
 }
 
 // Execute GraphQL mutation
-func executeCreateCustomField(client *Client, input LocalCreateCustomFieldInput) (*CreatedCustomField, error) {
+func executeCreateCustomField(client *common.Client, input LocalCreateCustomFieldInput) (*CreatedCustomField, error) {
 	// Build the mutation
 	optionalFields := buildOptionalFields(input)
 	if optionalFields != "" {
 		optionalFields = "\n\t\t\t\t" + optionalFields
 	}
-	
+
 	mutation := fmt.Sprintf(`
 		mutation CreateCustomField {
 			createCustomField(input: {
@@ -121,7 +120,6 @@ func executeCreateCustomField(client *Client, input LocalCreateCustomFieldInput)
 			}
 		}
 	`, input.Name, input.Type, optionalFields)
-
 
 	// Execute mutation
 	var response CreateCustomFieldResponse
@@ -267,37 +265,37 @@ func buildLookupOptionInput(input *CustomFieldLookupOptionInput) string {
 }
 
 // Parse options string into CustomFieldOptionInput slice
-func parseOptions(optionsStr string) ([]CustomFieldOptionInput, error) {
+func parseOptions(optionsStr string) ([]common.CustomFieldOptionInput, error) {
 	if optionsStr == "" {
 		return nil, nil
 	}
 
-	var options []CustomFieldOptionInput
+	var options []common.CustomFieldOptionInput
 	pairs := strings.Split(optionsStr, ",")
-	
+
 	for _, pair := range pairs {
 		parts := strings.Split(strings.TrimSpace(pair), ":")
 		if len(parts) < 1 || parts[0] == "" {
 			continue
 		}
-		
-		option := CustomFieldOptionInput{
+
+		option := common.CustomFieldOptionInput{
 			Title: parts[0],
 		}
-		
+
 		// Add color if provided
 		if len(parts) > 1 && parts[1] != "" {
 			option.Color = parts[1]
 		}
-		
+
 		options = append(options, option)
 	}
-	
+
 	return options, nil
 }
 
 // Create custom field options after field creation
-func createCustomFieldOptions(client *Client, customFieldID string, options []CustomFieldOptionInput) error {
+func createCustomFieldOptions(client *common.Client, customFieldID string, options []common.CustomFieldOptionInput) error {
 	if len(options) == 0 {
 		return nil
 	}
@@ -356,17 +354,17 @@ func RunCreateCustomField(args []string) error {
 		for _, t := range customFieldTypes {
 			fmt.Printf("  - %s\n", t)
 		}
-		
+
 		fmt.Println("\n=== Available Currencies ===")
 		for _, c := range currencies {
 			fmt.Printf("  - %s\n", c)
 		}
-		
+
 		fmt.Println("\n=== Available Time Duration Types ===")
 		for _, t := range timeDurationTypes {
 			fmt.Printf("  - %s\n", t)
 		}
-		
+
 		fmt.Println("\n=== Available Time Duration Conditions ===")
 		for _, c := range timeDurationConditions {
 			fmt.Printf("  - %s\n", c)
@@ -398,14 +396,14 @@ func RunCreateCustomField(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
-	
+	client := common.NewClient(config)
+
 	// Set project context for the request
 	client.SetProjectID(*projectID)
 
@@ -427,29 +425,29 @@ func RunCreateCustomField(args []string) error {
 		ConversionDateType:     *conversionDateType,
 		Currency:               *currency,
 		Prefix:                 *prefix,
-		IsDueDate:              &*isDueDate,
+		IsDueDate:              isDueDate,
 		TimeDurationDisplay:    *timeDurationDisplay,
 		ReferenceProjectID:     *referenceProjectID,
-		ReferenceMultiple:      &*referenceMultiple,
-		UseSequenceUniqueID:    &*useSequenceUniqueID,
-		SequenceDigits:         &*sequenceDigits,
-		SequenceStartingNumber: &*sequenceStartingNumber,
+		ReferenceMultiple:      referenceMultiple,
+		UseSequenceUniqueID:    useSequenceUniqueID,
+		SequenceDigits:         sequenceDigits,
+		SequenceStartingNumber: sequenceStartingNumber,
 	}
 
 	// Handle numeric fields - only set if non-default values
 	if *min != 0 {
-		input.Min = &*min
+		input.Min = min
 	}
 	if *max != 0 {
-		input.Max = &*max
+		input.Max = max
 	}
 	if *timeDurationTargetTime != 0 {
-		input.TimeDurationTargetTime = &*timeDurationTargetTime
+		input.TimeDurationTargetTime = timeDurationTargetTime
 	}
 
 	// Execute creation
 	fmt.Printf("Creating custom field '%s' of type '%s'...\n", input.Name, input.Type)
-	
+
 	customField, err := executeCreateCustomField(client, input)
 	if err != nil {
 		return fmt.Errorf("failed to create custom field: %v", err)
@@ -468,7 +466,7 @@ func RunCreateCustomField(args []string) error {
 	// Create options if provided and field type supports them
 	if len(parsedOptions) > 0 && (*fieldType == "SELECT_SINGLE" || *fieldType == "SELECT_MULTI") {
 		fmt.Printf("\nCreating %d options for the field...\n", len(parsedOptions))
-		
+
 		if err := createCustomFieldOptions(client, customField.ID, parsedOptions); err != nil {
 			fmt.Printf("⚠️  Warning: Field created successfully but failed to create options: %v\n", err)
 			fmt.Printf("You can manually add options later.\n")
@@ -486,7 +484,7 @@ func RunCreateCustomField(args []string) error {
 	} else if len(parsedOptions) > 0 {
 		fmt.Printf("\n⚠️  Warning: Options provided but field type '%s' doesn't support options. Options were ignored.\n", *fieldType)
 	}
-	
+
 	fmt.Printf("\nYou can now use this custom field in your todos and projects.\n")
 
 	return nil

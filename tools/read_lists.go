@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // List structures - TodoList is already in common/types.go
 type TodoListsResponse struct {
-	TodoLists []TodoList `json:"todoLists"`
+	TodoLists []common.TodoList `json:"todoLists"`
 }
 
 // Queries
@@ -54,13 +54,13 @@ func RunReadLists(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Select query based on flag
 	var query string

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Record and TodoList are already defined in common/types.go
@@ -12,7 +12,7 @@ import (
 type ProjectTodoList struct {
 	ID     string   `json:"id"`
 	Title  string   `json:"title"`
-	Todos  []Record `json:"todos"`
+	Todos  []common.Record `json:"todos"`
 }
 
 type ProjectResponse struct {
@@ -29,13 +29,13 @@ func RunReadProjectRecords(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// First get all lists
 	listQuery := `
@@ -99,7 +99,7 @@ func RunReadProjectRecords(args []string) error {
 
 			var recordResponse struct {
 				TodoList struct {
-					Todos []Record `json:"todos"`
+					Todos []common.Record `json:"todos"`
 				} `json:"todoList"`
 			}
 

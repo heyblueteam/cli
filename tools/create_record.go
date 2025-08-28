@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-	
-	. "demo-builder/common"
+
+	"demo-builder/common"
 )
 
 // CustomFieldValue and CreateTodoInput are already defined in common/types.go
@@ -22,8 +22,8 @@ type CreateTodoResponse struct {
 			Title string `json:"title"`
 		} `json:"todoList"`
 		CustomFieldValues []struct {
-			ID            string `json:"id"`
-			CustomFieldID string `json:"customFieldId"`
+			ID            string      `json:"id"`
+			CustomFieldID string      `json:"customFieldId"`
 			Value         interface{} `json:"value"`
 			CustomField   struct {
 				ID   string `json:"id"`
@@ -35,49 +35,49 @@ type CreateTodoResponse struct {
 }
 
 // parseCustomFieldValues parses the custom field values from command line arguments
-func parseCustomFieldValues(customFieldsStr string) ([]CustomFieldValue, error) {
+func parseCustomFieldValues(customFieldsStr string) ([]common.CustomFieldValue, error) {
 	if customFieldsStr == "" {
 		return nil, nil
 	}
 
-	var customFieldValues []CustomFieldValue
-	
+	var customFieldValues []common.CustomFieldValue
+
 	// Split by semicolon for multiple custom fields
 	fieldPairs := strings.Split(customFieldsStr, ";")
-	
+
 	for _, pair := range fieldPairs {
 		// Split by colon for field_id:value
 		parts := strings.SplitN(strings.TrimSpace(pair), ":", 2)
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid custom field format: %s (expected field_id:value)", pair)
 		}
-		
+
 		fieldID := strings.TrimSpace(parts[0])
 		valueStr := strings.TrimSpace(parts[1])
-		
+
 		// For now, always use string values (API might expect strings even for numbers)
 		value := valueStr
-		
-		customFieldValues = append(customFieldValues, CustomFieldValue{
+
+		customFieldValues = append(customFieldValues, common.CustomFieldValue{
 			CustomFieldID: fieldID,
 			Value:         value,
 		})
 	}
-	
+
 	return customFieldValues, nil
 }
 
 // buildCustomFieldValuesString builds the GraphQL custom field values string
-func buildCustomFieldValuesString(customFieldValues []CustomFieldValue) string {
+func buildCustomFieldValuesString(customFieldValues []common.CustomFieldValue) string {
 	if len(customFieldValues) == 0 {
 		return ""
 	}
-	
+
 	var valueStrings []string
-	
+
 	for _, cfv := range customFieldValues {
 		var valueStr string
-		
+
 		switch v := cfv.Value.(type) {
 		case string:
 			valueStr = fmt.Sprintf(`"%s"`, strings.ReplaceAll(v, `"`, `\"`))
@@ -99,13 +99,13 @@ func buildCustomFieldValuesString(customFieldValues []CustomFieldValue) string {
 				valueStr = fmt.Sprintf(`"%v"`, v)
 			}
 		}
-		
+
 		valueStrings = append(valueStrings, fmt.Sprintf(`{
 			customFieldId: "%s"
 			value: %s
 		}`, cfv.CustomFieldID, valueStr))
 	}
-	
+
 	return fmt.Sprintf(`customFields: [%s]`, strings.Join(valueStrings, ", "))
 }
 
@@ -138,17 +138,17 @@ func RunCreateRecord(args []string) error {
 		return fmt.Errorf("required flags missing")
 	}
 
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
 
-	client := NewClient(config)
-	
+	client := common.NewClient(config)
+
 	// Set project context from the provided flag (auto-detects ID vs slug)
 	client.SetProject(*projectID)
 
-	input := CreateTodoInput{
+	input := common.CreateTodoInput{
 		TodoListID: *listID,
 		Title:      *title,
 		ProjectID:  *projectID,
@@ -184,7 +184,7 @@ func RunCreateRecord(args []string) error {
 	if input.Description != "" {
 		descriptionField = fmt.Sprintf(`description: "%s"`, strings.ReplaceAll(input.Description, `"`, `\"`))
 	}
-	
+
 	var placementField string
 	if input.TodoListPlacement != "" {
 		placementField = fmt.Sprintf(`placement: %s`, input.TodoListPlacement)
@@ -260,7 +260,7 @@ func RunCreateRecord(args []string) error {
 		fmt.Printf("Title: %s\n", record.Title)
 		fmt.Printf("Position: %.0f\n", record.Position)
 		fmt.Printf("List: %s (%s)\n", record.TodoList.Title, record.TodoList.ID)
-		
+
 		if len(record.CustomFieldValues) > 0 {
 			fmt.Printf("\n=== Custom Field Values ===\n")
 			for _, cfv := range record.CustomFieldValues {

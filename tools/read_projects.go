@@ -4,13 +4,13 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common" // Import types and auth from common
+	"demo-builder/common"
 )
 
 // ProjectList represents a paginated list of projects
 type ProjectList struct {
-	Items    []Project       `json:"items"`
-	PageInfo OffsetPageInfo  `json:"pageInfo"`
+	Items    []common.Project       `json:"items"`
+	PageInfo common.OffsetPageInfo  `json:"pageInfo"`
 }
 
 type ProjectListResponse struct {
@@ -91,13 +91,13 @@ func RunReadProjects(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Calculate skip value from page
 	skip := (*page - 1) * *pageSize

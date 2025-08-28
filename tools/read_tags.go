@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Tag is already defined in common/types.go
@@ -19,13 +19,13 @@ func RunReadTags(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client using shared auth
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// GraphQL query for listing tags
 	query := fmt.Sprintf(`
@@ -59,7 +59,7 @@ func RunReadTags(args []string) error {
 	// Execute query
 	var tagResponse struct {
 		TagList struct {
-			Items      []Tag `json:"items"`
+			Items      []common.Tag `json:"items"`
 			TotalCount int   `json:"totalCount"`
 		} `json:"tagList"`
 	}

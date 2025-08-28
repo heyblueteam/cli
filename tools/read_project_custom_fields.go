@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // CustomField, Project, and CustomFieldOption are already defined in common/types.go
@@ -23,7 +23,7 @@ type PageInfo struct {
 
 // CustomFieldPagination represents a paginated list of custom fields
 type CustomFieldPagination struct {
-	Items    []CustomField `json:"items"`
+	Items    []common.CustomField `json:"items"`
 	PageInfo PageInfo      `json:"pageInfo"`
 }
 
@@ -74,13 +74,13 @@ func RunReadProjectCustomFields(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Calculate skip value from page
 	skip := (*page - 1) * *pageSize

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // RunDeleteRecord deletes a record/todo by ID
@@ -34,12 +34,12 @@ func RunDeleteRecord(args []string) error {
 		return fmt.Errorf("confirmation required for deletion")
 	}
 
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("error loading config: %v", err)
 	}
 
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	mutation := `
 		mutation DeleteTodo($input: DeleteTodoInput!) {
@@ -51,7 +51,7 @@ func RunDeleteRecord(args []string) error {
 	`
 
 	variables := map[string]interface{}{
-		"input": DeleteTodoInput{
+		"input": common.DeleteTodoInput{
 			TodoID: recordID,
 		},
 	}

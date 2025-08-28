@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Edit project input
@@ -22,7 +22,7 @@ type EditProjectInput struct {
 	HideRecordCount           *bool                  `json:"hideRecordCount,omitempty"`
 	ShowTimeSpentInTodoList   *bool                  `json:"showTimeSpentInTodoList,omitempty"`
 	ShowTimeSpentInProject    *bool                  `json:"showTimeSpentInProject,omitempty"`
-	Features                  []ProjectFeatureInput  `json:"features,omitempty"`
+	Features                  []common.ProjectFeatureInput  `json:"features,omitempty"`
 }
 
 // Response structures
@@ -38,7 +38,7 @@ type EditedProject struct {
 	HideRecordCount           bool             `json:"hideRecordCount"`
 	ShowTimeSpentInTodoList   bool             `json:"showTimeSpentInTodoList"`
 	ShowTimeSpentInProject    bool             `json:"showTimeSpentInProject"`
-	Features                  []ProjectFeature `json:"features"`
+	Features                  []common.ProjectFeature `json:"features"`
 }
 
 type EditProjectResponse struct {
@@ -64,7 +64,7 @@ var projectCategories = []string{
 }
 
 // Get current project data to merge features
-func getCurrentProject(client *Client, projectID string) (*EditedProject, error) {
+func getCurrentProject(client *common.Client, projectID string) (*EditedProject, error) {
 	query := fmt.Sprintf(`
 		query GetProject {
 			project(id: "%s") {
@@ -98,7 +98,7 @@ func getCurrentProject(client *Client, projectID string) (*EditedProject, error)
 }
 
 // Merge existing features with user-specified changes
-func mergeFeatures(existingFeatures []ProjectFeature, newFeatures []ProjectFeatureInput) []ProjectFeatureInput {
+func mergeFeatures(existingFeatures []common.ProjectFeature, newFeatures []common.ProjectFeatureInput) []common.ProjectFeatureInput {
 	// Create a map of all possible feature types with default enabled=true
 	featureMap := make(map[string]bool)
 	for _, featureType := range featureTypes {
@@ -116,9 +116,9 @@ func mergeFeatures(existingFeatures []ProjectFeature, newFeatures []ProjectFeatu
 	}
 	
 	// Convert back to array with all feature types
-	var result []ProjectFeatureInput
+	var result []common.ProjectFeatureInput
 	for _, featureType := range featureTypes {
-		result = append(result, ProjectFeatureInput{
+		result = append(result, common.ProjectFeatureInput{
 			Type:    featureType,
 			Enabled: featureMap[featureType],
 		})
@@ -128,7 +128,7 @@ func mergeFeatures(existingFeatures []ProjectFeature, newFeatures []ProjectFeatu
 }
 
 // Execute GraphQL mutation
-func executeEditProject(client *Client, input EditProjectInput) (*EditedProject, error) {
+func executeEditProject(client *common.Client, input EditProjectInput) (*EditedProject, error) {
 	// If features are being updated, we need to merge with existing features
 	if len(input.Features) > 0 {
 		currentProject, err := getCurrentProject(client, input.ProjectID)
@@ -218,7 +218,7 @@ func buildEditFields(input EditProjectInput) string {
 }
 
 // Build features array string for GraphQL
-func buildFeaturesString(features []ProjectFeatureInput) string {
+func buildFeaturesString(features []common.ProjectFeatureInput) string {
 	var featureStrings []string
 	for _, feature := range features {
 		featureStrings = append(featureStrings, fmt.Sprintf(`{type: "%s", enabled: %t}`, feature.Type, feature.Enabled))
@@ -227,12 +227,12 @@ func buildFeaturesString(features []ProjectFeatureInput) string {
 }
 
 // Parse features from command line string
-func parseFeatures(featuresStr string) []ProjectFeatureInput {
+func parseFeatures(featuresStr string) []common.ProjectFeatureInput {
 	if featuresStr == "" {
 		return nil
 	}
 
-	var features []ProjectFeatureInput
+	var features []common.ProjectFeatureInput
 	pairs := strings.Split(featuresStr, ",")
 	
 	for _, pair := range pairs {
@@ -250,7 +250,7 @@ func parseFeatures(featuresStr string) []ProjectFeatureInput {
 		enabledStr := strings.TrimSpace(strings.ToLower(parts[1]))
 		enabled := enabledStr == "true" || enabledStr == "1" || enabledStr == "yes" || enabledStr == "on"
 		
-		features = append(features, ProjectFeatureInput{
+		features = append(features, common.ProjectFeatureInput{
 			Type:    featureType,
 			Enabled: enabled,
 		})
@@ -321,13 +321,13 @@ func RunUpdateProject(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client and set project context
-	client := NewClient(config)
+	client := common.NewClient(config)
 	client.SetProjectID(*projectID)
 
 	// Parse features

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // RecordsResult represents the paginated response from the GraphQL query
 type RecordsResult struct {
-	Items    []Record           `json:"items"`
-	PageInfo CursorPageInfo `json:"pageInfo"`
+	Items    []common.Record           `json:"items"`
+	PageInfo common.CursorPageInfo `json:"pageInfo"`
 }
 
 // RecordsResponse represents the response from the GraphQL query
@@ -42,13 +42,13 @@ func RunReadRecords(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Build the GraphQL query
 	query := buildRecordsQuery(*simple)
@@ -189,7 +189,7 @@ func RunReadRecords(args []string) error {
 			fmt.Printf("   Status: %s\n", getRecordStatus(record))
 			
 			if record.Text != "" {
-				fmt.Printf("   Description: %s\n", TruncateString(record.Text, 100))
+				fmt.Printf("   Description: %s\n", common.TruncateString(record.Text, 100))
 			}
 			if record.StartedAt != "" {
 				fmt.Printf("   Started: %s\n", record.StartedAt)
@@ -361,7 +361,7 @@ func buildRecordsQuery(simple bool) string {
 }
 
 // getRecordStatus returns a human-readable status for a record
-func getRecordStatus(record Record) string {
+func getRecordStatus(record common.Record) string {
 	if record.Archived {
 		return "Archived"
 	}

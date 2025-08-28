@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // Response structures
@@ -23,68 +23,10 @@ type CreateProjectResponse struct {
 	CreateProject CreatedProject `json:"createProject"`
 }
 
-// ProjectCategories is now in common package
-
-// Common project colors
-var projectColors = map[string]string{
-	"blue":   "#3B82F6",
-	"red":    "#EF4444",
-	"green":  "#10B981",
-	"purple": "#8B5CF6",
-	"yellow": "#F59E0B",
-	"pink":   "#EC4899",
-	"indigo": "#6366F1",
-	"gray":   "#6B7280",
-}
-
-// Available project icons
-var projectIcons = []string{
-	"mdi-cash",
-	"mdi-shield-bug-outline",
-	"mdi-account-box-outline",
-	"mdi-account-group-outline",
-	"mdi-alarm-panel-outline",
-	"mdi-animation-play-outline",
-	"mdi-application-brackets-outline",
-	"mdi-archive-arrow-up-outline",
-	"mdi-badge-account-horizontal-outline",
-	"mdi-bank-outline",
-	"mdi-basket-outline",
-	"mdi-book-open-outline",
-	"mdi-briefcase-variant-outline",
-	"mdi-car-outline",
-	"mdi-cake-variant-outline",
-	"mdi-calendar-account-outline",
-	"mdi-camera-outline",
-	"mdi-card-account-mail-outline",
-	"mdi-cards-club-outline",
-	"mdi-cards-heart-outline",
-	"mdi-cellphone-basic",
-	"mdi-chart-line",
-	"mdi-flag-variant-outline",
-	"mdi-chat-outline",
-	"mdi-cloud-check-outline",
-	"mdi-clipboard-list-outline",
-	"mdi-clock-time-eight-outline",
-	"mdi-video-outline",
-	"mdi-gamepad-round-outline",
-	"mdi-earth",
-	"mdi-image-frame",
-	"mdi-laptop",
-	"mdi-microphone-outline",
-	"mdi-music-note",
-	"mdi-cog-outline",
-	"mdi-compass-outline",
-	"mdi-home-outline",
-	"mdi-airplane-takeoff",
-	"mdi-gamepad-variant-outline",
-	"mdi-key-outline",
-	"mdi-folder",
-	"mdi-folder-search-outline",
-}
+// Using common package for project constants
 
 // Execute GraphQL mutation
-func executeCreateProject(client *Client, input CreateProjectInput) (*CreatedProject, error) {
+func executeCreateProject(client *common.Client, input common.CreateProjectInput) (*CreatedProject, error) {
 	// Build the mutation
 	mutation := fmt.Sprintf(`
 		mutation CreateProject {
@@ -114,7 +56,7 @@ func executeCreateProject(client *Client, input CreateProjectInput) (*CreatedPro
 }
 
 // Build optional fields for the mutation
-func buildProjectOptionalFields(input CreateProjectInput) string {
+func buildProjectOptionalFields(input common.CreateProjectInput) string {
 	var fields []string
 
 	if input.Description != "" {
@@ -158,15 +100,15 @@ func RunCreateProject(args []string) error {
 	if *listOptions {
 		fmt.Println("\n=== Available Options ===")
 		fmt.Println("\nCategories:")
-		for _, cat := range ProjectCategories {
+		for _, cat := range common.ProjectCategories {
 			fmt.Printf("  - %s\n", cat)
 		}
 		fmt.Println("\nColors:")
-		for name, hex := range projectColors {
+		for name, hex := range common.ProjectColors {
 			fmt.Printf("  - %s: %s\n", name, hex)
 		}
 		fmt.Println("\nIcons:")
-		for _, ico := range projectIcons {
+		for _, ico := range common.ProjectIcons {
 			fmt.Printf("  - %s\n", ico)
 		}
 		return nil
@@ -178,24 +120,24 @@ func RunCreateProject(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Process color input
 	colorValue := *color
 	if colorValue != "" && !strings.HasPrefix(colorValue, "#") {
-		if hex, ok := projectColors[colorValue]; ok {
+		if hex, ok := common.ProjectColors[colorValue]; ok {
 			colorValue = hex
 		}
 	}
 
 	// Create project input
-	input := CreateProjectInput{
+	input := common.CreateProjectInput{
 		Name:        *name,
 		CompanyID:   client.GetCompanyID(),
 		Description: *description,

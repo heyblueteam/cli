@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 func RunCreateRecordTags(args []string) error {
@@ -43,12 +43,12 @@ func RunCreateRecordTags(args []string) error {
 		return fmt.Errorf("project flag is required when using -tag-titles")
 	}
 
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
 
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Set project context if provided
 	if *projectID != "" {

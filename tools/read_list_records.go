@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // User, Tag, TodoList, and Record are already defined in common/types.go
@@ -24,7 +24,7 @@ type TodoListWithRecords struct {
 	Completed        bool     `json:"completed"`
 	Editable         bool     `json:"editable"`
 	Deletable        bool     `json:"deletable"`
-	Todos            []Record `json:"todos"`
+	Todos            []common.Record `json:"todos"`
 }
 
 // TodoListResponse represents the response from the GraphQL query
@@ -50,13 +50,13 @@ func RunReadTodos(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Build the GraphQL query
 	query := buildTodoListQuery(*simple)
@@ -128,7 +128,7 @@ func RunReadTodos(args []string) error {
 			fmt.Printf("   Position: %.0f\n", todo.Position)
 			fmt.Printf("   Status: %s\n", getTodoStatus(todo))
 			if todo.Text != "" {
-				fmt.Printf("   Description: %s\n", TruncateString(todo.Text, 100))
+				fmt.Printf("   Description: %s\n", common.TruncateString(todo.Text, 100))
 			}
 			if todo.StartedAt != "" {
 				fmt.Printf("   Started: %s\n", todo.StartedAt)
@@ -308,7 +308,7 @@ func buildTodoListQuery(simple bool) string {
 }
 
 // getTodoStatus returns a human-readable status for a todo
-func getTodoStatus(todo Record) string {
+func getTodoStatus(todo common.Record) string {
 	if todo.Archived {
 		return "Archived"
 	}

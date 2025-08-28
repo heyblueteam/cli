@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	. "demo-builder/common"
+	"demo-builder/common"
 )
 
 // CountResponse represents the response from the GraphQL query
@@ -29,13 +29,13 @@ func RunReadRecordsCount(args []string) error {
 	}
 
 	// Load configuration
-	config, err := LoadConfig()
+	config, err := common.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("Failed to load configuration: %v", err)
 	}
 
 	// Create client
-	client := NewClient(config)
+	client := common.NewClient(config)
 
 	// Build the GraphQL query - using deprecated todos query which has totalCount
 	query := `
