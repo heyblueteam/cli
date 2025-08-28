@@ -5,7 +5,7 @@ A collection of Go scripts for interacting with the Blue GraphQL API to create d
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Go 1.21+ installed
+- Go 1.21+ installed (see [Installation Instructions](#installation) below)
 - Blue API credentials (personal access token, client ID, company ID)
 
 ### Setup
@@ -483,6 +483,55 @@ COMPANY_ID=your_company_slug
 1. **Personal Access Token**: Generate from Blue settings
 2. **Client ID**: Found in your API settings
 3. **Company ID**: Your company's slug (e.g., "heyblueteam")
+
+## 🔧 Installation
+
+### Installing Go
+
+#### macOS
+```bash
+# Using Homebrew (recommended)
+brew install go
+
+# Or download from golang.org
+# Visit https://golang.org/dl/ and download the macOS installer
+```
+
+#### Windows
+```bash
+# Using Chocolatey
+choco install golang
+
+# Using Scoop
+scoop install go
+
+# Or download the Windows installer from https://golang.org/dl/
+# Run the .msi installer and follow the prompts
+```
+
+#### Linux
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install golang-go
+
+# Fedora
+sudo dnf install golang
+
+# Arch Linux
+sudo pacman -S go
+
+# Or install from official tarball
+wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+```
+
+#### Verify Installation
+```bash
+go version
+# Should output: go version go1.21.x or higher
+```
 
 ## 📁 Project Structure
 
