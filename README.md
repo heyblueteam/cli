@@ -410,22 +410,34 @@ demo-builder/
 ├── .gitignore                    # Git ignore file  
 ├── go.mod                        # Go module file
 ├── go.sum                        # Go dependencies
-├── auth                       # Centralized authentication and GraphQL client
-├── list-projects              # List all projects
-├── create-project             # Create new projects
-├── get-lists                  # Get lists in a project
-├── create-list                # Create lists in a project
-├── list-tags                  # List tags in a project
-├── create-tags                # Create tags in a project
-├── list-project-custom-fields # List custom fields in a project
-├── list-project-todos         # List all todos in a project
-├── list-todos                 # List todos within a specific list
-├── create-custom-field        # Create custom fields
-├── create-record              # Create todos/records in lists
-├── list-records               # Advanced record querying with filtering
-├── count-records              # Count records/todos in projects
-├── delete-record              # Delete records/todos
-└── README.md                     # This file
+├── main.go                       # Main entry point with command router
+├── common/                       # Shared code
+│   ├── auth.go                   # Centralized authentication and GraphQL client
+│   ├── types.go                  # Shared type definitions
+│   └── utils.go                  # Utility functions
+├── tools/                        # All command implementations
+│   ├── create_custom_field.go    # Create custom fields
+│   ├── create_list.go            # Create lists in a project
+│   ├── create_project.go         # Create new projects
+│   ├── create_record_tags.go     # Add tags to records
+│   ├── create_record.go          # Create todos/records in lists
+│   ├── create_tags.go            # Create tags in a project
+│   ├── delete_project.go         # Delete projects
+│   ├── delete_record.go          # Delete records/todos
+│   ├── read_list_records.go      # List todos within a specific list
+│   ├── read_lists.go             # Get lists in a project
+│   ├── read_project_custom_fields.go # List custom fields in a project
+│   ├── read_project_records.go   # List all todos in a project
+│   ├── read_projects.go          # List all projects
+│   ├── read_records_count.go     # Count records/todos in projects
+│   ├── read_records.go           # Advanced record querying with filtering
+│   ├── read_tags.go              # List tags in a project
+│   └── update_project.go         # Update project settings and features
+├── test/                         # Test suite
+│   └── e2e.go                    # End-to-end test suite
+├── README.md                     # This file
+├── CLAUDE.md                     # Claude Code configuration
+└── CUSTOM_FIELDS_README.md      # Detailed custom fields documentation
 ```
 
 ## 🎯 Example Workflow
