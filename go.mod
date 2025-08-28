@@ -1,4 +1,4 @@
-module github.com/blue/demo-builder
+module demo-builder
 
 go 1.21
 
