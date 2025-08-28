@@ -59,7 +59,7 @@ const (
 
 func main() {
 	// Parse command line flags
-	projectID := flag.String("project", "", "Project ID (required)")
+	projectID := flag.String("project", "", "Project ID or Project slug (required)")
 	simple := flag.Bool("simple", false, "Show only basic list information")
 	flag.Parse()
 
