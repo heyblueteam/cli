@@ -474,6 +474,61 @@ go run auth.go list-records.go -project PROJECT_ID -done false -limit 10
 
 # 13. Count total records in the project
 go run auth.go count-records.go -project PROJECT_ID
+```
+
+## 🧪 Testing
+
+### End-to-End Test Suite (`e2e.go`)
+A comprehensive test suite that validates all 17 tool files by executing them in sequence.
+
+```bash
+# Run the complete end-to-end test
+go run auth.go e2e.go
+```
+
+**What it tests:**
+- ✅ Project operations (list, create, update, delete)
+- ✅ List operations (create, read)
+- ✅ Tag operations (create, read)
+- ✅ Custom field operations (create multiple types, read)
+- ✅ Record/Todo operations (create, tag, read, query, count, delete)
+- ✅ Automatic cleanup (deletes test project)
+
+**Features:**
+- Emoji-friendly output (✅ pass, ❌ fail)
+- Creates realistic test data
+- Tests actual tool execution (not reimplemented logic)
+- Generates unique names with timestamps to avoid conflicts
+- Complete cleanup after testing
+- Exit code 0 for success, 1 for failure (CI/CD friendly)
+
+**Example output:**
+```
+🚀 Starting End-to-End Tests for Demo Builder
+===================================================
+
+📋 Running Tests:
+---------------------------------------------------
+
+🏗️  Project Operations:
+✅ List existing projects
+✅ Create project
+✅ Update project settings and features
+
+📝 List Operations:
+✅ Create lists
+✅ Read project lists
+
+... (continues for all tests)
+
+==================================================
+📊 Test Summary:
+   ✅ Passed: 22
+   ❌ Failed: 0
+   📈 Total:  22
+
+✅ All tests passed successfully!
+```
 
 ## 🛠️ Technical Details
 

@@ -210,6 +210,29 @@ CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
 ```
 
+## Testing
+
+### End-to-End Test (`e2e.go`)
+Comprehensive test suite that validates all 17 tool files:
+
+```bash
+# Run the end-to-end test
+go run auth.go e2e.go
+```
+
+**Coverage:**
+- Tests all CRUD operations (Create, Read, Update, Delete)
+- Validates project → lists → tags → custom fields → records workflow
+- Uses actual tool execution (calls the real Go files)
+- Automatic cleanup (deletes test project)
+- 22 test cases covering all major functionality
+
+**Output:**
+- Emoji-friendly status indicators (✅/❌)
+- Detailed progress reporting
+- Summary with pass/fail counts
+- Exit code 0 for success, 1 for failure (CI/CD compatible)
+
 ## Implemented Features
 
 Completed:
@@ -227,6 +250,7 @@ Completed:
 - ✅ Delete records/todos with safety confirmation
 - ✅ Add tags to records/todos (by tag ID or title)
 - ✅ Edit/update project settings and toggle features (with intelligent feature merging)
+- ✅ End-to-end test suite with full coverage
 
 ## Planned Features
 
