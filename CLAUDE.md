@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Go module for building demo projects using the Blue GraphQL API. It consists of individual command-line utilities that share a centralized authentication module.
+This is a Go module for building demo projects using the Blue GraphQL API. It provides a unified CLI with multiple commands for managing projects, lists, records, tags, and custom fields.
 
 ## Development Commands
 
-### Running Scripts
-All scripts follow this pattern:
+### Running Commands
+All commands follow this pattern:
 ```bash
-go run auth.go <script-name>.go [flags]
+go run . <command> [flags]
 ```
 
 **Note**: Scripts that require a project context can accept either a Project ID or Project slug. The system automatically detects which type is provided.
@@ -20,92 +20,92 @@ go run auth.go <script-name>.go [flags]
 ```bash
 # READ operations - List/view data
 # List projects (first 20)
-go run auth.go read-projects.go -simple
+go run . read-projects -simple
 
 # Get lists in a project (using Project ID or slug)
-go run auth.go read-lists.go -project PROJECT_ID_OR_SLUG -simple
+go run . read-lists -project PROJECT_ID_OR_SLUG -simple
 
 # List all todos across all lists in a project (overview)
-go run auth.go read-project-todos.go -project PROJECT_ID
+go run . read-project-records -project PROJECT_ID
 
 # List todos in a specific list (detailed with filtering)
-go run auth.go read-todos.go -list LIST_ID -simple
+go run . read-list-records -list LIST_ID -simple
 
 # List tags in a project
-go run auth.go read-tags.go -project PROJECT_ID
+go run . read-tags -project PROJECT_ID
 
 # List custom fields in a project
-go run auth.go read-project-custom-fields.go -project PROJECT_ID
+go run . read-project-custom-fields -project PROJECT_ID
 
 # List/query records across projects with advanced filtering
-go run auth.go read-records.go -project PROJECT_ID -done false -assignee USER_ID -simple
+go run . read-records -project PROJECT_ID -done false -assignee USER_ID -simple
 
 # Count records/todos in a project with optional filtering
-go run auth.go read-records-count.go -project PROJECT_ID
-go run auth.go read-records-count.go -project PROJECT_ID -done false
-go run auth.go read-records-count.go -project PROJECT_ID -list LIST_ID -archived false
+go run . read-records-count -project PROJECT_ID
+go run . read-records-count -project PROJECT_ID -done false
+go run . read-records-count -project PROJECT_ID -list LIST_ID -archived false
 
 # CREATE operations - Add new data
 # Create project with options
-go run auth.go create-project.go -name "Demo" -color blue -icon rocket -category ENGINEERING
+go run . create-project -name "Demo" -color blue -icon rocket -category ENGINEERING
 
 # Create lists in a project
-go run auth.go create-list.go -project PROJECT_ID -names "To Do,In Progress,Done"
+go run . create-list -project PROJECT_ID -names "To Do,In Progress,Done"
 
 # Create tags in a project
-go run auth.go create-tags.go -project PROJECT_ID -title "Bug" -color "red"
+go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
 
 # Create custom fields (all types except reference/lookup)
-go run auth.go create-custom-field.go -name "Priority" -type "SELECT_SINGLE" -description "Task priority" -options "High:red,Medium:yellow,Low:green"
-go run auth.go create-custom-field.go -name "Status" -type "SELECT_MULTI" -options "In Progress,Blocked:red,Review Required:blue"
-go run auth.go create-custom-field.go -name "Story Points" -type "NUMBER" -min 1 -max 13
-go run auth.go create-custom-field.go -name "Cost" -type "CURRENCY" -currency "USD"
+go run . create-custom-field -name "Priority" -type "SELECT_SINGLE" -description "Task priority" -options "High:red,Medium:yellow,Low:green"
+go run . create-custom-field -name "Status" -type "SELECT_MULTI" -options "In Progress,Blocked:red,Review Required:blue"
+go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
+go run . create-custom-field -name "Cost" -type "CURRENCY" -currency "USD"
 
 # Create records/todos in lists (supports custom fields)
-go run auth.go create-record.go -list LIST_ID -title "Task Name" -description "Description" -simple
+go run . create-record -list LIST_ID -title "Task Name" -description "Description" -simple
 
 # Create records/todos with custom field values
-go run auth.go create-record.go -list LIST_ID -title "Task" -custom-fields "cf123:Priority High;cf456:42"
+go run . create-record -list LIST_ID -title "Task" -custom-fields "cf123:Priority High;cf456:42"
 
 # Add tags to existing records/todos
-go run auth.go create-record-tags.go -record RECORD_ID -tag-ids "tag1,tag2" -simple
-go run auth.go create-record-tags.go -record RECORD_ID -tag-titles "Bug,Priority" -project PROJECT_ID
+go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
+go run . create-record-tags -record RECORD_ID -tag-titles "Bug,Priority" -project PROJECT_ID
 
 # UPDATE operations - Modify existing data
 # Edit/update project settings and toggle features
-go run auth.go update-project.go -project PROJECT_ID -name "New Name" -features "Chat:true,Files:false"
-go run auth.go update-project.go -project PROJECT_ID -todo-alias "Tasks" -hide-record-count true
-go run auth.go update-project.go -project PROJECT_ID -features "Wiki:true,Docs:false" -simple
+go run . update-project -project PROJECT_ID -name "New Name" -features "Chat:true,Files:false"
+go run . update-project -project PROJECT_ID -todo-alias "Tasks" -hide-record-count true
+go run . update-project -project PROJECT_ID -features "Wiki:true,Docs:false" -simple
 
 # Available feature types: Activity, Todo, Wiki, Chat, Docs, Forms, Files, People
 # Features are merged with existing state (partial updates supported)
-go run auth.go update-project.go -project PROJECT_ID -features "Todo:false,People:false"
+go run . update-project -project PROJECT_ID -features "Todo:false,People:false"
 
 # DELETE operations - Remove data
 # Delete project (requires confirmation and special permissions)
-go run auth.go delete-project.go -project PROJECT_ID -confirm
+go run . delete-project -project PROJECT_ID -confirm
 
 # Delete records/todos (requires confirmation for safety)
-go run auth.go delete-record.go -record RECORD_ID -confirm
+go run . delete-record -record RECORD_ID -confirm
 ```
 
 ### Detailed Script Documentation
 
-#### Create Record (`create-record.go`)
+#### Create Record (`create-record`)
 Creates new records/todos in lists with support for custom field values, assignments, and placement options.
 
 ```bash
 # Create a simple record
-go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title "Task Name"
+go run . create-record -project PROJECT_ID -list LIST_ID -title "Task Name"
 
 # Create record with description and placement
-go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title "Task Name" -description "Task description" -placement TOP
+go run . create-record -project PROJECT_ID -list LIST_ID -title "Task Name" -description "Task description" -placement TOP
 
 # Create record with custom field values
-go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title "Task Name" -custom-fields "cf123:High Priority;cf456:42.5"
+go run . create-record -project PROJECT_ID -list LIST_ID -title "Task Name" -custom-fields "cf123:High Priority;cf456:42.5"
 
 # Create record with assignees and custom fields
-go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title "Task Name" -assignees "user1,user2" -custom-fields "cf789:true"
+go run . create-record -project PROJECT_ID -list LIST_ID -title "Task Name" -assignees "user1,user2" -custom-fields "cf789:true"
 ```
 
 **Options:**
@@ -118,19 +118,19 @@ go run auth.go create-record.go -project PROJECT_ID -list LIST_ID -title "Task N
 - `-custom-fields`: Custom field values in format "field_id1:value1;field_id2:value2" (optional)
 - `-simple`: Simple output format (optional)
 
-#### Create Custom Field (`create-custom-field.go`)
+#### Create Custom Field (`create-custom-field`)
 Creates custom fields for projects with support for all field types including SELECT fields with options.
 
 ```bash
 # Create SELECT_SINGLE field with options and colors
-go run auth.go create-custom-field.go -project PROJECT_ID -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
+go run . create-custom-field -project PROJECT_ID -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
 
 # Create SELECT_MULTI field with options (some with colors, some without)
-go run auth.go create-custom-field.go -project PROJECT_ID -name "Labels" -type "SELECT_MULTI" -options "Bug:red,Feature,Enhancement:blue"
+go run . create-custom-field -project PROJECT_ID -name "Labels" -type "SELECT_MULTI" -options "Bug:red,Feature,Enhancement:blue"
 
 # Create other field types
-go run auth.go create-custom-field.go -project PROJECT_ID -name "Story Points" -type "NUMBER" -min 1 -max 13
-go run auth.go create-custom-field.go -project PROJECT_ID -name "Budget" -type "CURRENCY" -currency "USD"
+go run . create-custom-field -project PROJECT_ID -name "Story Points" -type "NUMBER" -min 1 -max 13
+go run . create-custom-field -project PROJECT_ID -name "Budget" -type "CURRENCY" -currency "USD"
 ```
 
 **Options:**
@@ -153,21 +153,21 @@ go run auth.go create-custom-field.go -project PROJECT_ID -name "Budget" -type "
 - Boolean field: `"cf789:true"`
 - Multiple fields: `"cf123:Hello;cf456:42;cf789:true"`
 
-#### Count Records (`read-records-count.go`)
+#### Count Records (`read-records-count`)
 Counts the total number of records/todos in a project with optional filtering.
 
 ```bash
 # Count all records in a project
-go run auth.go read-records-count.go -project PROJECT_ID
+go run . read-records-count -project PROJECT_ID
 
 # Count only incomplete records
-go run auth.go read-records-count.go -project PROJECT_ID -done false
+go run . read-records-count -project PROJECT_ID -done false
 
 # Count records in a specific list
-go run auth.go read-records-count.go -project PROJECT_ID -list LIST_ID
+go run . read-records-count -project PROJECT_ID -list LIST_ID
 
 # Count non-archived records
-go run auth.go read-records-count.go -project PROJECT_ID -archived false
+go run . read-records-count -project PROJECT_ID -archived false
 ```
 
 **Options:**
@@ -183,8 +183,14 @@ go mod tidy  # Install/update dependencies
 
 ## Architecture
 
-### Centralized Authentication (`auth.go`)
-All scripts import and use the shared authentication module which provides:
+### Project Structure
+- `main.go` - Single entry point with command router
+- `tools/` - All command implementations
+- `common/` - Shared code (authentication, types, utilities)
+- `test/` - End-to-end test suite
+
+### Centralized Authentication (`common/auth.go`)
+Provides shared authentication and client functionality:
 - `Client` struct with GraphQL request method
 - Environment variable loading from `.env`
 - Standard HTTP headers for Blue API authentication
@@ -192,9 +198,15 @@ All scripts import and use the shared authentication module which provides:
 - Automatic detection of Project ID vs Project slug format
 - 30-second timeout for requests
 
+### Shared Types (`common/types.go`)
+Centralized type definitions to eliminate duplication:
+- User, Tag, Project, TodoList, Record, CustomField types
+- Input types for mutations (CreateProjectInput, CreateTodoInput, etc.)
+- Separate pagination types (CursorPageInfo, OffsetPageInfo)
+
 ### GraphQL Integration Pattern
-Each script:
-1. Imports the auth module
+Each tool:
+1. Imports the common package using dot imports
 2. Creates a client instance
 3. Sets project context using `client.SetProjectID()`, `client.SetProjectSlug()`, or `client.SetProject()` when needed
 4. Defines GraphQL query/mutation as a string
@@ -212,18 +224,18 @@ COMPANY_ID=your_company_slug
 
 ## Testing
 
-### End-to-End Test (`e2e.go`)
-Comprehensive test suite that validates all 17 tool files:
+### End-to-End Test (`test/e2e.go`)
+Comprehensive test suite that validates all 18 commands:
 
 ```bash
 # Run the end-to-end test
-go run auth.go e2e.go
+go run . e2e
 ```
 
 **Coverage:**
 - Tests all CRUD operations (Create, Read, Update, Delete)
 - Validates project → lists → tags → custom fields → records workflow
-- Uses actual tool execution (calls the real Go files)
+- Uses actual command execution through the main router
 - Automatic cleanup (deletes test project)
 - 22 test cases covering all major functionality
 
@@ -262,19 +274,22 @@ To implement:
 
 ## Implementation Guidelines
 
-When adding new scripts:
-1. Use the centralized `auth.go` module for all API calls
-2. Follow the existing command-line flag patterns using Go's `flag` package
-3. Use `client.SetProjectID()` for operations that require project context
-4. Include both `-simple` and detailed output options where applicable
-5. Define proper struct types for GraphQL responses
-6. Handle errors consistently with proper context
-7. For operations that modify arrays/lists, implement proper merging logic to preserve existing data
-8. Update CLAUDE.md with usage examples
+When adding new commands:
+1. Create a new file in the `tools/` directory
+2. Use the common package with dot imports for shared functionality
+3. Follow the existing command-line flag patterns using Go's `flag` package
+4. Add the command to the switch statement in `main.go`
+5. Use `client.SetProjectID()` for operations that require project context
+6. Include both `-simple` and detailed output options where applicable
+7. Define proper struct types for GraphQL responses
+8. Handle errors consistently with proper context
+9. For operations that modify arrays/lists, implement proper merging logic to preserve existing data
+10. Update CLAUDE.md with usage examples
+11. Add test cases to `test/e2e.go`
 
 ### Feature Toggle Implementation Notes
 
-The `update-project.go` script implements intelligent feature merging:
+The `update-project` command implements intelligent feature merging:
 - Fetches current project state before making changes
 - Merges user-specified feature toggles with existing features
 - Sends complete feature array to prevent data loss
@@ -286,8 +301,7 @@ The `update-project.go` script implements intelligent feature merging:
 - Project listing limited to first 20 results (pagination not implemented)
 - Maximum 50 lists per project
 - Project deletion requires special permissions (may fail with authorization error)
-- No test suite or linting configuration
-- Individual script execution (no unified CLI)
+- No linting configuration
 
 ## GraphQL API Details
 
