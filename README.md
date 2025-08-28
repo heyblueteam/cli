@@ -26,30 +26,30 @@ A collection of Go scripts for interacting with the Blue GraphQL API to create d
 <!-- ─────────────────────────────────────────────────────────────── -->
 
 
-### 1. List Projects (`list-projects.go`)
+### 1. List Projects (`read-projects`)
 Lists projects in your Blue company with pagination, search, and filtering.
 
 ```bash
 # List first 20 projects (default)
-go run auth.go list-projects.go
+go run . read-projects
 
 # List with just names and IDs
-go run auth.go list-projects.go -simple
+go run . read-projects -simple
 
 # Search for projects by name
-go run auth.go list-projects.go -search "marketing"
+go run . read-projects -search "marketing"
 
 # Navigate through pages
-go run auth.go list-projects.go -page 2
-go run auth.go list-projects.go -page 3 -size 50
+go run . read-projects -page 2
+go run . read-projects -page 3 -size 50
 
 # Include archived and template projects
-go run auth.go list-projects.go -archived    # Include archived
-go run auth.go list-projects.go -templates   # Include templates  
-go run auth.go list-projects.go -all         # Show everything
+go run . read-projects -archived    # Include archived
+go run . read-projects -templates   # Include templates  
+go run . read-projects -all         # Show everything
 
 # Combine options
-go run auth.go list-projects.go -search "CRM" -page 2 -simple
+go run . read-projects -search "CRM" -page 2 -simple
 ```
 
 **Options:**
@@ -61,15 +61,15 @@ go run auth.go list-projects.go -search "CRM" -page 2 -simple
 - `-templates`: Include template projects
 - `-all`: Show all projects including archived and templates
 
-### 2. Create Project (`create-project.go`)
+### 2. Create Project (`create-project`)
 Creates a new project in your Blue company.
 
 ```bash
 # Create a basic project
-go run auth.go create-project.go -name "My Demo Project"
+go run . create-project -name "My Demo Project"
 
 # Create with all options
-go run auth.go create-project.go \
+go run . create-project \
   -name "Sprint Planning" \
   -description "Q1 2024 Sprint Planning" \
   -color blue \
@@ -77,7 +77,7 @@ go run auth.go create-project.go \
   -category ENGINEERING
 
 # Show available options
-go run auth.go create-project.go -list
+go run . create-project -list
 ```
 
 **Options:**
@@ -88,37 +88,37 @@ go run auth.go create-project.go -list
 - `-category`: Project category (GENERAL, CRM, MARKETING, ENGINEERING, etc.)
 - `-template`: Template ID to create from
 
-### 3. Get Lists (`get-lists.go`)
+### 3. Read Lists (`read-lists`)
 Gets all lists in a specific project.
 
 ```bash
 # Get lists with full details
-go run auth.go get-lists.go -project PROJECT_ID
+go run . read-lists -project PROJECT_ID
 
 # Get lists with simple output
-go run auth.go get-lists.go -project PROJECT_ID -simple
+go run . read-lists -project PROJECT_ID -simple
 ```
 
 **Options:**
 - `-project` (required): Project ID
 - `-simple`: Show only basic information
 
-### 4. List Project Custom Fields (`list-project-custom-fields.go`)
+### 4. Read Project Custom Fields (`read-project-custom-fields`)
 Lists all custom fields within a specific project with detailed information.
 
 ```bash
 # List custom fields with full details
-go run auth.go list-project-custom-fields.go -project PROJECT_ID
+go run . read-project-custom-fields -project PROJECT_ID
 
 # List with simple output (name, type, ID, position only)
-go run auth.go list-project-custom-fields.go -project PROJECT_ID -simple
+go run . read-project-custom-fields -project PROJECT_ID -simple
 
 # Navigate through pages
-go run auth.go list-project-custom-fields.go -project PROJECT_ID -page 2
-go run auth.go list-project-custom-fields.go -project PROJECT_ID -page 3 -size 100
+go run . read-project-custom-fields -project PROJECT_ID -page 2
+go run . read-project-custom-fields -project PROJECT_ID -page 3 -size 100
 
 # Combine options
-go run auth.go list-project-custom-fields.go -project PROJECT_ID -simple -page 2 -size 25
+go run . read-project-custom-fields -project PROJECT_ID -simple -page 2 -size 25
 ```
 
 **Options:**
@@ -136,47 +136,47 @@ go run auth.go list-project-custom-fields.go -project PROJECT_ID -simple -page 2
 - `-project` (required): Project ID
 - `-simple`: Show only basic list information
 
-### 4. List Todos in Project (`list-project-todos.go`)
+### 4. Read Todos in Project (`read-project-records`)
 Lists all todos across all lists in a project (project overview).
 
 ```bash
 # List all todos in all lists of a project
-go run auth.go list-project-todos.go -project PROJECT_ID
+go run . read-project-records -project PROJECT_ID
 ```
 
 **Options:**
 - `-project` (required): Project ID
 
-### 5. List Todos in Specific List (`list-todos.go`)
+### 5. Read Todos in Specific List (`read-list-records`)
 Lists todos within a specific todo list with filtering and sorting options.
 
 ```bash
 # List todos in a list with full details
-go run auth.go list-todos.go -list LIST_ID
+go run . read-list-records -list LIST_ID
 
 # List todos with simple output
-go run auth.go list-todos.go -list LIST_ID -simple
+go run . read-list-records -list LIST_ID -simple
 
 # Search for specific todos
-go run auth.go list-todos.go -list LIST_ID -search "bug fix"
+go run . read-list-records -list LIST_ID -search "bug fix"
 
 # Filter by completion status
-go run auth.go list-todos.go -list LIST_ID -done false  # Show only active todos
-go run auth.go list-todos.go -list LIST_ID -done true   # Show only completed todos
+go run . read-list-records -list LIST_ID -done false  # Show only active todos
+go run . read-list-records -list LIST_ID -done true   # Show only completed todos
 
 # Filter by assignee
-go run auth.go list-todos.go -list LIST_ID -assignee USER_ID
+go run . read-list-records -list LIST_ID -assignee USER_ID
 
 # Filter by tags
-go run auth.go list-todos.go -list LIST_ID -tags "tag1,tag2"
+go run . read-list-records -list LIST_ID -tags "tag1,tag2"
 
 # Sort by different fields
-go run auth.go list-todos.go -list LIST_ID -order title_ASC
-go run auth.go list-todos.go -list LIST_ID -order duedAt_ASC
-go run auth.go list-todos.go -list LIST_ID -order createdAt_DESC
+go run . read-list-records -list LIST_ID -order title_ASC
+go run . read-list-records -list LIST_ID -order duedAt_ASC
+go run . read-list-records -list LIST_ID -order createdAt_DESC
 
 # Limit the number of results
-go run auth.go list-todos.go -list LIST_ID -limit 100
+go run . read-list-records -list LIST_ID -limit 100
 ```
 
 **Options:**
@@ -189,18 +189,18 @@ go run auth.go list-todos.go -list LIST_ID -limit 100
 - `-order`: Order by field (position_ASC, position_DESC, title_ASC, title_DESC, createdAt_ASC, createdAt_DESC, duedAt_ASC, duedAt_DESC)
 - `-limit`: Maximum number of todos to return (default: 50)
 
-### 6. Create Lists (`create-list.go`)
+### 6. Create Lists (`create-list`)
 Creates one or more lists in a project.
 
 ```bash
 # Create multiple lists
-go run auth.go create-list.go -project PROJECT_ID -names "To Do,In Progress,Done"
+go run . create-list -project PROJECT_ID -names "To Do,In Progress,Done"
 
 # Create lists in reverse order (for right-to-left display)
-go run auth.go create-list.go -project PROJECT_ID -names "Done,In Progress,To Do" -reverse
+go run . create-list -project PROJECT_ID -names "Done,In Progress,To Do" -reverse
 
 # Create a single list
-go run auth.go create-list.go -project PROJECT_ID -names "Backlog"
+go run . create-list -project PROJECT_ID -names "Backlog"
 ```
 
 **Options:**
@@ -208,27 +208,27 @@ go run auth.go create-list.go -project PROJECT_ID -names "Backlog"
 - `-names` (required): Comma-separated list names
 - `-reverse`: Create lists in reverse order
 
-### 7. List Tags (`list-tags.go`)
+### 7. Read Tags (`read-tags`)
 Lists all tags within a specific project.
 
 ```bash
 # List tags in a project
-go run auth.go list-tags.go -project PROJECT_ID
+go run . read-tags -project PROJECT_ID
 ```
 
 **Options:**
 - `-project` (required): Project ID
 
-### 8. Create Tags (`create-tags.go`)
+### 8. Create Tags (`create-tags`)
 Creates tags within a specific project.
 
 ```bash
 # Create a tag
-go run auth.go create-tags.go -project PROJECT_ID -title "Bug" -color "red"
+go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
 
 # Create different types of tags
-go run auth.go create-tags.go -project PROJECT_ID -title "Feature" -color "blue"
-go run auth.go create-tags.go -project PROJECT_ID -title "Urgent" -color "orange"
+go run . create-tags -project PROJECT_ID -title "Feature" -color "blue"
+go run . create-tags -project PROJECT_ID -title "Urgent" -color "orange"
 ```
 
 **Options:**
@@ -236,27 +236,27 @@ go run auth.go create-tags.go -project PROJECT_ID -title "Urgent" -color "orange
 - `-title` (required): Tag title/name
 - `-color` (required): Tag color (e.g., "red", "blue", "green", etc.)
 
-### 9. Create Custom Field (`create-custom-field.go`)
+### 9. Create Custom Field (`create-custom-field`)
 Creates custom fields for projects with support for 24+ field types.
 
 ```bash
 # Create a simple text field
-go run auth.go create-custom-field.go -name "Notes" -type "TEXT_MULTI" -description "Additional notes"
+go run . create-custom-field -name "Notes" -type "TEXT_MULTI" -description "Additional notes"
 
 # Create a number field with constraints
-go run auth.go create-custom-field.go -name "Story Points" -type "NUMBER" -min 1 -max 13
+go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
 
 # Create a currency field
-go run auth.go create-custom-field.go -name "Cost" -type "CURRENCY" -currency "USD" -prefix "$"
+go run . create-custom-field -name "Cost" -type "CURRENCY" -currency "USD" -prefix "$"
 
 # Create a date field
-go run auth.go create-custom-field.go -name "Start Date" -type "DATE" -is-due-date
+go run . create-custom-field -name "Start Date" -type "DATE" -is-due-date
 
 # Create a unique ID field
-go run auth.go create-custom-field.go -name "Task ID" -type "UNIQUE_ID" -use-sequence -sequence-digits 8
+go run . create-custom-field -name "Task ID" -type "UNIQUE_ID" -use-sequence -sequence-digits 8
 
 # Show available options
-go run auth.go create-custom-field.go -list
+go run . create-custom-field -list
 ```
 
 **Available Field Types:**
@@ -282,21 +282,21 @@ go run auth.go create-custom-field.go -list
 
 > **💡 For comprehensive custom field documentation** including detailed examples, field type explanations, and troubleshooting, see [CUSTOM_FIELDS_README.md](CUSTOM_FIELDS_README.md).
 
-### 10. Create Record/Todo (`create-record.go`)
+### 10. Create Record/Todo (`create-record`)
 Creates todos (records) within todo lists.
 
 ```bash
 # Create a basic record
-go run auth.go create-record.go -list LIST_ID -title "Fix login bug"
+go run . create-record -list LIST_ID -title "Fix login bug"
 
 # Create with description and assignees
-go run auth.go create-record.go -list LIST_ID -title "User Stories" -description "Create user stories for sprint" -assignees "user1,user2"
+go run . create-record -list LIST_ID -title "User Stories" -description "Create user stories for sprint" -assignees "user1,user2"
 
 # Create with placement
-go run auth.go create-record.go -list LIST_ID -title "Priority Task" -placement "TOP"
+go run . create-record -list LIST_ID -title "Priority Task" -placement "TOP"
 
 # Simple output
-go run auth.go create-record.go -list LIST_ID -title "Task" -simple
+go run . create-record -list LIST_ID -title "Task" -simple
 ```
 
 **Options:**
@@ -307,30 +307,30 @@ go run auth.go create-record.go -list LIST_ID -title "Task" -simple
 - `-assignees`: Comma-separated assignee IDs
 - `-simple`: Simple output format
 
-### 11. List Records (`list-records.go`)
+### 11. Read Records (`read-records`)
 Advanced querying of records/todos across projects with filtering and sorting.
 
 ```bash
 # List records in a project
-go run auth.go list-records.go -project PROJECT_ID
+go run . read-records -project PROJECT_ID
 
 # List records in a specific list
-go run auth.go list-records.go -list LIST_ID
+go run . read-records -list LIST_ID
 
 # Filter by assignee and completion status
-go run auth.go list-records.go -project PROJECT_ID -assignee USER_ID -done false
+go run . read-records -project PROJECT_ID -assignee USER_ID -done false
 
 # Filter by tags
-go run auth.go list-records.go -project PROJECT_ID -tags "tag1,tag2"
+go run . read-records -project PROJECT_ID -tags "tag1,tag2"
 
 # Sort by different fields
-go run auth.go list-records.go -project PROJECT_ID -order "duedAt_ASC"
+go run . read-records -project PROJECT_ID -order "duedAt_ASC"
 
 # Pagination
-go run auth.go list-records.go -project PROJECT_ID -limit 50 -skip 100
+go run . read-records -project PROJECT_ID -limit 50 -skip 100
 
 # Simple output
-go run auth.go list-records.go -project PROJECT_ID -simple
+go run . read-records -project PROJECT_ID -simple
 ```
 
 **Options:**
@@ -345,21 +345,21 @@ go run auth.go list-records.go -project PROJECT_ID -simple
 - `-skip`: Number of records to skip (for pagination)
 - `-simple`: Show only basic record information
 
-### 12. Count Records (`count-records.go`)
+### 12. Count Records (`read-records-count`)
 Counts the total number of records/todos in a project with optional filtering.
 
 ```bash
 # Count all records in a project
-go run auth.go count-records.go -project PROJECT_ID
+go run . read-records-count -project PROJECT_ID
 
 # Count only incomplete records
-go run auth.go count-records.go -project PROJECT_ID -done false
+go run . read-records-count -project PROJECT_ID -done false
 
 # Count records in a specific list
-go run auth.go count-records.go -project PROJECT_ID -list LIST_ID
+go run . read-records-count -project PROJECT_ID -list LIST_ID
 
 # Count non-archived records
-go run auth.go count-records.go -project PROJECT_ID -archived false
+go run . read-records-count -project PROJECT_ID -archived false
 ```
 
 **Options:**
@@ -368,15 +368,15 @@ go run auth.go count-records.go -project PROJECT_ID -archived false
 - `-done`: Filter by completion status (true/false, optional)
 - `-archived`: Filter by archived status (true/false, optional)
 
-### 13. Delete Record/Todo (`delete-record.go`)
+### 13. Delete Record/Todo (`delete-record`)
 Permanently deletes a record/todo from a project. Requires confirmation for safety.
 
 ```bash
 # Delete a record (confirmation required)
-go run auth.go delete-record.go -record RECORD_ID -confirm
+go run . delete-record -record RECORD_ID -confirm
 
 # Example with actual record ID
-go run auth.go delete-record.go -record "clr2x3y4z5a6b7c8d9e0" -confirm
+go run . delete-record -record "clr2x3y4z5a6b7c8d9e0" -confirm
 ```
 
 **Options:**
@@ -410,21 +410,21 @@ demo-builder/
 ├── .gitignore                    # Git ignore file  
 ├── go.mod                        # Go module file
 ├── go.sum                        # Go dependencies
-├── auth.go                       # Centralized authentication and GraphQL client
-├── list-projects.go              # List all projects
-├── create-project.go             # Create new projects
-├── get-lists.go                  # Get lists in a project
-├── create-list.go                # Create lists in a project
-├── list-tags.go                  # List tags in a project
-├── create-tags.go                # Create tags in a project
-├── list-project-custom-fields.go # List custom fields in a project
-├── list-project-todos.go         # List all todos in a project
-├── list-todos.go                 # List todos within a specific list
-├── create-custom-field.go        # Create custom fields
-├── create-record.go              # Create todos/records in lists
-├── list-records.go               # Advanced record querying with filtering
-├── count-records.go              # Count records/todos in projects
-├── delete-record.go              # Delete records/todos
+├── auth                       # Centralized authentication and GraphQL client
+├── list-projects              # List all projects
+├── create-project             # Create new projects
+├── get-lists                  # Get lists in a project
+├── create-list                # Create lists in a project
+├── list-tags                  # List tags in a project
+├── create-tags                # Create tags in a project
+├── list-project-custom-fields # List custom fields in a project
+├── list-project-todos         # List all todos in a project
+├── list-todos                 # List todos within a specific list
+├── create-custom-field        # Create custom fields
+├── create-record              # Create todos/records in lists
+├── list-records               # Advanced record querying with filtering
+├── count-records              # Count records/todos in projects
+├── delete-record              # Delete records/todos
 └── README.md                     # This file
 ```
 
@@ -434,56 +434,56 @@ Here's a complete example of creating a demo project:
 
 ```bash
 # 1. List existing projects
-go run auth.go list-projects.go -simple
+go run . read-projects -simple
 
 # 2. Create a new project
-go run auth.go create-project.go -name "Q1 Sprint Demo" -color blue -icon rocket
+go run . create-project -name "Q1 Sprint Demo" -color blue -icon rocket
 
 # 3. Get the project ID from the output, then create lists
-go run auth.go create-list.go -project PROJECT_ID -names "Backlog,To Do,In Progress,Done"
+go run . create-list -project PROJECT_ID -names "Backlog,To Do,In Progress,Done"
 
 # 4. Verify the lists were created
-go run auth.go get-lists.go -project PROJECT_ID -simple
+go run . read-lists -project PROJECT_ID -simple
 
 # 5. List all custom fields in the project
-go run auth.go list-project-custom-fields.go -project PROJECT_ID -simple
+go run . read-project-custom-fields -project PROJECT_ID -simple
 
 # 6. List tags in the project
-go run auth.go list-tags.go -project PROJECT_ID
+go run . read-tags -project PROJECT_ID
 
 # 7. Create some tags for the project
-go run auth.go create-tags.go -project PROJECT_ID -title "Bug" -color "red"
-go run auth.go create-tags.go -project PROJECT_ID -title "Feature" -color "blue"
+go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
+go run . create-tags -project PROJECT_ID -title "Feature" -color "blue"
 
 # 8. List all todos across all lists in the project
-go run auth.go list-project-todos.go -project PROJECT_ID
+go run . read-project-records -project PROJECT_ID
 
 # 9. Create some custom fields for the project
-go run auth.go create-custom-field.go -name "Priority" -type "SELECT_SINGLE" -description "Task priority level"
-go run auth.go create-custom-field.go -name "Story Points" -type "NUMBER" -min 1 -max 13
+go run . create-custom-field -name "Priority" -type "SELECT_SINGLE" -description "Task priority level"
+go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
 
 # 10. Create some records in the lists
-go run auth.go create-record.go -list LIST_ID -title "Setup project structure" -description "Initialize project with basic structure"
-go run auth.go create-record.go -list LIST_ID -title "Create user authentication" -placement "TOP"
+go run . create-record -list LIST_ID -title "Setup project structure" -description "Initialize project with basic structure"
+go run . create-record -list LIST_ID -title "Create user authentication" -placement "TOP"
 
 # 11. List todos in a specific list with detailed info
-go run auth.go list-todos.go -list LIST_ID -simple
+go run . read-list-records -list LIST_ID -simple
 
 # 12. Query records across the project with filters
-go run auth.go list-records.go -project PROJECT_ID -done false -limit 10
+go run . read-records -project PROJECT_ID -done false -limit 10
 
 # 13. Count total records in the project
-go run auth.go count-records.go -project PROJECT_ID
+go run . read-records-count -project PROJECT_ID
 ```
 
 ## 🧪 Testing
 
-### End-to-End Test Suite (`e2e.go`)
+### End-to-End Test Suite (`e2e`)
 A comprehensive test suite that validates all 17 tool files by executing them in sequence.
 
 ```bash
 # Run the complete end-to-end test
-go run auth.go e2e.go
+go run . e2e
 ```
 
 **What it tests:**
@@ -533,8 +533,8 @@ go run auth.go e2e.go
 ## 🛠️ Technical Details
 
 ### Architecture
-- **auth.go**: Provides centralized authentication and GraphQL client
-- All scripts use the shared `Client` from auth.go
+- **auth**: Provides centralized authentication and GraphQL client
+- All scripts use the shared `Client` from auth
 - Environment variables are loaded from `.env` file
 - Project context support via `client.SetProjectID()` method
 - GraphQL queries are embedded in each script
@@ -556,15 +556,15 @@ go run auth.go e2e.go
 - Maximum 50 lists per project
 - Project names are automatically trimmed
 - All scripts require authentication
-- `list-projects.go` shows only first 20 projects (pagination not yet implemented)
+- `list-projects` shows only first 20 projects (pagination not yet implemented)
 
 ## 🔮 Future Scripts
-- `create-todos.go` - Create todos within lists
-- `bulk-demo.go` - Create complete demo projects from templates
+- `create-todos` - Create todos within lists
+- `bulk-demo` - Create complete demo projects from templates
 
 ## 🤝 Contributing
 When adding new scripts:
-1. Use the centralized auth.go for all API calls
+1. Use the centralized auth for all API calls
 2. Follow the existing command-line flag patterns
 3. Use `client.SetProjectID()` for operations requiring project context
 4. Include both simple and detailed output options where applicable
