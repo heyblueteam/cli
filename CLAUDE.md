@@ -19,11 +19,20 @@ go run . <command> [flags]
 ### Available Scripts & Usage
 ```bash
 # READ operations - List/view data
-# List projects (first 20)
+# List projects with sorting and search options
 go run . read-projects -simple
+go run . read-projects -search "CRM" -sort updatedAt_DESC
 
 # Get lists in a project (using Project ID or slug)
 go run . read-lists -project PROJECT_ID_OR_SLUG -simple
+
+# Get detailed record information by ID
+go run . read-record -record RECORD_ID -project PROJECT_ID -simple
+
+# Advanced record querying with filtering and statistics (NEW ENHANCED)
+go run . read-records -project PROJECT_ID -done false -assignee USER_ID -simple
+go run . read-records -project PROJECT_ID -custom-field "field_id:GT:1000" -stats
+go run . read-records -project PROJECT_ID -custom-field "field_id:CONTAINS:urgent" -limit 10
 
 # List all todos across all lists in a project (overview)
 go run . read-project-records -project PROJECT_ID
@@ -36,9 +45,6 @@ go run . read-tags -project PROJECT_ID
 
 # List custom fields in a project
 go run . read-project-custom-fields -project PROJECT_ID
-
-# List/query records across projects with advanced filtering
-go run . read-records -project PROJECT_ID -done false -assignee USER_ID -simple
 
 # Count records/todos in a project with optional filtering
 go run . read-records-count -project PROJECT_ID
@@ -67,6 +73,10 @@ go run . create-record -list LIST_ID -title "Task Name" -description "Descriptio
 # Create records/todos with custom field values
 go run . create-record -list LIST_ID -title "Task" -custom-fields "cf123:Priority High;cf456:42"
 
+# Create comments on records/todos
+go run . create-comment -record RECORD_ID -text "This is a comment" -project PROJECT_ID -simple
+go run . create-comment -record RECORD_ID -text "Progress update" -html "<p><strong>Progress update</strong><br>Making good progress on this task.</p>"
+
 # Add tags to existing records/todos
 go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
 go run . create-record-tags -record RECORD_ID -tag-titles "Bug,Priority" -project PROJECT_ID
@@ -81,6 +91,15 @@ go run . update-project -project PROJECT_ID -features "Wiki:true,Docs:false" -si
 # Features are merged with existing state (partial updates supported)
 go run . update-project -project PROJECT_ID -features "Todo:false,People:false"
 
+# Update individual records/todos with comprehensive field support
+go run . update-record -record RECORD_ID -title "New Title" -description "Updated description"
+go run . update-record -record RECORD_ID -move-to-list LIST_ID -assignees "user1,user2"
+go run . update-record -record RECORD_ID -custom-fields "cf123:Updated Value;cf456:42"
+
+# Update existing comments
+go run . update-comment -comment COMMENT_ID -text "Updated comment text" -project PROJECT_ID -simple
+go run . update-comment -comment COMMENT_ID -text "Updated text" -html "<p><em>Updated with formatting</em></p>"
+
 # DELETE operations - Remove data
 # Delete project (requires confirmation and special permissions)
 go run . delete-project -project PROJECT_ID -confirm
@@ -90,6 +109,217 @@ go run . delete-record -record RECORD_ID -confirm
 ```
 
 ### Detailed Script Documentation
+
+#### Project Listing (`read-projects`) - ENHANCED WITH SORTING AND FILTERING
+List and search projects with advanced sorting, pagination, and filtering capabilities.
+
+```bash
+# Basic project listing
+go run . read-projects -simple
+go run . read-projects
+
+# Sorting options
+go run . read-projects -sort name_ASC -simple
+go run . read-projects -sort name_DESC -simple
+go run . read-projects -sort createdAt_DESC -simple
+go run . read-projects -sort updatedAt_DESC -simple
+go run . read-projects -sort position_ASC -simple
+
+# Search projects by name
+go run . read-projects -search "CRM" -simple
+go run . read-projects -search "Test" -sort updatedAt_DESC
+
+# Pagination
+go run . read-projects -page 1 -size 10
+go run . read-projects -page 2 -size 5
+
+# Include archived and template projects
+go run . read-projects -all
+go run . read-projects -archived -simple
+go run . read-projects -templates -simple
+
+# Combined options
+go run . read-projects -search "Test" -sort name_ASC -archived -page 1 -simple
+```
+
+**Options:**
+- `-simple`: Show only project names and IDs
+- `-page`: Page number (default: 1)
+- `-size`: Page size (default: 20)
+- `-search`: Search projects by name (case-sensitive)
+- `-sort`: Sort projects by field (default: name_ASC)
+- `-all`: Show all projects including archived and templates
+- `-archived`: Include archived projects
+- `-templates`: Include template projects
+
+**Available Sort Options:**
+- **Name**: `name_ASC`, `name_DESC`
+- **Creation Date**: `createdAt_ASC`, `createdAt_DESC`
+- **Update Date**: `updatedAt_ASC`, `updatedAt_DESC`
+- **Position**: `position_ASC`, `position_DESC`
+
+**Output Features:**
+- **Pagination info**: Shows current page, total pages, and total items
+- **Filter indicators**: Displays active search terms, sort options, and filters
+- **Navigation help**: Provides next/previous page commands when applicable
+- **Simple vs Detailed**: Simple shows ID/name only, detailed includes description, colors, icons, timestamps
+
+#### Advanced Record Querying (`read-records`) - ENHANCED WITH CLIENT-SIDE FILTERING
+Query records across projects with advanced filtering, client-side custom field filtering, and automatic numerical statistics.
+
+```bash
+# Basic querying with standard filters
+go run . read-records -project PROJECT_ID -simple -limit 10
+go run . read-records -project PROJECT_ID -done false -list LIST_ID
+
+# Client-side custom field filtering with operators (FIXED - Now Working!)
+go run . read-records -project PROJECT_ID -custom-field "cf123:GT:50000" -simple
+go run . read-records -project PROJECT_ID -custom-field "cf456:CONTAINS:urgent" -limit 5
+go run . read-records -project PROJECT_ID -custom-field "cf789:EQ:high" -done false
+
+# Automatic numerical calculations (NEW)
+go run . read-records -project PROJECT_ID -calc -simple
+go run . read-records -project PROJECT_ID -custom-field "cf123:GT:1000" -calc
+
+# Manual numerical statistics for custom fields
+go run . read-records -project PROJECT_ID -stats -limit 20
+go run . read-records -project PROJECT_ID -stats -calc-fields "cf123,cf456"
+
+# Combined filtering, calculations, and statistics
+go run . read-records -project PROJECT_ID -custom-field "cf123:GT:1000" -calc -stats -simple
+```
+
+**Standard Filtering Options:**
+- `-project`: Project ID or slug (required)
+- `-list`: Todo List ID to filter records
+- `-assignee`: Filter by assignee ID
+- `-tags`: Filter by tag IDs (comma-separated)
+- `-done`: Filter by completion status (true/false)
+- `-archived`: Filter by archived status (true/false)
+- `-order`: Order by field (position_ASC/DESC, title_ASC/DESC, createdAt_ASC/DESC, etc.)
+- `-limit`: Maximum number of records to return (default: 20)
+- `-skip`: Number of records to skip (for pagination)
+- `-simple`: Show only basic record information
+
+**Custom Field Filtering (CLIENT-SIDE):**
+- `-custom-field`: Filter by custom field using format "field_id:operator:value"
+- **Implementation**: Client-side filtering after fetching records (server-side filtering not supported)
+- **Performance**: Filters on already-fetched results, shows "Filter Applied: X → Y records (client-side)"
+
+**Available Operators:**
+- **Equality**: `EQ` (equal), `NE` (not equal)
+- **Comparison**: `GT` (greater than), `GTE` (greater than or equal), `LT` (less than), `LTE` (less than or equal)
+- **Membership**: `IN` (value in list), `NIN` (value not in list)
+- **Text**: `CONTAINS` (contains substring)
+- **Existence**: `IS` (is/is not null), `NOT` (negation)
+
+**Numerical Statistics & Calculations:**
+- `-calc`: Automatically detect and calculate stats for all numerical fields in results (NEW)
+- `-stats`: Show numerical statistics for custom fields (sum, average, min, max)
+- `-calc-fields`: Comma-separated list of custom field IDs to calculate stats for (optional - auto-detects if not specified)
+
+**Automatic Calculation Features:**
+- **Auto-detection**: Finds NUMBER, CURRENCY, PERCENT, RATING fields automatically
+- **Real-time stats**: Calculates sum, average, min, max for numerical fields
+- **Filtered calculations**: Stats apply to filtered results when combined with `-custom-field`
+- **Multiple fields**: Handles multiple numerical fields simultaneously
+- **Type safety**: Proper number conversion with error handling
+
+**Custom Field Filter Examples:**
+- Find records with amount over $50,000: `"cf123:GT:50000"`
+- Find records containing 'urgent': `"cf456:CONTAINS:urgent"`
+- Find records with specific priority: `"cf789:EQ:high"`
+- Find records in value range: `"cf123:IN:1000,2000,3000"`
+
+**Supported Field Types for Filtering:**
+- **Numerical**: NUMBER, CURRENCY, PERCENT, RATING (supports GT, LT, GTE, LTE, EQ, NE)
+- **Text**: TEXT_SINGLE, TEXT_MULTI, EMAIL, PHONE, URL (supports CONTAINS, EQ, NE)
+- **Selection**: SELECT_SINGLE, SELECT_MULTI (supports EQ, NE, IN, NIN)
+- **Boolean**: CHECKBOX (supports EQ, IS, NOT)
+
+**Custom Field Display Format:**
+- **Simple mode**: Shows field name and ID for disambiguation: `Deal Value (cmeqh9ts21czrsj1othq1rff8)=75000`
+- **Detailed mode**: Shows field name, type, and ID: `Deal Value (CURRENCY) [cmeqh9ts21czrsj1othq1rff8]: 75000`
+- **Field IDs are always visible** to handle cases where multiple fields might have the same name
+- **Empty fields are hidden** by default - only fields with actual values are displayed
+- **Value parsing**: Complex value structures are automatically parsed to show the relevant value (e.g., extracts `75000` from `map[currency:<nil> number:75000 text:<nil>]`)
+
+#### Single Record Details (`read-record`)
+Get comprehensive details for a specific record by ID, including custom field values.
+
+```bash
+# Get detailed record information with custom fields
+go run . read-record -record RECORD_ID -project PROJECT_ID
+
+# Get simple record information with custom field count
+go run . read-record -record RECORD_ID -project PROJECT_ID -simple
+```
+
+**Options:**
+- `-record` (required): Record ID to retrieve
+- `-project`: Project ID or slug (required for context)
+- `-simple`: Show only basic record information and custom field count
+
+**Custom Field Display:**
+- **Detailed mode**: Shows all custom field values with names, types, and parsed values (e.g., `Deal Value (CURRENCY) [field_id]: 75000`)
+- **Simple mode**: Shows only the count of custom fields attached to the record
+- **Field names and types**: Field names and types are fetched from project metadata for user-friendly display
+- **Value parsing**: Complex API structures are automatically parsed to show meaningful values (e.g., extracts `75000` from currency fields)
+- **Field IDs**: Shown in brackets `[field_id]` for technical reference and disambiguation
+- **Empty fields**: Clearly marked as `(empty)` when no value is set
+
+#### Create Comment (`create-comment`)
+Creates comments on records/todos with support for both plain text and HTML content.
+
+```bash
+# Create a simple text comment
+go run . create-comment -record RECORD_ID -text "This is a progress update"
+
+# Create comment with HTML formatting
+go run . create-comment -record RECORD_ID -text "Progress update" -html "<p><strong>Progress update</strong><br>Making good progress on this task.</p>"
+
+# Create comment with project context
+go run . create-comment -record RECORD_ID -text "Task completed" -project PROJECT_ID -simple
+```
+
+**Options:**
+- `-record` (required): Record ID to comment on
+- `-text` (required): Plain text content of the comment
+- `-html`: HTML content of the comment (optional - will use formatted text if not provided)
+- `-project`: Project ID or slug for context (optional)
+- `-simple`: Show only basic comment information after creation
+
+**Notes:**
+- If HTML is not provided, the text will be automatically converted to HTML with basic formatting
+- Comments on records use the "TODO" category in the Blue system
+- All comments are associated with the authenticated user making the request
+
+#### Update Comment (`update-comment`)
+Updates existing comments on records/todos with new text and HTML content.
+
+```bash
+# Update comment with new text
+go run . update-comment -comment COMMENT_ID -text "Updated progress: task is now 75% complete"
+
+# Update comment with custom HTML formatting
+go run . update-comment -comment COMMENT_ID -text "Final update" -html "<p><strong>COMPLETED</strong><br>✅ Task finished ahead of schedule</p>"
+
+# Update comment with project context and simple output
+go run . update-comment -comment COMMENT_ID -text "Status changed to completed" -project PROJECT_ID -simple
+```
+
+**Options:**
+- `-comment` (required): Comment ID to update
+- `-text` (required): New plain text content for the comment
+- `-html`: New HTML content for the comment (optional - will use formatted text if not provided)
+- `-project`: Project ID or slug for context (optional)
+- `-simple`: Show only basic comment information after update
+
+**Notes:**
+- Updates both the text and HTML content of the comment
+- If HTML is not provided, the text will be automatically converted to HTML with basic formatting
+- The comment's creation timestamp remains unchanged, but updatedAt is set to current time
+- Only the comment author or users with appropriate permissions can update comments
 
 #### Create Record (`create-record`)
 Creates new records/todos in lists with support for custom field values, assignments, and placement options.
@@ -176,6 +406,42 @@ go run . read-records-count -project PROJECT_ID -archived false
 - `-done`: Filter by completion status (true/false, optional)
 - `-archived`: Filter by archived status (true/false, optional)
 
+#### Update Record (`update-record`)
+Update individual records/todos with comprehensive field support, including moving between lists and updating custom fields.
+
+```bash
+# Update basic record information
+go run . update-record -record RECORD_ID -title "New Title" -description "Updated description"
+
+# Move record to different list and update assignees
+go run . update-record -record RECORD_ID -move-to-list LIST_ID -assignees "user1,user2"
+
+# Update custom field values
+go run . update-record -record RECORD_ID -custom-fields "cf123:Updated Priority;cf456:75000"
+
+# Complete comprehensive update
+go run . update-record -record RECORD_ID -title "Updated Title" -description "New description" -move-to-list LIST_ID -assignees "user1" -custom-fields "cf123:High;cf456:50000" -due-date "2025-12-31" -simple
+```
+
+**Options:**
+- `-record` (required): Record ID to update
+- `-title`: New title for the record
+- `-description`: New description for the record
+- `-move-to-list`: List ID to move the record to
+- `-assignees`: Comma-separated list of user IDs to assign
+- `-custom-fields`: Custom field updates in format "field_id1:value1;field_id2:value2"
+- `-due-date`: Due date in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
+- `-color`: Record color
+- `-done`: Mark as done (true/false)
+- `-archived`: Archive status (true/false)
+- `-simple`: Simple output format
+
+**Custom Field Update Examples:**
+- Text field: `"cf123:Updated text value"`
+- Number field: `"cf456:99.5"`
+- Boolean field: `"cf789:false"`
+- Multiple fields: `"cf123:Priority High;cf456:75000;cf789:true"`
+
 ### Dependencies
 ```bash
 go mod tidy  # Install/update dependencies
@@ -225,7 +491,7 @@ COMPANY_ID=your_company_slug
 ## Testing
 
 ### End-to-End Test (`test/e2e.go`)
-Comprehensive test suite that validates all 18 commands:
+Comprehensive test suite that validates all 20+ commands:
 
 ```bash
 # Run the end-to-end test
@@ -235,9 +501,10 @@ go run . e2e
 **Coverage:**
 - Tests all CRUD operations (Create, Read, Update, Delete)
 - Validates project → lists → tags → custom fields → records workflow
+- Tests advanced record querying with custom field filtering
 - Uses actual command execution through the main router
 - Automatic cleanup (deletes test project)
-- 22 test cases covering all major functionality
+- 25+ test cases covering all major functionality including new enhanced features
 
 **Output:**
 - Emoji-friendly status indicators (✅/❌)
@@ -248,7 +515,10 @@ go run . e2e
 ## Implemented Features
 
 Completed:
-- ✅ List projects with pagination and search
+- ✅ **ENHANCED**: List projects with advanced sorting, pagination, search, and filtering
+  - Sorting by name, created/updated dates, position (ASC/DESC)
+  - Search by project name with real-time filtering
+  - Include/exclude archived and template projects
 - ✅ Create projects with customization options
 - ✅ Delete projects (with safety confirmation)
 - ✅ List and create todo lists in projects
@@ -256,11 +526,22 @@ Completed:
 - ✅ List and create tags in projects
 - ✅ List custom fields in projects
 - ✅ Create custom fields (24+ types including reference/lookup)
-- ✅ Create records/todos (simple: name + list + description)
-- ✅ Advanced record querying with filtering and sorting
+- ✅ Create records/todos with custom field values and assignments
+- ✅ **ENHANCED**: Single record details with comprehensive custom field display
+  - Field names, types, and parsed values with proper formatting
+  - Field IDs shown for technical reference and disambiguation
+  - Empty field handling and value extraction from complex structures
+- ✅ **FIXED**: Client-side custom field filtering and automatic numerical calculations
+  - **Client-side filtering**: Works with all operators (GT, LT, EQ, CONTAINS, IN, etc.)
+  - **Auto calculations**: Automatic detection and stats for numerical fields (-calc flag)
+  - **Real-time statistics**: Sum, average, min, max for CURRENCY, NUMBER, PERCENT, RATING fields
+  - **Filtered calculations**: Stats apply to filtered subsets of data
+  - **Intelligent value parsing**: Extracts meaningful values from complex data structures
+  - Support for all custom field types with appropriate operators
 - ✅ Count records/todos in projects with filtering options
 - ✅ Delete records/todos with safety confirmation
 - ✅ Add tags to records/todos (by tag ID or title)
+- ✅ Update individual records with full field support
 - ✅ Edit/update project settings and toggle features (with intelligent feature merging)
 - ✅ End-to-end test suite with full coverage
 
@@ -270,7 +551,9 @@ To implement:
 - Create custom field groups
 - Create automations
 - Create custom user roles
-- Create record (full: name + list + custom field values)
+- Bulk record operations (bulk update, bulk delete)
+- Advanced export/import functionality
+- Real-time record watching and notifications
 
 ## Implementation Guidelines
 
@@ -312,3 +595,64 @@ The `update-project` command implements intelligent feature merging:
   - `X-Bloo-Company-ID`: Company slug
 - Request timeout: 30 seconds
 - All requests use POST method with JSON body
+
+## Practical Usage Examples
+
+### CRM System Management
+```bash
+# Set up a CRM project
+go run . create-project -name "CRM System" -color blue -icon "office-building"
+
+# Create pipeline lists
+go run . create-list -project PROJECT_ID -names "Leads,Prospects,Customers,Closed Won,Closed Lost"
+
+# Create custom fields for deal tracking
+go run . create-custom-field -project PROJECT_ID -name "Deal Value" -type "CURRENCY" -currency "USD"
+go run . create-custom-field -project PROJECT_ID -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
+
+# Add prospects with deal values
+go run . create-record -project PROJECT_ID -list LIST_ID -title "TechCorp - Enterprise Deal" -custom-fields "cf123:75000"
+
+# Find high-value deals (CLIENT-SIDE FILTERING - NOW WORKING!)
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -custom-field "cmeqh9ts21czrsj1othq1rff8:GT:50000" -simple
+
+# Automatic deal statistics (NEW FEATURE)
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -calc -simple
+
+# Manual statistics for specific fields
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -stats -calc-fields "cmeqh9ts21czrsj1othq1rff8"
+
+# Combined filtering + calculations
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -custom-field "cmeqh9ts21czrsj1othq1rff8:EQ:75000" -calc
+```
+
+### Project Portfolio Management
+```bash
+# Query incomplete tasks across projects
+go run . read-records -project PROJECT_ID -done false -limit 20
+
+# Find companies containing "ABC" (CLIENT-SIDE TEXT FILTERING)
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -custom-field "cmeqhal6a1d1msj1o1qpco9wm:CONTAINS:ABC" -simple
+
+# Update task priorities in bulk
+go run . read-records -project PROJECT_ID -custom-field "cf789:EQ:low" -simple | \
+  grep "ID:" | awk '{print $2}' | \
+  xargs -I {} go run . update-record -record {} -custom-fields "cf789:medium"
+```
+
+### Data Analysis and Reporting
+```bash
+# Get comprehensive project statistics with new auto-calculations
+go run . read-records-count -project cmeqh9ceq1j4er41oseriuxhv
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -calc -simple
+
+# Advanced project analysis with sorting and search
+go run . read-projects -search "CRM" -sort updatedAt_DESC -simple
+go run . read-projects -all -sort createdAt_ASC
+
+# Export filtered data
+go run . read-records -project cmeqh9ceq1j4er41oseriuxhv -custom-field "cmeqh9ts21czrsj1othq1rff8:GT:50000" > high_value_deals.txt
+
+# Detailed record inspection
+go run . read-record -record dc41f3cf00b94040946c2a4cd1aac356 -project cmeqh9ceq1j4er41oseriuxhv
+```

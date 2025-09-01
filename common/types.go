@@ -151,7 +151,7 @@ type CustomField struct {
 	Number                *float64            `json:"number,omitempty"`
 	Checked               bool                `json:"checked,omitempty"`
 	Editable              bool                `json:"editable"`
-	Options               []CustomFieldOption `json:"options,omitempty"`
+	Options               []CustomFieldOption `json:"customFieldOptions,omitempty"`
 }
 
 // CustomFieldOption represents an option for select-type custom fields
@@ -265,4 +265,16 @@ type ConversionRateStaticInput struct {
 // DeleteTodoInput for record/todo deletion
 type DeleteTodoInput struct {
 	TodoID string `json:"todoId"`
+}
+
+// RecordCustomFieldValue represents a custom field value for a record
+type RecordCustomFieldValue struct {
+	ID            string      `json:"id"`
+	CustomFieldID string      `json:"customFieldId"`
+	Value         interface{} `json:"value"`
+	CustomField   struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		Type string `json:"type"`
+	} `json:"customField"`
 }

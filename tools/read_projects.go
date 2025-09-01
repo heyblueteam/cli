@@ -17,8 +17,8 @@ type ProjectListResponse struct {
 	ProjectList ProjectList `json:"projectList"`
 }
 
-// Build query with pagination and search
-func buildProjectQuery(companyID string, simple bool, skip int, take int, search string, showArchived bool, showTemplates bool) string {
+// Build query with pagination, search, and sorting
+func buildProjectQuery(companyID string, simple bool, skip int, take int, search string, showArchived bool, showTemplates bool, sortBy string) string {
 	fields := "id name"
 	if !simple {
 		fields = `id
@@ -52,7 +52,7 @@ func buildProjectQuery(companyID string, simple bool, skip int, take int, search
 			filter: { %s }
 			skip: %d
 			take: %d
-			sort: [name_ASC]
+			sort: [%s]
 		) {
 			items {
 				%s
@@ -67,7 +67,7 @@ func buildProjectQuery(companyID string, simple bool, skip int, take int, search
 			}
 			totalCount
 		}
-	}`, filter, skip, take, fields)
+	}`, filter, skip, take, sortBy, fields)
 
 	return query
 }
@@ -82,12 +82,31 @@ func RunReadProjects(args []string) error {
 	page := fs.Int("page", 1, "Page number (default: 1)")
 	pageSize := fs.Int("size", 20, "Page size (default: 20)")
 	search := fs.String("search", "", "Search projects by name")
+	sortBy := fs.String("sort", "name_ASC", "Sort projects by field (name_ASC, name_DESC, createdAt_ASC, createdAt_DESC, updatedAt_ASC, updatedAt_DESC, position_ASC, position_DESC)")
 	all := fs.Bool("all", false, "Show all projects (including archived and templates)")
 	showArchived := fs.Bool("archived", false, "Include archived projects")
 	showTemplates := fs.Bool("templates", false, "Include template projects")
 	
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("failed to parse flags: %w", err)
+	}
+	
+	// Validate sort option
+	validSortOptions := []string{
+		"name_ASC", "name_DESC", 
+		"createdAt_ASC", "createdAt_DESC",
+		"updatedAt_ASC", "updatedAt_DESC", 
+		"position_ASC", "position_DESC",
+	}
+	isValidSort := false
+	for _, validSort := range validSortOptions {
+		if *sortBy == validSort {
+			isValidSort = true
+			break
+		}
+	}
+	if !isValidSort {
+		return fmt.Errorf("invalid sort option '%s'. Valid options: %v", *sortBy, validSortOptions)
 	}
 
 	// Load configuration
@@ -110,7 +129,7 @@ func RunReadProjects(args []string) error {
 	}
 
 	// Build and execute query
-	query := buildProjectQuery(client.GetCompanyID(), *simple, skip, take, *search, *showArchived, *showTemplates)
+	query := buildProjectQuery(client.GetCompanyID(), *simple, skip, take, *search, *showArchived, *showTemplates, *sortBy)
 
 	// Execute query
 	var response ProjectListResponse
@@ -125,6 +144,18 @@ func RunReadProjects(args []string) error {
 	fmt.Printf("\n=== Projects in %s ===\n", client.GetCompanyID())
 	if *search != "" {
 		fmt.Printf("Search: '%s'\n", *search)
+	}
+	if *sortBy != "name_ASC" {
+		fmt.Printf("Sort: %s\n", *sortBy)
+	}
+	if *showArchived && !*all {
+		fmt.Printf("Filter: Including archived projects\n")
+	}
+	if *showTemplates && !*all {
+		fmt.Printf("Filter: Including template projects\n")
+	}
+	if *all {
+		fmt.Printf("Filter: All projects (including archived and templates)\n")
 	}
 	fmt.Printf("Page %d of %d (showing %d of %d total)\n\n", 
 		*page, 

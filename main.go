@@ -18,9 +18,11 @@ func printUsage() {
 	fmt.Println("READ operations:")
 	fmt.Println("  read-projects               List all projects")
 	fmt.Println("  read-lists                  List todo lists in a project")
+	fmt.Println("  read-record                 Get detailed record information")
+	fmt.Println("  read-records                Query records with advanced filtering and statistics")
 	fmt.Println("  read-list-records           List records in a specific list")
 	fmt.Println("  read-project-records        List all records in a project by list")
-	fmt.Println("  read-records                Query records with advanced filtering")
+	fmt.Println("")
 	fmt.Println("  read-records-count          Count records in a project")
 	fmt.Println("  read-tags                   List tags in a project")
 	fmt.Println("  read-project-custom-fields  List custom fields in a project")
@@ -29,12 +31,15 @@ func printUsage() {
 	fmt.Println("  create-project              Create a new project")
 	fmt.Println("  create-list                 Create a new todo list")
 	fmt.Println("  create-record               Create a new record/todo")
+	fmt.Println("  create-comment              Create a comment on a record")
 	fmt.Println("  create-tags                 Create new tags")
 	fmt.Println("  create-record-tags          Add tags to a record")
 	fmt.Println("  create-custom-field         Create a custom field")
 	fmt.Println()
 	fmt.Println("UPDATE operations:")
 	fmt.Println("  update-project              Update project settings")
+	fmt.Println("  update-record               Update a record/todo")
+	fmt.Println("  update-comment              Update a comment")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
@@ -70,12 +75,14 @@ func main() {
 		err = tools.RunReadProjects(args)
 	case "read-lists":
 		err = tools.RunReadLists(args)
+	case "read-record":
+		err = tools.RunReadRecord(args)
+	case "read-records":
+		err = tools.RunReadRecords(args)
 	case "read-list-records":
 		err = tools.RunReadTodos(args)
 	case "read-project-records":
 		err = tools.RunReadProjectRecords(args)
-	case "read-records":
-		err = tools.RunReadRecords(args)
 	case "read-records-count":
 		err = tools.RunReadRecordsCount(args)
 	case "read-tags":
@@ -90,6 +97,8 @@ func main() {
 		err = tools.RunCreateList(args)
 	case "create-record":
 		err = tools.RunCreateRecord(args)
+	case "create-comment":
+		err = tools.RunCreateComment(args)
 	case "create-tags":
 		err = tools.RunCreateTags(args)
 	case "create-record-tags":
@@ -100,6 +109,12 @@ func main() {
 	// UPDATE operations
 	case "update-project":
 		err = tools.RunUpdateProject(args)
+	case "update-record":
+		err = tools.RunUpdateRecord(args)
+	case "update-comment":
+		err = tools.RunUpdateComment(args)
+	case "test-custom-fields":
+		err = tools.RunTestCustomFields(args)
 	
 	// DELETE operations
 	case "delete-project":

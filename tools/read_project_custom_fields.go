@@ -45,6 +45,14 @@ func buildQuery(projectID string, skip int, take int) string {
 				name
 				type
 				position
+				description
+				createdAt
+				updatedAt
+				customFieldOptions {
+					id
+					title
+					color
+				}
 			}
 			pageInfo {
 				totalPages
@@ -115,8 +123,24 @@ func RunReadProjectCustomFields(args []string) error {
 		// Simple output
 		startNum := skip + 1
 		for i, field := range customFields.Items {
-			fmt.Printf("%d. %s (%s)\n   ID: %s\n   Position: %.0f\n\n", 
+			fmt.Printf("%d. %s (%s)\n   ID: %s\n   Position: %.0f\n", 
 				startNum+i, field.Name, field.Type, field.ID, field.Position)
+			
+			// Show options for SELECT fields
+			if (field.Type == "SELECT_SINGLE" || field.Type == "SELECT_MULTI") && len(field.Options) > 0 {
+				fmt.Printf("   Options: ")
+				for j, option := range field.Options {
+					if j > 0 {
+						fmt.Printf(", ")
+					}
+					fmt.Printf("%s", option.Title)
+					if option.Color != "" {
+						fmt.Printf(" (%s)", option.Color)
+					}
+				}
+				fmt.Printf("\n")
+			}
+			fmt.Printf("\n")
 		}
 	} else {
 		// Detailed output
@@ -129,6 +153,18 @@ func RunReadProjectCustomFields(args []string) error {
 			
 			if field.Description != "" {
 				fmt.Printf("   Description: %s\n", field.Description)
+			}
+			
+			// Show options for SELECT fields
+			if (field.Type == "SELECT_SINGLE" || field.Type == "SELECT_MULTI") && len(field.Options) > 0 {
+				fmt.Printf("   Available Options:\n")
+				for _, option := range field.Options {
+					fmt.Printf("     - %s (ID: %s", option.Title, option.ID)
+					if option.Color != "" {
+						fmt.Printf(", Color: %s", option.Color)
+					}
+					fmt.Printf(")\n")
+				}
 			}
 			
 			fmt.Printf("   Created: %s\n", field.CreatedAt)
