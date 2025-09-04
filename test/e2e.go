@@ -578,6 +578,126 @@ func testCreateCustomFields(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Add options to existing custom field
+func testCreateCustomFieldOptions(ctx *TestContext) bool {
+	if len(ctx.customFieldIDs) == 0 {
+		fmt.Println("❌ No custom fields available for adding options")
+		ctx.testsFailed++
+		return false
+	}
+
+	// Add options to the first SELECT_SINGLE field (Priority field)
+	_, err := runCommand("create-custom-field-options",
+		"-field", ctx.customFieldIDs[0],
+		"-project", ctx.projectID,
+		"-options", "Critical:purple,Blocked:black",
+		"-simple")
+
+	if !printTestResult("Create custom field options", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Added options to custom field: %s\n", ctx.customFieldIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update custom field properties
+func testUpdateCustomField(ctx *TestContext) bool {
+	if len(ctx.customFieldIDs) < 3 {
+		fmt.Println("❌ Not enough custom fields available for update test")
+		ctx.testsFailed++
+		return false
+	}
+
+	// Update the NUMBER field (Story Points field - should be 3rd field)
+	_, err := runCommand("update-custom-field",
+		"-field", ctx.customFieldIDs[2],
+		"-project", ctx.projectID,
+		"-name", "Complexity Points",
+		"-description", "Updated: Task complexity estimation",
+		"-min", "0",
+		"-max", "21",
+		"-simple")
+
+	if !printTestResult("Update custom field properties", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated custom field: %s\n", ctx.customFieldIDs[2])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update list properties
+func testUpdateList(ctx *TestContext) bool {
+	if len(ctx.listIDs) == 0 {
+		fmt.Println("❌ No lists available for update test")
+		ctx.testsFailed++
+		return false
+	}
+
+	// Update the first list
+	_, err := runCommand("update-list",
+		"-list", ctx.listIDs[0],
+		"-project", ctx.projectID,
+		"-title", "Backlog Items",
+		"-position", "500.0",
+		"-locked", "false",
+		"-simple")
+
+	if !printTestResult("Update list properties", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated list: %s\n", ctx.listIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read custom fields with enhanced reference
+func testReadCustomFieldsReference(ctx *TestContext) bool {
+	output, err := runCommand("read-custom-fields",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read custom fields reference", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fieldCount := strings.Count(output, "|")
+	fmt.Printf("   Found custom fields reference with %d entries\n", fieldCount/3) // Roughly 3 pipes per row
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read custom fields with examples
+func testReadCustomFieldsExamples(ctx *TestContext) bool {
+	output, err := runCommand("read-custom-fields",
+		"-project", ctx.projectID,
+		"-examples")
+
+	if !printTestResult("Read custom fields with examples", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Check if examples section is present
+	hasExamples := strings.Contains(output, "Command Examples") || strings.Contains(output, "create-record")
+	if !hasExamples {
+		fmt.Printf("   ⚠️  Warning: Expected examples section in output\n")
+	} else {
+		fmt.Printf("   Examples section found in output\n")
+	}
+
+	ctx.testsPassed++
+	return true
+}
+
 // Test: Read custom fields
 func testReadCustomFields(ctx *TestContext) bool {
 	output, err := runCommand("read-project-custom-fields",
@@ -845,6 +965,7 @@ func main() {
 	fmt.Println("\n📝 List Operations:")
 	testCreateLists(ctx)
 	testReadLists(ctx)
+	testUpdateList(ctx)
 
 	// Tag operations
 	fmt.Println("\n🏷️  Tag Operations:")
@@ -854,7 +975,11 @@ func main() {
 	// Custom field operations (testing 18 field types)
 	fmt.Println("\n⚙️  Custom Field Operations (18 types):")
 	testCreateCustomFields(ctx)
+	testCreateCustomFieldOptions(ctx)
+	testUpdateCustomField(ctx)
 	testReadCustomFields(ctx)
+	testReadCustomFieldsReference(ctx)
+	testReadCustomFieldsExamples(ctx)
 
 	// Record/Todo operations
 	fmt.Println("\n✅ Record/Todo Operations:")

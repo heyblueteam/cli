@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Update list input
@@ -62,14 +63,11 @@ func RunUpdateList(args []string) error {
 		client.SetProjectID(*projectID)
 	}
 
-	// Prepare input
-	input := UpdateTodoListInput{
-		TodoListID: *listID,
-	}
+	// Build the mutation fields dynamically
+	var fields []string
 
-	// Set optional fields
 	if *title != "" {
-		input.Title = *title
+		fields = append(fields, fmt.Sprintf("title: \"%s\"", *title))
 	}
 
 	if *positionStr != "" {
@@ -77,7 +75,7 @@ func RunUpdateList(args []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid position value '%s': %v", *positionStr, err)
 		}
-		input.Position = &position
+		fields = append(fields, fmt.Sprintf("position: %g", position))
 	}
 
 	if *lockedStr != "" {
@@ -85,28 +83,33 @@ func RunUpdateList(args []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid locked value '%s': %v", *lockedStr, err)
 		}
-		input.IsLocked = &locked
+		fields = append(fields, fmt.Sprintf("isLocked: %t", locked))
 	}
 
-	// Execute mutation using variables
-	mutation := `
-		mutation EditTodoList($input: EditTodoListInput!) {
-			editTodoList(input: $input) {
+	// Build the fields string
+	fieldsStr := ""
+	if len(fields) > 0 {
+		fieldsStr = strings.Join(fields, "\n\t\t\t\t")
+	}
+
+	// Execute mutation using string interpolation like other working commands
+	mutation := fmt.Sprintf(`
+		mutation EditTodoList {
+			editTodoList(input: {
+				todoListId: "%s"
+				%s
+			}) {
 				id
 				uid
 				title
 				position
 				isLocked
 			}
-		}`
-
-	variables := map[string]interface{}{
-		"input": input,
-	}
+		}`, *listID, fieldsStr)
 
 	var response UpdateTodoListResponse
-	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
-		return fmt.Errorf("failed to edit list: %v", err)
+	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+		return fmt.Errorf("failed to edit list: %v. Note: Try providing -project flag for proper authorization", err)
 	}
 
 	// Display results
@@ -122,14 +125,14 @@ func RunUpdateList(args []string) error {
 		fmt.Printf("Is Locked: %t\n", list.IsLocked)
 		
 		fmt.Printf("\nUpdated fields:\n")
-		if input.Title != "" {
-			fmt.Printf("- Title: %s\n", input.Title)
+		if *title != "" {
+			fmt.Printf("- Title: %s\n", *title)
 		}
-		if input.Position != nil {
-			fmt.Printf("- Position: %.0f\n", *input.Position)
+		if *positionStr != "" {
+			fmt.Printf("- Position: %s\n", *positionStr)
 		}
-		if input.IsLocked != nil {
-			fmt.Printf("- Locked: %t\n", *input.IsLocked)
+		if *lockedStr != "" {
+			fmt.Printf("- Locked: %s\n", *lockedStr)
 		}
 	}
 
