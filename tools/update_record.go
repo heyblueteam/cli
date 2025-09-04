@@ -65,9 +65,6 @@ type SetTagsResponse struct {
 	SetTodoTags bool `json:"setTodoTags"`
 }
 
-type SetCustomFieldResponse struct {
-	SetTodoCustomField bool `json:"setTodoCustomField"`
-}
 
 // parseCustomFieldValues parses the custom field values from command line arguments
 func parseUpdateCustomFieldValues(customFieldsStr string) ([]common.CustomFieldValue, error) {
@@ -121,38 +118,6 @@ func parseUpdateCustomFieldValues(customFieldsStr string) ([]common.CustomFieldV
 	return customFieldValues, nil
 }
 
-// buildCustomFieldMutation builds individual custom field mutations
-func buildCustomFieldMutation(todoID string, cfv common.CustomFieldValue) string {
-	var valueStr string
-
-	switch v := cfv.Value.(type) {
-	case string:
-		valueStr = fmt.Sprintf(`text: "%s"`, strings.ReplaceAll(v, `"`, `\"`))
-	case float64:
-		valueStr = fmt.Sprintf(`number: %g`, v)
-	case bool:
-		valueStr = fmt.Sprintf(`checked: %t`, v)
-	case []string:
-		var arrayItems []string
-		for _, item := range v {
-			arrayItems = append(arrayItems, fmt.Sprintf(`"%s"`, strings.ReplaceAll(item, `"`, `\"`)))
-		}
-		valueStr = fmt.Sprintf(`customFieldOptionIds: [%s]`, strings.Join(arrayItems, ", "))
-	default:
-		// Fallback to text
-		valueStr = fmt.Sprintf(`text: "%v"`, v)
-	}
-
-	return fmt.Sprintf(`
-		mutation SetTodoCustomField {
-			setTodoCustomField(input: {
-				todoId: "%s"
-				customFieldId: "%s"
-				%s
-			})
-		}
-	`, todoID, cfv.CustomFieldID, valueStr)
-}
 
 // executeEditTodo performs the main record update
 func executeEditTodo(client *common.Client, input UpdateRecordInput) (*UpdateRecordResponse, error) {
@@ -295,22 +260,6 @@ func executeSetTags(client *common.Client, todoID string, tagIds []string, tagTi
 }
 
 // executeSetCustomFields updates custom field values
-func executeSetCustomFields(client *common.Client, todoID string, customFields []common.CustomFieldValue) error {
-	if len(customFields) == 0 {
-		return nil
-	}
-
-	// Execute each custom field update separately
-	for _, cfv := range customFields {
-		mutation := buildCustomFieldMutation(todoID, cfv)
-		var response SetCustomFieldResponse
-		if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
-			return fmt.Errorf("failed to update custom field %s: %v", cfv.CustomFieldID, err)
-		}
-	}
-
-	return nil
-}
 
 // getProjectIDFromRecord retrieves project ID from a record
 func getProjectIDFromRecord(client *common.Client, todoID string) (string, error) {

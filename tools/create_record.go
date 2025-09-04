@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"strings"
@@ -21,16 +20,6 @@ type CreateTodoResponse struct {
 			ID    string `json:"id"`
 			Title string `json:"title"`
 		} `json:"todoList"`
-		CustomFieldValues []struct {
-			ID            string      `json:"id"`
-			CustomFieldID string      `json:"customFieldId"`
-			Value         interface{} `json:"value"`
-			CustomField   struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Type string `json:"type"`
-			} `json:"customField"`
-		} `json:"customFieldValues"`
 	} `json:"createTodo"`
 }
 
@@ -67,47 +56,6 @@ func parseCustomFieldValues(customFieldsStr string) ([]common.CustomFieldValue, 
 	return customFieldValues, nil
 }
 
-// buildCustomFieldValuesString builds the GraphQL custom field values string
-func buildCustomFieldValuesString(customFieldValues []common.CustomFieldValue) string {
-	if len(customFieldValues) == 0 {
-		return ""
-	}
-
-	var valueStrings []string
-
-	for _, cfv := range customFieldValues {
-		var valueStr string
-
-		switch v := cfv.Value.(type) {
-		case string:
-			valueStr = fmt.Sprintf(`"%s"`, strings.ReplaceAll(v, `"`, `\"`))
-		case float64:
-			valueStr = fmt.Sprintf(`%g`, v)
-		case bool:
-			valueStr = fmt.Sprintf(`%t`, v)
-		case []string:
-			var arrayItems []string
-			for _, item := range v {
-				arrayItems = append(arrayItems, fmt.Sprintf(`"%s"`, strings.ReplaceAll(item, `"`, `\"`)))
-			}
-			valueStr = fmt.Sprintf(`[%s]`, strings.Join(arrayItems, ", "))
-		default:
-			// Fallback to JSON marshaling
-			if jsonBytes, err := json.Marshal(v); err == nil {
-				valueStr = string(jsonBytes)
-			} else {
-				valueStr = fmt.Sprintf(`"%v"`, v)
-			}
-		}
-
-		valueStrings = append(valueStrings, fmt.Sprintf(`{
-			customFieldId: "%s"
-			value: %s
-		}`, cfv.CustomFieldID, valueStr))
-	}
-
-	return fmt.Sprintf(`customFields: [%s]`, strings.Join(valueStrings, ", "))
-}
 
 func RunCreateRecord(args []string) error {
 	fs := flag.NewFlagSet("create-record", flag.ExitOnError)
@@ -198,35 +146,7 @@ func RunCreateRecord(args []string) error {
 		assigneesField = fmt.Sprintf(`assigneeIds: [%s]`, strings.Join(assigneeStrings, ", "))
 	}
 
-	var customFieldValuesField string
-	if len(input.CustomFieldValues) > 0 {
-		customFieldValuesField = buildCustomFieldValuesString(input.CustomFieldValues)
-	}
-
-	// Determine response fields based on whether custom fields are requested
-	responseFields := `
-		id
-		title
-		position
-		todoList {
-			id
-			title
-		}`
-
-	if len(input.CustomFieldValues) > 0 {
-		responseFields += `
-		customFieldValues {
-			id
-			customFieldId
-			value
-			customField {
-				id
-				name
-				type
-			}
-		}`
-	}
-
+	// Create the basic mutation without custom fields
 	mutation := fmt.Sprintf(`
 		mutation CreateTodo {
 			createTodo(input: {
@@ -235,11 +155,17 @@ func RunCreateRecord(args []string) error {
 				%s
 				%s
 				%s
-				%s
-			}) {%s
+			}) {
+				id
+				title
+				position
+				todoList {
+					id
+					title
+				}
 			}
 		}
-	`, input.TodoListID, strings.ReplaceAll(input.Title, `"`, `\"`), descriptionField, placementField, assigneesField, customFieldValuesField, responseFields)
+	`, input.TodoListID, strings.ReplaceAll(input.Title, `"`, `\"`), descriptionField, placementField, assigneesField)
 
 	var response CreateTodoResponse
 	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
@@ -248,10 +174,17 @@ func RunCreateRecord(args []string) error {
 
 	record := response.CreateTodo
 
+	// Set custom fields if provided
+	if len(input.CustomFieldValues) > 0 {
+		if err := executeSetCustomFields(client, record.ID, input.CustomFieldValues); err != nil {
+			return fmt.Errorf("record created but failed to set custom fields: %v", err)
+		}
+	}
+
 	if *simple {
 		fmt.Printf("Created record: %s (ID: %s)\n", record.Title, record.ID)
 		if len(input.CustomFieldValues) > 0 {
-			fmt.Printf("Custom fields set: %d\n", len(record.CustomFieldValues))
+			fmt.Printf("Custom fields set: %d\n", len(input.CustomFieldValues))
 		}
 	} else {
 		fmt.Printf("=== Record Created Successfully ===\n")
@@ -260,11 +193,8 @@ func RunCreateRecord(args []string) error {
 		fmt.Printf("Position: %.0f\n", record.Position)
 		fmt.Printf("List: %s (%s)\n", record.TodoList.Title, record.TodoList.ID)
 
-		if len(record.CustomFieldValues) > 0 {
-			fmt.Printf("\n=== Custom Field Values ===\n")
-			for _, cfv := range record.CustomFieldValues {
-				fmt.Printf("%s (%s): %v\n", cfv.CustomField.Name, cfv.CustomField.Type, cfv.Value)
-			}
+		if len(input.CustomFieldValues) > 0 {
+			fmt.Printf("Custom fields set: %d\n", len(input.CustomFieldValues))
 		}
 	}
 

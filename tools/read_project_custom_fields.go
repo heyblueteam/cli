@@ -133,7 +133,7 @@ func RunReadProjectCustomFields(args []string) error {
 					if j > 0 {
 						fmt.Printf(", ")
 					}
-					fmt.Printf("%s", option.Title)
+					fmt.Printf("%s [%s]", option.Title, option.ID)
 					if option.Color != "" {
 						fmt.Printf(" (%s)", option.Color)
 					}
@@ -157,13 +157,13 @@ func RunReadProjectCustomFields(args []string) error {
 			
 			// Show options for SELECT fields
 			if (field.Type == "SELECT_SINGLE" || field.Type == "SELECT_MULTI") && len(field.Options) > 0 {
-				fmt.Printf("   Available Options:\n")
+				fmt.Printf("   Available Options (use Option ID or Title for record values):\n")
 				for _, option := range field.Options {
-					fmt.Printf("     - %s (ID: %s", option.Title, option.ID)
+					fmt.Printf("     - %s [%s]", option.Title, option.ID)
 					if option.Color != "" {
-						fmt.Printf(", Color: %s", option.Color)
+						fmt.Printf(" (%s)", option.Color)
 					}
-					fmt.Printf(")\n")
+					fmt.Printf("\n")
 				}
 			}
 			
