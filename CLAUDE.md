@@ -30,9 +30,9 @@ go run . read-project-records -project PROJECT_ID
 go run . read-list-records -list LIST_ID -simple
 go run . read-tags -project PROJECT_ID
 go run . read-project-custom-fields -project PROJECT_ID
-go run . list-custom-fields -project PROJECT_ID -simple
-go run . list-custom-fields -project PROJECT_ID -examples
-go run . list-custom-fields -project PROJECT_ID -format json
+go run . read-custom-fields -project PROJECT_ID -simple
+go run . read-custom-fields -project PROJECT_ID -examples
+go run . read-custom-fields -project PROJECT_ID -format json
 go run . read-records-count -project PROJECT_ID
 go run . read-records-count -project PROJECT_ID -done false
 
@@ -43,7 +43,7 @@ go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
 go run . create-custom-field -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
 go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
 go run . create-custom-field -name "Cost" -type "CURRENCY" -currency "USD"
-go run . add-custom-field-options -field FIELD_ID -options "High:red,Medium:yellow,Low:green"
+go run . create-custom-field-options -field FIELD_ID -options "High:red,Medium:yellow,Low:green"
 go run . create-record -list LIST_ID -title "Task Name" -description "Description" -simple
 go run . create-record -list LIST_ID -title "Task" -custom-fields "cf123:option_id_123,;cf456:42"
 go run . create-comment -record RECORD_ID -text "This is a comment" -project PROJECT_ID -simple
@@ -55,8 +55,8 @@ go run . update-record -record RECORD_ID -title "New Title" -description "Update
 go run . update-record -record RECORD_ID -move-to-list LIST_ID -assignees "user1,user2"
 go run . update-record -record RECORD_ID -custom-fields "cf123:Updated Value;cf456:42"
 go run . update-comment -comment COMMENT_ID -text "Updated comment text" -project PROJECT_ID -simple
-go run . edit-custom-field -field FIELD_ID -project PROJECT_ID -name "New Field Name" -description "Updated description"
-go run . edit-list -list LIST_ID -title "New List Name" -position 1000.0 -locked true
+go run . update-custom-field -field FIELD_ID -project PROJECT_ID -name "New Field Name" -description "Updated description"
+go run . update-list -list LIST_ID -title "New List Name" -position 1000.0 -locked true
 
 # DELETE operations - Remove data
 go run . delete-project -project PROJECT_ID -confirm
@@ -93,10 +93,10 @@ go run . read-records -project PROJECT_ID -custom-field "cf456:CONTAINS:urgent" 
 - `-stats`: Show numerical statistics (sum, average, min, max)
 - `-calc-fields`: Specify custom field IDs to calculate
 
-### Custom Fields Reference (`list-custom-fields`)
+### Custom Fields Reference (`read-custom-fields`)
 ```bash
-go run . list-custom-fields -project PROJECT_ID -simple
-go run . list-custom-fields -project PROJECT_ID -examples -format json
+go run . read-custom-fields -project PROJECT_ID -simple
+go run . read-custom-fields -project PROJECT_ID -examples -format json
 ```
 **Options**: `-simple`, `-examples`, `-format` (table, json, csv), `-page`, `-size`
 
@@ -120,7 +120,7 @@ For SELECT_SINGLE and SELECT_MULTI fields, MUST use Option IDs with trailing com
 
 **Get Option IDs**:
 1. `go run . read-project-custom-fields -project PROJECT_ID` - Shows: `Title [option_id] (color)`
-2. `go run . list-custom-fields -project PROJECT_ID -examples`
+2. `go run . read-custom-fields -project PROJECT_ID -examples`
 
 ### Comments
 ```bash

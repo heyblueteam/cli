@@ -26,7 +26,7 @@ func printUsage() {
 	fmt.Println("  read-records-count          Count records in a project")
 	fmt.Println("  read-tags                   List tags in a project")
 	fmt.Println("  read-project-custom-fields  List custom fields in a project")
-	fmt.Println("  list-custom-fields          Enhanced custom fields reference for record operations")
+	fmt.Println("  read-custom-fields          Enhanced custom fields reference for record operations")
 	fmt.Println()
 	fmt.Println("CREATE operations:")
 	fmt.Println("  create-project              Create a new project")
@@ -36,13 +36,14 @@ func printUsage() {
 	fmt.Println("  create-tags                 Create new tags")
 	fmt.Println("  create-record-tags          Add tags to a record")
 	fmt.Println("  create-custom-field         Create a custom field")
-	fmt.Println("  add-custom-field-options    Add options to existing custom fields")
+	fmt.Println("  create-custom-field-options Create options for existing custom fields")
 	fmt.Println()
 	fmt.Println("UPDATE operations:")
 	fmt.Println("  update-project              Update project settings")
 	fmt.Println("  update-record               Update a record/todo")
 	fmt.Println("  update-comment              Update a comment")
-	fmt.Println("  edit-custom-field           Edit custom field properties")
+	fmt.Println("  update-custom-field         Update custom field properties")
+	fmt.Println("  update-list                 Update list properties")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
@@ -94,8 +95,8 @@ func main() {
 		err = tools.RunReadTags(args)
 	case "read-project-custom-fields":
 		err = tools.RunReadProjectCustomFields(args)
-	case "list-custom-fields":
-		err = tools.RunListCustomFields(args)
+	case "read-custom-fields":
+		err = tools.RunReadCustomFields(args)
 	
 	// CREATE operations
 	case "create-project":
@@ -112,8 +113,8 @@ func main() {
 		err = tools.RunCreateRecordTags(args)
 	case "create-custom-field":
 		err = tools.RunCreateCustomField(args)
-	case "add-custom-field-options":
-		err = tools.RunAddCustomFieldOptions(args)
+	case "create-custom-field-options":
+		err = tools.RunCreateCustomFieldOptions(args)
 	
 	// UPDATE operations
 	case "update-project":
@@ -122,10 +123,10 @@ func main() {
 		err = tools.RunUpdateRecord(args)
 	case "update-comment":
 		err = tools.RunUpdateComment(args)
-	case "edit-custom-field":
-		err = tools.RunEditCustomField(args)
-	case "edit-list":
-		err = tools.RunEditList(args)
+	case "update-custom-field":
+		err = tools.RunUpdateCustomField(args)
+	case "update-list":
+		err = tools.RunUpdateList(args)
 	case "test-custom-fields":
 		err = tools.RunTestCustomFields(args)
 	

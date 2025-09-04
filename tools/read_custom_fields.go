@@ -8,8 +8,8 @@ import (
 	. "demo-builder/common"
 )
 
-// ListCustomFieldsResponse represents the response from the GraphQL query
-type ListCustomFieldsResponse struct {
+// ReadCustomFieldsResponse represents the response from the GraphQL query
+type ReadCustomFieldsResponse struct {
 	CustomFields struct {
 		Items    []CustomField  `json:"items"`
 		PageInfo OffsetPageInfo `json:"pageInfo"`
@@ -17,7 +17,7 @@ type ListCustomFieldsResponse struct {
 }
 
 // Build enhanced query to fetch custom fields with all details needed for record operations
-func buildListCustomFieldsQuery(projectID string, skip int, take int) string {
+func buildReadCustomFieldsQuery(projectID string, skip int, take int) string {
 	query := fmt.Sprintf(`query {
 		customFields(
 			filter: { projectId: "%s" }
@@ -151,8 +151,8 @@ func generateExampleValue(field CustomField) string {
 	}
 }
 
-func RunListCustomFields(args []string) error {
-	fs := flag.NewFlagSet("list-custom-fields", flag.ExitOnError)
+func RunReadCustomFields(args []string) error {
+	fs := flag.NewFlagSet("read-custom-fields", flag.ExitOnError)
 	projectID := fs.String("project", "", "Project ID or slug (required)")
 	page := fs.Int("page", 1, "Page number (default: 1)")
 	pageSize := fs.Int("size", 50, "Page size (default: 50)")
@@ -181,10 +181,10 @@ func RunListCustomFields(args []string) error {
 	take := *pageSize
 
 	// Build and execute query
-	query := buildListCustomFieldsQuery(*projectID, skip, take)
+	query := buildReadCustomFieldsQuery(*projectID, skip, take)
 
 	// Execute query
-	var response ListCustomFieldsResponse
+	var response ReadCustomFieldsResponse
 	if err := client.ExecuteQueryWithResult(query, nil, &response); err != nil {
 		return fmt.Errorf("failed to execute query: %v", err)
 	}

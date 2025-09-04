@@ -7,8 +7,8 @@ import (
 	"strconv"
 )
 
-// Edit list input
-type EditTodoListInput struct {
+// Update list input
+type UpdateTodoListInput struct {
 	TodoListID string   `json:"todoListId"`
 	Title      string   `json:"title,omitempty"`
 	Position   *float64 `json:"position,omitempty"`
@@ -24,12 +24,12 @@ type EditedTodoList struct {
 	IsLocked bool    `json:"isLocked"`
 }
 
-type EditTodoListResponse struct {
+type UpdateTodoListResponse struct {
 	EditTodoList EditedTodoList `json:"editTodoList"`
 }
 
-func RunEditList(args []string) error {
-	fs := flag.NewFlagSet("edit-list", flag.ExitOnError)
+func RunUpdateList(args []string) error {
+	fs := flag.NewFlagSet("update-list", flag.ExitOnError)
 	listID := fs.String("list", "", "List ID (required)")
 	projectID := fs.String("project", "", "Project ID (optional for context)")
 	title := fs.String("title", "", "New title for the list")
@@ -63,7 +63,7 @@ func RunEditList(args []string) error {
 	}
 
 	// Prepare input
-	input := EditTodoListInput{
+	input := UpdateTodoListInput{
 		TodoListID: *listID,
 	}
 
@@ -104,7 +104,7 @@ func RunEditList(args []string) error {
 		"input": input,
 	}
 
-	var response EditTodoListResponse
+	var response UpdateTodoListResponse
 	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
 		return fmt.Errorf("failed to edit list: %v", err)
 	}

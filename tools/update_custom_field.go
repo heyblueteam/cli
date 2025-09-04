@@ -8,8 +8,8 @@ import (
 	"demo-builder/common"
 )
 
-// EditCustomFieldInput for editing custom field properties
-type EditCustomFieldInput struct {
+// UpdateCustomFieldInput for updating custom field properties
+type UpdateCustomFieldInput struct {
 	CustomFieldID           string   `json:"customFieldId"`
 	Position                *float64 `json:"position,omitempty"`
 	Name                    string   `json:"name,omitempty"`
@@ -21,14 +21,14 @@ type EditCustomFieldInput struct {
 	SequenceStartingNumber  *int     `json:"sequenceStartingNumber,omitempty"`
 }
 
-// EditCustomFieldResponse represents the response from the edit mutation
-type EditCustomFieldResponse struct {
+// UpdateCustomFieldResponse represents the response from the update mutation
+type UpdateCustomFieldResponse struct {
 	EditCustomField common.CustomField `json:"editCustomField"`
 }
 
-// RunEditCustomField executes the edit custom field command
-func RunEditCustomField(args []string) error {
-	flagSet := flag.NewFlagSet("edit-custom-field", flag.ExitOnError)
+// RunUpdateCustomField executes the update custom field command
+func RunUpdateCustomField(args []string) error {
+	flagSet := flag.NewFlagSet("update-custom-field", flag.ExitOnError)
 	var (
 		customFieldID          = flagSet.String("field", "", "Custom field ID to edit (required)")
 		projectID              = flagSet.String("project", "", "Project ID or slug (required for authorization)")
@@ -69,7 +69,7 @@ func RunEditCustomField(args []string) error {
 	client.SetProjectID(*projectID)
 
 	// Build the input structure
-	input := EditCustomFieldInput{
+	input := UpdateCustomFieldInput{
 		CustomFieldID: *customFieldID,
 	}
 
@@ -146,7 +146,7 @@ func RunEditCustomField(args []string) error {
 		"input": input,
 	}
 
-	var result EditCustomFieldResponse
+	var result UpdateCustomFieldResponse
 	err = client.ExecuteQueryWithResult(mutation, variables, &result)
 	if err != nil {
 		return fmt.Errorf("failed to execute query: %v", err)

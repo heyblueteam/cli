@@ -19,9 +19,9 @@ type AddCustomFieldOptionsResponse struct {
 	CreateCustomFieldOptions []common.CustomFieldOption `json:"createCustomFieldOptions"`
 }
 
-// RunAddCustomFieldOptions executes the add custom field options command
-func RunAddCustomFieldOptions(args []string) error {
-	flagSet := flag.NewFlagSet("add-custom-field-options", flag.ExitOnError)
+// RunCreateCustomFieldOptions executes the create custom field options command
+func RunCreateCustomFieldOptions(args []string) error {
+	flagSet := flag.NewFlagSet("create-custom-field-options", flag.ExitOnError)
 	var (
 		customFieldID = flagSet.String("field", "", "Custom field ID to add options to (required)")
 		projectID     = flagSet.String("project", "", "Project ID or slug (optional - improves authorization)")
@@ -31,11 +31,11 @@ func RunAddCustomFieldOptions(args []string) error {
 	flagSet.Parse(args)
 
 	if *customFieldID == "" {
-		return fmt.Errorf("-field parameter is required. Usage: go run . add-custom-field-options -field FIELD_ID -options 'Option1:red,Option2:blue'")
+		return fmt.Errorf("-field parameter is required. Usage: go run . create-custom-field-options -field FIELD_ID -options 'Option1:red,Option2:blue'")
 	}
 
 	if *options == "" {
-		return fmt.Errorf("-options parameter is required. Usage: go run . add-custom-field-options -field FIELD_ID -options 'Option1:red,Option2:blue'")
+		return fmt.Errorf("-options parameter is required. Usage: go run . create-custom-field-options -field FIELD_ID -options 'Option1:red,Option2:blue'")
 	}
 
 	// Parse options string into CustomFieldOptionInput array
