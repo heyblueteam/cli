@@ -27,6 +27,9 @@ func printUsage() {
 	fmt.Println("  read-tags                   List tags in a project")
 	fmt.Println("  read-project-custom-fields  List custom fields in a project")
 	fmt.Println("  read-custom-fields          Enhanced custom fields reference for record operations")
+	fmt.Println("  read-automations            List automations in a project")
+	fmt.Println("  read-user-profiles          List user profiles in a company")
+	fmt.Println("  read-project-user-roles     List custom user roles in projects")
 	fmt.Println()
 	fmt.Println("CREATE operations:")
 	fmt.Println("  create-project              Create a new project")
@@ -37,6 +40,9 @@ func printUsage() {
 	fmt.Println("  create-record-tags          Add tags to a record")
 	fmt.Println("  create-custom-field         Create a custom field")
 	fmt.Println("  create-custom-field-options Create options for existing custom fields")
+	fmt.Println("  create-automation           Create a new automation")
+	fmt.Println("  create-automation-multi     Create automation with multiple actions")
+	fmt.Println("  invite-user                 Invite a user to the company or project")
 	fmt.Println()
 	fmt.Println("UPDATE operations:")
 	fmt.Println("  update-project              Update project settings")
@@ -44,12 +50,15 @@ func printUsage() {
 	fmt.Println("  update-comment              Update a comment")
 	fmt.Println("  update-custom-field         Update custom field properties")
 	fmt.Println("  update-list                 Update list properties")
+	fmt.Println("  update-automation           Update an existing automation")
+	fmt.Println("  update-automation-multi     Update automation with multiple actions")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
 	fmt.Println("  delete-record               Delete a record/todo")
 	fmt.Println("  delete-custom-field         Delete a custom field")
 	fmt.Println("  delete-custom-field-options Delete options from custom fields")
+	fmt.Println("  delete-automation           Delete an automation")
 	fmt.Println()
 	fmt.Println("Testing:")
 	fmt.Println("  e2e                         Run end-to-end tests")
@@ -97,6 +106,12 @@ func main() {
 		err = tools.RunReadProjectCustomFields(args)
 	case "read-custom-fields":
 		err = tools.RunReadCustomFields(args)
+	case "read-automations":
+		err = tools.RunReadAutomations(args)
+	case "read-user-profiles":
+		err = tools.RunReadUserProfiles(args)
+	case "read-project-user-roles":
+		err = tools.RunReadProjectUserRoles(args)
 	
 	// CREATE operations
 	case "create-project":
@@ -115,6 +130,12 @@ func main() {
 		err = tools.RunCreateCustomField(args)
 	case "create-custom-field-options":
 		err = tools.RunCreateCustomFieldOptions(args)
+	case "create-automation":
+		err = tools.RunCreateAutomation(args)
+	case "create-automation-multi":
+		err = tools.RunCreateAutomationMulti(args)
+	case "invite-user":
+		err = tools.RunInviteUser(args)
 	
 	// UPDATE operations
 	case "update-project":
@@ -127,6 +148,10 @@ func main() {
 		err = tools.RunUpdateCustomField(args)
 	case "update-list":
 		err = tools.RunUpdateList(args)
+	case "update-automation":
+		err = tools.RunUpdateAutomation(args)
+	case "update-automation-multi":
+		err = tools.RunUpdateAutomationMulti(args)
 	case "test-custom-fields":
 		err = tools.RunTestCustomFields(args)
 	
@@ -141,6 +166,8 @@ func main() {
 		err = tools.RunDeleteCustomFieldOptions(args)
 	case "delete-list":
 		err = tools.RunDeleteList(args)
+	case "delete-automation":
+		err = tools.RunDeleteAutomation(args)
 	
 	// Testing
 	case "e2e":
