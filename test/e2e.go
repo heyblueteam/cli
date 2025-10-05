@@ -1010,6 +1010,30 @@ func testUpdateRecord(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Move record between lists
+func testMoveRecord(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 || len(ctx.listIDs) < 2 {
+		fmt.Println("⚠️  Insufficient records/lists for move test")
+		return true
+	}
+
+	// Move record from list[1] back to list[0]
+	_, err := runCommand("move-record",
+		"-record", ctx.recordIDs[0],
+		"-list", ctx.listIDs[0],
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Move record between lists", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Moved record %s to list %s\n", ctx.recordIDs[0], ctx.listIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
 // Test: Read user profiles (company-wide)
 func testReadUserProfiles(ctx *TestContext) bool {
 	output, err := runCommand("read-user-profiles", "-simple")
@@ -1278,11 +1302,12 @@ func main() {
 	testQueryRecords(ctx)
 	testCountRecords(ctx)
 
-	// Comments and Updates  
+	// Comments and Updates
 	fmt.Println("\n💬 Comments and Updates:")
 	testCreateComment(ctx)
 	testUpdateComment(ctx)
 	testUpdateRecord(ctx)
+	testMoveRecord(ctx)
 
 	// User Management
 	fmt.Println("\n👥 User Management:")

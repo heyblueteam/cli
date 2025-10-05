@@ -76,7 +76,7 @@ go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -active
 go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -trigger-type "TODO_MARKED_AS_COMPLETE" -action-type "SEND_EMAIL"
 go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -email-to "new@example.com" -email-subject "Updated subject"
 go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID -action1-type "SEND_EMAIL" -action1-email-to "manager@company.com" -action2-type "ADD_COLOR" -action2-color "#00ff00"
-go run . move-record -record RECORD_ID -list LIST_ID
+go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID
 
 # DELETE operations - Remove data
 go run . delete-project -project PROJECT_ID -confirm
@@ -370,27 +370,34 @@ go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confir
 
 ### Record Moving (`move-record`) - NEW
 ```bash
-# Move record to different list in same or different project
-go run . move-record -record RECORD_ID -list LIST_ID
+# Move record to different list in same project
+go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID
+
+# Move record to different project (cross-project move)
+go run . move-record -record RECORD_ID -list LIST_ID -project SOURCE_PROJECT_ID
 
 # Move record with simple output
-go run . move-record -record RECORD_ID -list LIST_ID -simple
+go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID -simple
 ```
 
-**Required Parameters**: `-record` (record ID), `-list` (destination list ID)
+**Required Parameters**:
+- `-record` (record ID to move)
+- `-list` (destination list ID)
+- `-project` (source project ID where record currently exists)
 
 **Key Features**:
 - **Cross-Project Moves**: Automatically handles moving records between different projects
 - **Same-Project Moves**: Move records between lists within the same project
 - **Position Management**: Record position is automatically set in destination list
-- **Project Detection**: Automatically detects destination project from list
+- **Source Project Context**: Uses source project ID for authorization header
 - **Simple Interface**: Clean, focused command for just moving records
 
 **Implementation Details**:
-- Uses the `editTodo` mutation with just `todoId` and `todoListId` parameters
+- Uses the `updateTodos` mutation with `todoListId` and `filter.todoIds` parameters
 - More focused than `update-record -list` command - dedicated to moving operations
-- Returns updated record information including destination list and project details
-- No project context required - system handles cross-project authorization automatically
+- Project header is set to the source project ID (where record currently is)
+- Cross-project moves work automatically - mutation detects destination project from list ID
+- Returns boolean success status
 
 ### User Invitations (`invite-user`) - NEW
 ```bash
