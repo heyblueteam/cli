@@ -52,6 +52,7 @@ func printUsage() {
 	fmt.Println("  update-list                 Update list properties")
 	fmt.Println("  update-automation           Update an existing automation")
 	fmt.Println("  update-automation-multi     Update automation with multiple actions")
+	fmt.Println("  move-record                 Move a record to a different list/project")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
@@ -152,6 +153,8 @@ func main() {
 		err = tools.RunUpdateAutomation(args)
 	case "update-automation-multi":
 		err = tools.RunUpdateAutomationMulti(args)
+	case "move-record":
+		err = tools.RunMoveRecord(args)
 	case "test-custom-fields":
 		err = tools.RunTestCustomFields(args)
 	
