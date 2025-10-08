@@ -17,6 +17,8 @@ type TestContext struct {
 	tagIDs         []string
 	customFieldIDs []string
 	recordIDs      []string
+	automationIDs  []string
+	commentIDs     []string
 	testsFailed    int
 	testsPassed    int
 }
@@ -933,6 +935,315 @@ func testDeleteProject(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Create comment on record
+func testCreateComment(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 {
+		fmt.Println("❌ No records available for creating comments")
+		ctx.testsFailed++
+		return false
+	}
+
+	output, err := runCommand("create-comment",
+		"-record", ctx.recordIDs[0],
+		"-project", ctx.projectID,
+		"-text", "This is a test comment for e2e testing",
+		"-simple")
+
+	if !printTestResult("Create comment", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Extract comment ID from output
+	if id := extractID(output); id != "" {
+		ctx.commentIDs = append(ctx.commentIDs, id)
+	}
+
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update comment
+func testUpdateComment(ctx *TestContext) bool {
+	if len(ctx.commentIDs) == 0 {
+		fmt.Println("⚠️  No comments available for update test")
+		return true
+	}
+
+	_, err := runCommand("update-comment",
+		"-comment", ctx.commentIDs[0],
+		"-project", ctx.projectID,
+		"-text", "Updated comment text for e2e testing",
+		"-simple")
+
+	if !printTestResult("Update comment", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated comment: %s\n", ctx.commentIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update record properties
+func testUpdateRecord(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 || len(ctx.listIDs) < 2 {
+		fmt.Println("⚠️  Insufficient records/lists for update test")
+		return true
+	}
+
+	_, err := runCommand("update-record",
+		"-record", ctx.recordIDs[0],
+		"-title", "Updated Task Title",
+		"-description", "Updated task description from e2e test",
+		"-list", ctx.listIDs[1],
+		"-simple")
+
+	if !printTestResult("Update record properties", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated record: %s\n", ctx.recordIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Move record between lists
+func testMoveRecord(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 || len(ctx.listIDs) < 2 {
+		fmt.Println("⚠️  Insufficient records/lists for move test")
+		return true
+	}
+
+	// Move record from list[1] back to list[0]
+	_, err := runCommand("move-record",
+		"-record", ctx.recordIDs[0],
+		"-list", ctx.listIDs[0],
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Move record between lists", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Moved record %s to list %s\n", ctx.recordIDs[0], ctx.listIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read user profiles (company-wide)
+func testReadUserProfiles(ctx *TestContext) bool {
+	output, err := runCommand("read-user-profiles", "-simple")
+
+	if !printTestResult("Read user profiles (company-wide)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Count users in output
+	userCount := strings.Count(output, "Email:")
+	fmt.Printf("   Found %d users in company\n", userCount)
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read project user roles
+func testReadProjectUserRoles(ctx *TestContext) bool {
+	output, err := runCommand("read-project-user-roles",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read project user roles", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Count roles in output
+	roleCount := strings.Count(output, "Role ID:")
+	fmt.Printf("   Found %d custom roles in project\n", roleCount)
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read automations (should be empty initially)
+func testReadAutomations(ctx *TestContext) bool {
+	output, err := runCommand("read-automations",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read automations (initial)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	automationCount := strings.Count(output, "ID:")
+	fmt.Printf("   Found %d automations in project\n", automationCount)
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Create single automation
+func testCreateAutomation(ctx *TestContext) bool {
+	if len(ctx.listIDs) == 0 || len(ctx.tagIDs) == 0 {
+		fmt.Println("❌ Need lists and tags for automation test")
+		ctx.testsFailed++
+		return false
+	}
+
+	output, err := runCommand("create-automation",
+		"-project", ctx.projectID,
+		"-trigger-type", "TODO_CREATED",
+		"-trigger-todo-list", ctx.listIDs[0],
+		"-action-type", "ADD_TAG",
+		"-action-tags", ctx.tagIDs[0],
+		"-simple")
+
+	if !printTestResult("Create single automation (TODO_CREATED -> ADD_TAG)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Extract automation ID from output
+	if id := extractID(output); id != "" {
+		ctx.automationIDs = append(ctx.automationIDs, id)
+	}
+
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Create multi-action automation
+func testCreateAutomationMulti(ctx *TestContext) bool {
+	if len(ctx.listIDs) == 0 || len(ctx.tagIDs) < 2 {
+		fmt.Println("❌ Need lists and multiple tags for multi-automation test")
+		ctx.testsFailed++
+		return false
+	}
+
+	output, err := runCommand("create-automation-multi",
+		"-project", ctx.projectID,
+		"-trigger-type", "TODO_MARKED_AS_COMPLETE",
+		"-trigger-todo-list", ctx.listIDs[0],
+		"-action1-type", "ADD_TAG",
+		"-action1-tags", ctx.tagIDs[1],
+		"-action2-type", "ADD_COLOR",
+		"-action2-color", "#00ff00",
+		"-simple")
+
+	if !printTestResult("Create multi-action automation (TODO_COMPLETE -> ADD_TAG + ADD_COLOR)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Extract automation ID from output
+	if id := extractID(output); id != "" {
+		ctx.automationIDs = append(ctx.automationIDs, id)
+	}
+
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update automation status
+func testUpdateAutomation(ctx *TestContext) bool {
+	if len(ctx.automationIDs) == 0 {
+		fmt.Println("⚠️  No automations available for update test")
+		return true
+	}
+
+	_, err := runCommand("update-automation",
+		"-automation", ctx.automationIDs[0],
+		"-project", ctx.projectID,
+		"-active", "false",
+		"-simple")
+
+	if !printTestResult("Update automation (disable)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Disabled automation: %s\n", ctx.automationIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update multi-action automation
+func testUpdateAutomationMulti(ctx *TestContext) bool {
+	if len(ctx.automationIDs) < 2 {
+		fmt.Println("⚠️  Not enough automations for multi-update test")
+		return true
+	}
+
+	_, err := runCommand("update-automation-multi",
+		"-automation", ctx.automationIDs[1],
+		"-project", ctx.projectID,
+		"-active", "true",
+		"-action1-type", "ADD_COLOR",
+		"-action1-color", "#ff0000",
+		"-simple")
+
+	if !printTestResult("Update multi-action automation", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated multi-action automation: %s\n", ctx.automationIDs[1])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Read automations after creation
+func testReadAutomationsAfterCreation(ctx *TestContext) bool {
+	output, err := runCommand("read-automations",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read automations (after creation)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	automationCount := strings.Count(output, "ID:")
+	fmt.Printf("   Found %d automations after creation\n", automationCount)
+	
+	// Should have at least 2 automations now
+	if automationCount < 2 {
+		fmt.Printf("   ⚠️  Expected at least 2 automations, found %d\n", automationCount)
+	}
+	
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Delete automation
+func testDeleteAutomation(ctx *TestContext) bool {
+	if len(ctx.automationIDs) == 0 {
+		fmt.Println("⚠️  No automations available for deletion test")
+		return true
+	}
+
+	// Delete the first automation
+	automationToDelete := ctx.automationIDs[0]
+
+	_, err := runCommand("delete-automation",
+		"-automation", automationToDelete,
+		"-project", ctx.projectID,
+		"-confirm")
+
+	if !printTestResult("Delete automation", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted automation: %s\n", automationToDelete)
+	ctx.automationIDs = ctx.automationIDs[1:]
+	ctx.testsPassed++
+	return true
+}
+
 // Helper function to get minimum of two ints
 func min(a, b int) int {
 	if a < b {
@@ -990,6 +1301,31 @@ func main() {
 	testReadProjectTodos(ctx)
 	testQueryRecords(ctx)
 	testCountRecords(ctx)
+
+	// Comments and Updates
+	fmt.Println("\n💬 Comments and Updates:")
+	testCreateComment(ctx)
+	testUpdateComment(ctx)
+	testUpdateRecord(ctx)
+	testMoveRecord(ctx)
+
+	// User Management
+	fmt.Println("\n👥 User Management:")
+	testReadUserProfiles(ctx)
+	testReadProjectUserRoles(ctx)
+
+	// Automation Operations
+	fmt.Println("\n🤖 Automation Operations:")
+	testReadAutomations(ctx)
+	testCreateAutomation(ctx)
+	testCreateAutomationMulti(ctx)
+	testUpdateAutomation(ctx)
+	testUpdateAutomationMulti(ctx)
+	testReadAutomationsAfterCreation(ctx)
+	testDeleteAutomation(ctx)
+
+	// Cleanup (Record deletion)
+	fmt.Println("\n🗑️  Record Cleanup:")
 	testDeleteRecord(ctx)
 
 	// Cleanup
