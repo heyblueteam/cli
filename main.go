@@ -27,6 +27,7 @@ func printUsage() {
 	fmt.Println("  read-tags                   List tags in a project")
 	fmt.Println("  read-project-custom-fields  List custom fields in a project")
 	fmt.Println("  read-custom-fields          Enhanced custom fields reference for record operations")
+	fmt.Println("  read-field-groups           View custom field groups/folders organization")
 	fmt.Println()
 	fmt.Println("CREATE operations:")
 	fmt.Println("  create-project              Create a new project")
@@ -44,6 +45,7 @@ func printUsage() {
 	fmt.Println("  update-comment              Update a comment")
 	fmt.Println("  update-custom-field         Update custom field properties")
 	fmt.Println("  update-list                 Update list properties")
+	fmt.Println("  manage-field-groups         Manage custom field groups (create/delete/rename/move)")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
@@ -97,7 +99,9 @@ func main() {
 		err = tools.RunReadProjectCustomFields(args)
 	case "read-custom-fields":
 		err = tools.RunReadCustomFields(args)
-	
+	case "read-field-groups":
+		err = tools.RunReadCustomFieldGroups(args)
+
 	// CREATE operations
 	case "create-project":
 		err = tools.RunCreateProject(args)
@@ -129,7 +133,9 @@ func main() {
 		err = tools.RunUpdateList(args)
 	case "test-custom-fields":
 		err = tools.RunTestCustomFields(args)
-	
+	case "manage-field-groups":
+		err = tools.ManageCustomFieldGroups(args)
+
 	// DELETE operations
 	case "delete-project":
 		err = tools.RunDeleteProject(args)

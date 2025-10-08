@@ -44,6 +44,7 @@ type Project struct {
 	Position                float64          `json:"position,omitempty"`
 	IsTemplate              bool             `json:"isTemplate,omitempty"`
 	Features                []ProjectFeature `json:"features,omitempty"`
+	TodoFields              []TodoField      `json:"todoFields,omitempty"`
 }
 
 // ProjectFeature represents a project feature toggle
@@ -56,6 +57,24 @@ type ProjectFeature struct {
 type ProjectFeatureInput struct {
 	Type    string `json:"type"`
 	Enabled bool   `json:"enabled"`
+}
+
+// TodoField represents a field configuration in a project (includes custom field groups)
+type TodoField struct {
+	Type          string       `json:"type"`           // TodoFieldType enum (CUSTOM_FIELD, CUSTOM_FIELD_GROUP, etc.)
+	CustomFieldID *string      `json:"customFieldId"`  // Group ID or field ID
+	Name          *string      `json:"name,omitempty"` // Group name (for CUSTOM_FIELD_GROUP)
+	Color         *string      `json:"color,omitempty"` // Group color (for CUSTOM_FIELD_GROUP)
+	TodoFields    []TodoField  `json:"todoFields,omitempty"` // Nested fields (for CUSTOM_FIELD_GROUP)
+}
+
+// TodoFieldInput for mutation input
+type TodoFieldInput struct {
+	Type          string            `json:"type"`
+	CustomFieldID *string           `json:"customFieldId,omitempty"`
+	Name          *string           `json:"name,omitempty"`
+	Color         *string           `json:"color,omitempty"`
+	TodoFields    []TodoFieldInput  `json:"todoFields,omitempty"`
 }
 
 // TodoList represents a todo list with all possible fields
