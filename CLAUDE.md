@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Go module for building demo projects using the Blue GraphQL API. It provides a unified CLI with multiple commands for managing projects, lists, records, tags, and custom fields.
+This is a CLI tool for interacting with the Blue GraphQL API. It provides a comprehensive set of commands for managing projects, lists, records, tags, custom fields, automations, and more.
 
 ## Development Commands
 
@@ -45,7 +45,7 @@ go run . read-project-user-roles -project PROJECT_ID -simple
 go run . read-project-user-roles -projects "PROJECT_ID1,PROJECT_ID2" -format json
 
 # CREATE operations - Add new data
-go run . create-project -name "Demo" -color blue -icon rocket -category ENGINEERING
+go run . create-project -name "Project Name" -color blue -icon rocket -category ENGINEERING
 go run . create-list -project PROJECT_ID -names "To Do,In Progress,Done"
 go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
 go run . create-custom-field -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
