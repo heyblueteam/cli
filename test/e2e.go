@@ -634,6 +634,91 @@ func testUpdateCustomField(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Delete custom field options
+func testDeleteCustomFieldOptions(ctx *TestContext) bool {
+	if len(ctx.customFieldIDs) == 0 {
+		fmt.Println("⚠️  No custom fields available for delete options test")
+		return true
+	}
+
+	// Delete options from the first SELECT_SINGLE field (Priority field)
+	// First, we need to read the field to get option IDs
+	output, err := runCommand("read-project-custom-fields",
+		"-project", ctx.projectID)
+
+	if err != nil {
+		fmt.Printf("⚠️  Could not read custom fields to get option IDs: %v\n", err)
+		return true
+	}
+
+	// Extract first two option IDs from the output
+	// Look for lines like "Critical [option_id] (purple)"
+	var optionIDs []string
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "[cm") && strings.Contains(line, "]") {
+			start := strings.Index(line, "[")
+			end := strings.Index(line, "]")
+			if start != -1 && end != -1 && end > start {
+				optionID := line[start+1 : end]
+				optionIDs = append(optionIDs, optionID)
+				if len(optionIDs) >= 2 {
+					break
+				}
+			}
+		}
+	}
+
+	if len(optionIDs) < 2 {
+		fmt.Printf("⚠️  Could not find enough option IDs to delete (found %d)\n", len(optionIDs))
+		return true
+	}
+
+	// Delete the first two options (Critical and Blocked that we added)
+	optionIDsStr := strings.Join(optionIDs[:2], ",")
+	_, err = runCommand("delete-custom-field-options",
+		"-field", ctx.customFieldIDs[0],
+		"-project", ctx.projectID,
+		"-option-ids", optionIDsStr,
+		"-confirm")
+
+	if !printTestResult("Delete custom field options", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted %d options from custom field: %s\n", 2, ctx.customFieldIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Delete custom field
+func testDeleteCustomField(ctx *TestContext) bool {
+	if len(ctx.customFieldIDs) < 5 {
+		fmt.Println("⚠️  Not enough custom fields available for delete test")
+		return true
+	}
+
+	// Delete the 5th custom field (TEXT_MULTI field - Long Description)
+	// We don't delete the first few fields in case they're being used elsewhere
+	fieldToDelete := ctx.customFieldIDs[4]
+
+	_, err := runCommand("delete-custom-field",
+		"-field", fieldToDelete,
+		"-project", ctx.projectID,
+		"-confirm",
+		"-simple")
+
+	if !printTestResult("Delete custom field", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted custom field: %s\n", fieldToDelete)
+	ctx.testsPassed++
+	return true
+}
+
 // Test: Update list properties
 func testUpdateList(ctx *TestContext) bool {
 	if len(ctx.listIDs) == 0 {
@@ -1042,6 +1127,34 @@ func testReadProjectTodos(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Read single record by ID
+func testReadSingleRecord(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 {
+		fmt.Println("⚠️  No records available for single record read test")
+		return true
+	}
+
+	output, err := runCommand("read-record",
+		"-record", ctx.recordIDs[0],
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read single record by ID", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Check if output contains the record details
+	if strings.Contains(output, "ID:") && strings.Contains(output, ctx.recordIDs[0]) {
+		fmt.Printf("   Successfully read record: %s\n", ctx.recordIDs[0])
+	} else {
+		fmt.Printf("   ⚠️  Warning: Record details not found in output\n")
+	}
+
+	ctx.testsPassed++
+	return true
+}
+
 // Test: Query records with filters
 func testQueryRecords(ctx *TestContext) bool {
 	output, err := runCommand("read-records",
@@ -1104,6 +1217,31 @@ func testDeleteRecord(ctx *TestContext) bool {
 
 	fmt.Printf("   Deleted record: %s\n", recordToDelete)
 	ctx.recordIDs = ctx.recordIDs[:len(ctx.recordIDs)-1]
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Delete list
+func testDeleteList(ctx *TestContext) bool {
+	if len(ctx.listIDs) < 3 {
+		fmt.Println("⚠️  Not enough lists available for delete test")
+		return true
+	}
+
+	// Delete the third list (Done list - should be empty or have fewer records)
+	listToDelete := ctx.listIDs[2]
+
+	_, err := runCommand("delete-list",
+		"-project", ctx.projectID,
+		"-list", listToDelete,
+		"-confirm")
+
+	if !printTestResult("Delete list", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted list: %s\n", listToDelete)
 	ctx.testsPassed++
 	return true
 }
@@ -1490,6 +1628,8 @@ func main() {
 	testCreateCustomFields(ctx)
 	testCreateCustomFieldOptions(ctx)
 	testUpdateCustomField(ctx)
+	testDeleteCustomFieldOptions(ctx)
+	testDeleteCustomField(ctx)
 	testReadCustomFields(ctx)
 	testReadCustomFieldsReference(ctx)
 	testReadCustomFieldsExamples(ctx)
@@ -1512,6 +1652,7 @@ func main() {
 	testAddTagsToRecord(ctx)
 	testReadTodosFromList(ctx)
 	testReadProjectTodos(ctx)
+	testReadSingleRecord(ctx)
 	testQueryRecords(ctx)
 	testCountRecords(ctx)
 
@@ -1537,12 +1678,13 @@ func main() {
 	testReadAutomationsAfterCreation(ctx)
 	testDeleteAutomation(ctx)
 
-	// Cleanup (Record deletion)
-	fmt.Println("\n🗑️  Record Cleanup:")
+	// Cleanup (Record and List deletion)
+	fmt.Println("\n🗑️  Cleanup Operations:")
 	testDeleteRecord(ctx)
+	testDeleteList(ctx)
 
-	// Cleanup
-	fmt.Println("\n🧹 Cleanup:")
+	// Final Cleanup
+	fmt.Println("\n🧹 Final Cleanup:")
 	testDeleteProject(ctx)
 
 	// Print summary
