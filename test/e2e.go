@@ -1593,7 +1593,7 @@ func min(a, b int) int {
 }
 
 func main() {
-	fmt.Println("🚀 Starting End-to-End Tests for Demo Builder")
+	fmt.Println("🚀 Starting End-to-End Tests for Blue CLI")
 	fmt.Println("=" + strings.Repeat("=", 50))
 
 	// Create test context

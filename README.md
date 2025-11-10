@@ -1,6 +1,6 @@
-# Blue Demo Builder
+# Blue CLI
 
-A collection of Go scripts for interacting with the Blue GraphQL API to create demo projects programmatically.
+A command-line interface tool for interacting with the Blue GraphQL API to manage projects, records, custom fields, and more.
 
 ## 🚀 Quick Start
 
@@ -14,14 +14,18 @@ A collection of Go scripts for interacting with the Blue GraphQL API to create d
    ```bash
    go mod tidy
    ```
-3. Ensure `.env` file exists with your credentials (see Configuration section)
+3. Copy `.env.example` to `.env` and fill in your credentials:
+   ```bash
+   cp .env.example .env
+   # Then edit .env with your actual credentials
+   ```
 
 <!-- ─────────────────────────────────────────────────────────────── -->
 <!--                                                                -->
-<!--                📋   AVAILABLE SCRIPTS   📋                      -->
+<!--                📋   AVAILABLE COMMANDS   📋                     -->
 <!--                                                                -->
-<!--  Use the scripts below to interact with the Blue API!           -->
-<!--  Each script is designed for a specific demo-building task.     -->
+<!--  Use the commands below to interact with the Blue API!          -->
+<!--  Each command is designed for a specific task.                  -->
 <!--                                                                -->
 <!-- ─────────────────────────────────────────────────────────────── -->
 
@@ -469,8 +473,18 @@ go run . delete-project -project "my-demo-project" -confirm
 
 ## 🔧 Configuration
 
-Create a `.env` file in the demo-builder directory with the following variables:
+The CLI requires a `.env` file with your Blue API credentials.
 
+### Quick Setup
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and add your credentials
+# See below for how to get each credential
+```
+
+### Configuration Variables
 ```env
 # Blue API Configuration
 API_URL=https://api.blue.cc/graphql
@@ -480,9 +494,10 @@ COMPANY_ID=your_company_slug
 ```
 
 ### Getting Your Credentials
-1. **Personal Access Token**: Generate from Blue settings
-2. **Client ID**: Found in your API settings
-3. **Company ID**: Your company's slug (e.g., "heyblueteam")
+1. **Personal Access Token**: Generate from Blue settings → API & Integrations → Personal Access Tokens
+2. **Client ID**: Found in Blue settings → API & Integrations
+3. **Company ID**: Your company's slug (the part before `.blue.cc` in your URL)
+   - Example: If your URL is `https://acme.blue.cc`, use `acme`
 
 ## 🔧 Installation
 
@@ -536,9 +551,9 @@ go version
 ## 📁 Project Structure
 
 ```
-demo-builder/
+cli/
 ├── .env                          # Your API credentials (git ignored)
-├── .gitignore                    # Git ignore file  
+├── .gitignore                    # Git ignore file
 ├── go.mod                        # Go module file
 ├── go.sum                        # Go dependencies
 ├── main.go                       # Main entry point with command router
@@ -573,14 +588,14 @@ demo-builder/
 
 ## 🎯 Example Workflow
 
-Here's a complete example of creating a demo project:
+Here's a complete example of creating and managing a project:
 
 ```bash
 # 1. List existing projects
 go run . read-projects -simple
 
 # 2. Create a new project
-go run . create-project -name "Q1 Sprint Demo" -color blue -icon rocket
+go run . create-project -name "Q1 Sprint Planning" -color blue -icon rocket
 
 # 3. Get the project ID from the output, then create lists
 go run . create-list -project PROJECT_ID -names "Backlog,To Do,In Progress,Done"
@@ -622,7 +637,7 @@ go run . read-records-count -project PROJECT_ID
 ## 🧪 Testing
 
 ### End-to-End Test Suite (`e2e`)
-A comprehensive test suite that validates all 17 tool files by executing them in sequence.
+A comprehensive test suite that validates all CLI commands by executing them in sequence.
 
 ```bash
 # Run the complete end-to-end test
@@ -647,7 +662,7 @@ go run . e2e
 
 **Example output:**
 ```
-🚀 Starting End-to-End Tests for Demo Builder
+🚀 Starting End-to-End Tests for Blue CLI
 ===================================================
 
 📋 Running Tests:
@@ -703,7 +718,7 @@ go run . e2e
 
 
 ## 🤝 Contributing
-When adding new scripts:
+When adding new commands:
 1. Use the centralized auth for all API calls
 2. Follow the existing command-line flag patterns
 3. Use `client.SetProjectID()` for operations requiring project context
@@ -711,7 +726,7 @@ When adding new scripts:
 5. Update this README with usage examples
 
 ### Project Context Pattern
-For scripts that operate within a specific project:
+For commands that operate within a specific project:
 
 ```go
 // Create client
@@ -726,4 +741,4 @@ client.SetProjectID(projectID)
 This automatically adds the `X-Bloo-Project-Id` header to requests, enabling project-scoped operations like tag creation.
 
 ## 📝 License
-Internal use only for Blue team demonstrations.
+Internal use only for Blue team.
