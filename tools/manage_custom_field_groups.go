@@ -2,7 +2,7 @@ package tools
 
 import (
 	"crypto/rand"
-	"demo-builder/common"
+	"cli/common"
 	"encoding/hex"
 	"flag"
 	"fmt"

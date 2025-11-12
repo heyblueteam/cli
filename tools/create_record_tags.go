@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-	"demo-builder/common"
+	"cli/common"
 )
 
 func RunCreateRecordTags(args []string) error {

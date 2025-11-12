@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // UpdateCustomFieldInput for updating custom field properties

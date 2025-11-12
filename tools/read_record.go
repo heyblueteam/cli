@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CustomFieldValue represents a custom field value in record details

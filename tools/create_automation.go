@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "demo-builder/common"
+	. "cli/common"
 )
 
 // Response structures for automation creation

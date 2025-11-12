@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CountResponse represents the response from the GraphQL query

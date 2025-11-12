@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CustomField, Project, and CustomFieldOption are already defined in common/types.go

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // ProjectUserRole represents a custom user role in a project

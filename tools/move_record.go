@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // MoveRecordInput represents the input for moving a record

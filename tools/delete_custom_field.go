@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // DeleteCustomFieldResponse represents the response from the delete mutation

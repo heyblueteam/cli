@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "demo-builder/common"
+	. "cli/common"
 )
 
 // Enhanced multi-action automation update

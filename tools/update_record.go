@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // UpdateRecordInput combines all possible update operations

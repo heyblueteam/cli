@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // List structures - TodoList is already in common/types.go

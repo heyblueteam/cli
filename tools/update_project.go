@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"demo-builder/common"
+	"cli/common"
 	"flag"
 	"fmt"
 	"log"

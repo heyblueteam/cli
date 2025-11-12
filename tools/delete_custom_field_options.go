@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // DeleteCustomFieldOptionResponse represents the response from the delete mutation

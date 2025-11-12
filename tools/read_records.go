@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // Custom field filter structure

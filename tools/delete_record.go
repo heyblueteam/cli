@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // RunDeleteRecord deletes a record/todo by ID

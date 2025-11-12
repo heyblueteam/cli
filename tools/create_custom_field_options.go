@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // AddCustomFieldOptionsInput for adding options to existing custom fields

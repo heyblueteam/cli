@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CompanyInfo holds company display information

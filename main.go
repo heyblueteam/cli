@@ -5,11 +5,11 @@ import (
 	"os"
 	"os/exec"
 	
-	"demo-builder/tools"
+	"cli/tools"
 )
 
 func printUsage() {
-	fmt.Println("Blue Demo Builder - CLI Tool")
+	fmt.Println("Blue CLI Tool")
 	fmt.Println()
 	fmt.Println("Usage: go run . <command> [flags]")
 	fmt.Println()

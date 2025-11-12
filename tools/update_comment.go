@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	. "demo-builder/common"
+	. "cli/common"
 )
 
 // EditCommentInput represents the input for editing a comment

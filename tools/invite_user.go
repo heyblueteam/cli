@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // RunInviteUser invites a user to the company or project with specified role

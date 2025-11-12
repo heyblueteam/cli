@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CustomFieldTestResponse structure

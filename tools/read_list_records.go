@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // User, Tag, TodoList, and Record are already defined in common/types.go

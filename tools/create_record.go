@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"demo-builder/common"
+	"cli/common"
 )
 
 // CustomFieldValue and CreateTodoInput are already defined in common/types.go

@@ -2,7 +2,7 @@
 
 ## Final Structure
 ```
-demo-builder/
+cli/
 ├── main.go           (router - single entry point)
 ├── auth.go           (package main - shared auth client)
 ├── types.go          (package main - all shared types)
@@ -60,7 +60,7 @@ func main() {
 
 // After (tools/create_project.go)
 package tools
-import "github.com/blue/demo-builder"
+import "github.com/blue/cli"
 func RunCreateProject(args []string) error {
     fs := flag.NewFlagSet("create-project", flag.ExitOnError)
     // ... parse args
@@ -97,7 +97,7 @@ package main
 import (
     "os"
     "fmt"
-    "github.com/blue/demo-builder/tools"
+    "github.com/blue/cli/tools"
 )
 
 func main() {

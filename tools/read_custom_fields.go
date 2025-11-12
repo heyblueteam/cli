@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	
-	. "demo-builder/common"
+	. "cli/common"
 )
 
 // ReadCustomFieldsResponse represents the response from the GraphQL query

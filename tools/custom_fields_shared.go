@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // SetCustomFieldResponse represents the response from setTodoCustomField mutation

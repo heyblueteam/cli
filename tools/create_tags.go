@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	
-	"demo-builder/common"
+	"cli/common"
 )
 
 // Tag is already defined in common/types.go
