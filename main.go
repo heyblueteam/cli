@@ -31,6 +31,7 @@ func printUsage() {
 	fmt.Println("  read-automations            List automations in a project")
 	fmt.Println("  read-user-profiles          List user profiles in a company")
 	fmt.Println("  read-project-user-roles     List custom user roles in projects")
+	fmt.Println("  download-files              Download files from a project and create zip archive")
 	fmt.Println()
 	fmt.Println("CREATE operations:")
 	fmt.Println("  create-project              Create a new project")
@@ -117,6 +118,8 @@ func main() {
 		err = tools.RunReadUserProfiles(args)
 	case "read-project-user-roles":
 		err = tools.RunReadProjectUserRoles(args)
+	case "download-files":
+		err = tools.RunDownloadFiles(args)
 
 	// CREATE operations
 	case "create-project":

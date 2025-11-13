@@ -43,6 +43,9 @@ go run . read-user-profiles -simple
 go run . read-user-profiles -search "john" -page 1 -size 10
 go run . read-project-user-roles -project PROJECT_ID -simple
 go run . read-project-user-roles -projects "PROJECT_ID1,PROJECT_ID2" -format json
+go run . download-files                                              # Interactive mode for credentials
+go run . download-files -use-env                                     # Use .env file for credentials
+go run . download-files -use-env -output "backup.zip" -parallel 10   # Custom output and parallel downloads
 
 # CREATE operations - Add new data
 go run . create-project -name "Project Name" -color blue -icon rocket -category ENGINEERING
@@ -88,6 +91,30 @@ go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confir
 ```
 
 ## Key Command Details
+
+### Download Files (`download-files`) - NEW
+```bash
+# Interactive mode - prompts for all credentials
+go run . download-files
+
+# Use credentials from .env file
+go run . download-files -use-env
+
+# Custom output and parallel downloads
+go run . download-files -use-env -output "project-backup.zip" -parallel 10
+
+# Download from specific folder (prompts for folder ID)
+go run . download-files -use-env
+```
+**Options**: `-use-env` (use .env credentials), `-output` (custom zip path), `-parallel` (concurrent downloads, default: 5)
+
+**Features**:
+- **Interactive Mode**: Prompts for AUTH_TOKEN, CLIENT_ID, COMPANY_ID, PROJECT_ID, and optional FOLDER_ID
+- **Environment Mode**: Reads credentials from .env, prompts only for PROJECT_ID/FOLDER_ID if not set
+- **Parallel Downloads**: Configurable 1-20+ concurrent downloads for performance
+- **ZIP Archive**: Creates single zip file with all downloaded files
+- **Progress Tracking**: Shows download progress with success/failure counts
+- **Filename Sanitization**: Automatically handles invalid filename characters
 
 ### Project Listing (`read-projects`) - ENHANCED
 ```bash

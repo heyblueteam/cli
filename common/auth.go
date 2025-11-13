@@ -198,3 +198,40 @@ func (c *Client) GetProjectContext() string {
 func (c *Client) GetCompanyID() string {
 	return c.config.CompanyID
 }
+
+// DownloadFile downloads a file from the given URL using the authenticated client
+func (c *Client) DownloadFile(url string) ([]byte, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Set authentication headers
+	req.Header.Set("X-Bloo-Token-ID", c.config.ClientID)
+	req.Header.Set("X-Bloo-Token-Secret", c.config.AuthToken)
+	req.Header.Set("X-Bloo-Company-ID", c.config.CompanyID)
+
+	// Include project context header if project context is set
+	if c.projectID != "" {
+		req.Header.Set("X-Bloo-Project-Id", c.projectID)
+	} else if c.projectSlug != "" {
+		req.Header.Set("X-Bloo-Project-Id", c.projectSlug)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("download failed with status %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	return data, nil
+}

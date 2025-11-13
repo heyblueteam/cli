@@ -372,7 +372,65 @@ go run . read-records-count -project PROJECT_ID -archived false
 - `-done`: Filter by completion status (true/false, optional)
 - `-archived`: Filter by archived status (true/false, optional)
 
-### 14. Delete Record/Todo (`delete-record`)
+### 14. Download Files (`download-files`)
+Downloads all files from a Blue project or folder and creates a zip archive. Supports both interactive prompts and environment-based configuration.
+
+```bash
+# Interactive mode - prompts for all credentials
+go run . download-files
+
+# Use credentials from .env file
+go run . download-files -use-env
+
+# Custom output path
+go run . download-files -use-env -output "backup-2024.zip"
+
+# Increase parallel downloads for faster processing
+go run . download-files -use-env -parallel 10
+
+# Full example with all options
+go run . download-files -use-env -output "project-files.zip" -parallel 15
+```
+
+**Interactive Mode (default):**
+You will be prompted for:
+- `AUTH_TOKEN`: Your personal access token (labeled 'Secret' in Blue)
+- `CLIENT_ID`: Your client ID (labeled 'ID' in Blue)
+- `COMPANY_ID`: Your company ID
+- `PROJECT_ID`: The project ID or slug
+- `FOLDER_ID`: (optional) Specific folder ID, leave empty for root
+
+**Environment Mode (`-use-env`):**
+Reads credentials from `.env` file. If `PROJECT_ID` or `FOLDER_ID` are not in the environment, you'll be prompted for them.
+
+**Options:**
+- `-use-env`: Use credentials from .env file instead of interactive prompts
+- `-output`: Custom output path for zip file (default: `blue-files-TIMESTAMP.zip`)
+- `-parallel`: Number of concurrent downloads, 1-20+ (default: 5)
+
+**Features:**
+- 🚀 Parallel downloads for improved performance
+- 📦 Creates a single zip archive with all files
+- 🔒 Secure authentication using API tokens
+- 📁 Support for downloading from specific folders
+- ✅ Progress tracking with success/failure counts
+- 🧹 Automatic filename sanitization for filesystem compatibility
+
+**Example Output:**
+```
+ℹ Fetching files from project: my-project-slug
+ℹ Folder: root
+✓ Found 42 file(s)
+ℹ [1/42] Downloading: design-mockup.png
+✓ Added to zip: design-mockup.png (1847293 bytes)
+ℹ [2/42] Downloading: requirements.pdf
+✓ Added to zip: requirements.pdf (523819 bytes)
+...
+ℹ Download complete: 42 succeeded, 0 failed
+✓ Files downloaded and zipped to: blue-files-20241113-145230.zip
+```
+
+### 15. Delete Record/Todo (`delete-record`)
 Permanently deletes a record from a project. Requires confirmation for safety.
 
 ```bash
@@ -389,7 +447,7 @@ go run . delete-record -record "clr2x3y4z5a6b7c8d9e0" -confirm
 
 **⚠️ Warning:** This operation permanently deletes the record and cannot be undone.
 
-### 15. Add Tags to Records (`create-record-tags`)
+### 16. Add Tags to Records (`create-record-tags`)
 Adds tags to existing records/todos. Supports adding tags by either tag IDs or tag titles.
 
 ```bash
@@ -412,7 +470,7 @@ go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
 
 **Note:** You must provide either `-tag-ids` or `-tag-titles` (with `-project`), but not both.
 
-### 16. Update Project (`update-project`)
+### 17. Update Project (`update-project`)
 Updates project settings and toggles feature flags. Supports intelligent feature merging.
 
 ```bash
@@ -451,7 +509,7 @@ go run . update-project -project PROJECT_ID -name "Updated Name" -simple
 
 **Note:** Feature updates are merged with existing settings (partial updates supported).
 
-### 17. Delete Project (`delete-project`)
+### 18. Delete Project (`delete-project`)
 Permanently deletes a project. Requires confirmation and special permissions.
 
 ```bash

@@ -1,11 +1,28 @@
 package common
 
+import "fmt"
+
 // TruncateString truncates a string to the specified length
 func TruncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
 	}
 	return s[:maxLen] + "..."
+}
+
+// PrintSuccess prints a success message with a green checkmark
+func PrintSuccess(message string) {
+	fmt.Printf("✓ %s\n", message)
+}
+
+// PrintError prints an error message with a red X
+func PrintError(message string) {
+	fmt.Printf("✗ %s\n", message)
+}
+
+// PrintInfo prints an info message with an information symbol
+func PrintInfo(message string) {
+	fmt.Printf("ℹ %s\n", message)
 }
 
 // ProjectCategories - Available project categories

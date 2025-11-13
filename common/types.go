@@ -297,3 +297,28 @@ type RecordCustomFieldValue struct {
 		Type string `json:"type"`
 	} `json:"customField"`
 }
+
+// ============================================================================
+// FILE TYPES
+// ============================================================================
+
+// File represents a file in the Blue system
+type File struct {
+	ID        string `json:"id"`
+	UID       string `json:"uid"`
+	Name      string `json:"name"`
+	Size      int64  `json:"size"`
+	Type      string `json:"type"`
+	Extension string `json:"extension"`
+}
+
+// FilesResponse represents a response containing files
+type FilesResponse struct {
+	Files struct {
+		Items    []File `json:"items"`
+		PageInfo struct {
+			TotalItems  int  `json:"totalItems"`
+			HasNextPage bool `json:"hasNextPage"`
+		} `json:"pageInfo"`
+	} `json:"files"`
+}
