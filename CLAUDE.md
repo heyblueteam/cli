@@ -43,9 +43,11 @@ go run . read-user-profiles -simple
 go run . read-user-profiles -search "john" -page 1 -size 10
 go run . read-project-user-roles -project PROJECT_ID -simple
 go run . read-project-user-roles -projects "PROJECT_ID1,PROJECT_ID2" -format json
-go run . download-files                                              # Interactive mode for credentials
-go run . download-files -use-env                                     # Use .env file for credentials
-go run . download-files -use-env -output "backup.zip" -parallel 10   # Custom output and parallel downloads
+go run . read-checklists -record RECORD_ID -simple
+go run . read-checklists -record RECORD_ID -items false  # Without items
+go run . download-files                                                                    # Interactive mode
+PROJECT_ID=PROJECT_ID FOLDER_ID="" go run . download-files -use-env                    # Use .env credentials
+PROJECT_ID=PROJECT_ID FOLDER_ID="" go run . download-files -use-env -output "backup.zip" -parallel 10
 
 # CREATE operations - Add new data
 go run . create-project -name "Project Name" -color blue -icon rocket -category ENGINEERING
@@ -58,6 +60,8 @@ go run . create-custom-field-options -field FIELD_ID -options "High:red,Medium:y
 go run . create-record -list LIST_ID -title "Task Name" -description "Description" -simple
 go run . create-record -list LIST_ID -title "Task" -custom-fields "cf123:option_id_123,;cf456:42"
 go run . create-comment -record RECORD_ID -text "This is a comment" -project PROJECT_ID -simple
+go run . create-checklist -record RECORD_ID -title "Checklist Title" -position 1000.0 -simple
+go run . create-checklist-item -checklist CHECKLIST_ID -title "Item Title" -position 1000.0 -simple
 go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
 go run . create-automation -project PROJECT_ID -trigger-type "TODO_MARKED_AS_COMPLETE" -action-type "SEND_EMAIL" -email-to "user@example.com"
 go run . create-automation -project PROJECT_ID -trigger-type "TAG_ADDED" -trigger-tags "TAG_ID" -action-type "MAKE_HTTP_REQUEST" -http-url "https://example.com/webhook"
@@ -79,6 +83,9 @@ go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -active
 go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -trigger-type "TODO_MARKED_AS_COMPLETE" -action-type "SEND_EMAIL"
 go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -email-to "new@example.com" -email-subject "Updated subject"
 go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID -action1-type "SEND_EMAIL" -action1-email-to "manager@company.com" -action2-type "ADD_COLOR" -action2-color "#00ff00"
+go run . update-checklist-item -item ITEM_ID -done true -simple
+go run . update-checklist-item -item ITEM_ID -title "Updated Title" -position 2000.0
+go run . update-checklist-item -item ITEM_ID -move-to-checklist CHECKLIST_ID
 go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID
 
 # DELETE operations - Remove data
@@ -88,6 +95,8 @@ go run . delete-custom-field -field FIELD_ID -project PROJECT_ID -confirm
 go run . delete-custom-field-options -field FIELD_ID -option-ids "id1,id2" -confirm
 go run . delete-list -project PROJECT_ID -list LIST_ID -confirm
 go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confirm
+go run . delete-checklist -checklist CHECKLIST_ID -confirm
+go run . delete-checklist-item -item ITEM_ID -confirm
 ```
 
 ## Key Command Details
@@ -97,24 +106,32 @@ go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confir
 # Interactive mode - prompts for all credentials
 go run . download-files
 
-# Use credentials from .env file
-go run . download-files -use-env
+# Use credentials from .env file (set PROJECT_ID and FOLDER_ID in environment)
+PROJECT_ID=cmffabi5k0b6fqe1e2qn2ojl1 FOLDER_ID="" go run . download-files -use-env
 
 # Custom output and parallel downloads
-go run . download-files -use-env -output "project-backup.zip" -parallel 10
+PROJECT_ID=your_project_id FOLDER_ID="" go run . download-files -use-env -output "project-backup.zip" -parallel 10
 
-# Download from specific folder (prompts for folder ID)
-go run . download-files -use-env
+# Download from specific folder
+PROJECT_ID=your_project_id FOLDER_ID=your_folder_id go run . download-files -use-env
 ```
 **Options**: `-use-env` (use .env credentials), `-output` (custom zip path), `-parallel` (concurrent downloads, default: 5)
 
+**Required Environment Variables** (when using `-use-env`):
+- `PROJECT_ID`: Project ID or slug (required, will prompt if not set)
+- `FOLDER_ID`: Folder ID (optional, set to empty string `""` for root folder, will prompt if not set)
+
 **Features**:
 - **Interactive Mode**: Prompts for AUTH_TOKEN, CLIENT_ID, COMPANY_ID, PROJECT_ID, and optional FOLDER_ID
-- **Environment Mode**: Reads credentials from .env, prompts only for PROJECT_ID/FOLDER_ID if not set
+- **Environment Mode**: Reads credentials from .env, requires PROJECT_ID and FOLDER_ID as environment variables
 - **Parallel Downloads**: Configurable 1-20+ concurrent downloads for performance
 - **ZIP Archive**: Creates single zip file with all downloaded files
 - **Progress Tracking**: Shows download progress with success/failure counts
 - **Filename Sanitization**: Automatically handles invalid filename characters
+
+**Important Notes**:
+- Project context is set via `X-Bloo-Project-Id` header - minimal filter is used for file queries
+- To avoid prompts in non-interactive environments, always set both PROJECT_ID and FOLDER_ID environment variables
 
 ### Project Listing (`read-projects`) - ENHANCED
 ```bash
@@ -492,6 +509,192 @@ go run . read-project-user-roles -project PROJECT_ID -format csv
 ```bash
 go run . create-comment -record RECORD_ID -text "Progress update" -html "<p><strong>Update</strong></p>"
 go run . update-comment -comment COMMENT_ID -text "Updated text" -html "<p><em>Updated</em></p>"
+```
+
+### Checklists (`create-checklist`, `create-checklist-item`) - NEW
+```bash
+# Create a checklist on a record
+go run . create-checklist -record RECORD_ID -title "Pre-launch Checklist" -position 1000.0
+
+# Create a checklist with project context
+go run . create-checklist -record RECORD_ID -title "QA Tasks" -project PROJECT_ID -simple
+
+# Add items to a checklist
+go run . create-checklist-item -checklist CHECKLIST_ID -title "Review documentation" -position 1000.0
+go run . create-checklist-item -checklist CHECKLIST_ID -title "Run tests" -position 2000.0 -simple
+go run . create-checklist-item -checklist CHECKLIST_ID -title "Deploy to staging" -position 3000.0
+```
+
+**Required Parameters**:
+- `create-checklist`: `-record` (record/todo ID), `-title` (checklist title)
+- `create-checklist-item`: `-checklist` (checklist ID), `-title` (item title)
+
+**Optional Parameters**:
+- `-position` (float, default: 1000.0) - Position/order of the checklist or item
+- `-project` (project ID or slug) - For project context
+- `-simple` - Show simplified output
+
+**Workflow Example**:
+```bash
+# 1. Create a checklist on a record
+go run . create-checklist -record cm123abc -title "Deployment Checklist" -position 1000.0
+# Output: Checklist ID: cl456def
+
+# 2. Add multiple items to the checklist
+go run . create-checklist-item -checklist cl456def -title "Update dependencies" -position 1000.0
+go run . create-checklist-item -checklist cl456def -title "Run integration tests" -position 2000.0
+go run . create-checklist-item -checklist cl456def -title "Deploy to production" -position 3000.0
+go run . create-checklist-item -checklist cl456def -title "Monitor for errors" -position 4000.0
+```
+
+### Reading Checklists (`read-checklists`) - NEW
+```bash
+# List all checklists from a record with detailed output
+go run . read-checklists -record RECORD_ID
+
+# Simple output with checklist items
+go run . read-checklists -record RECORD_ID -simple
+
+# List checklists without showing items
+go run . read-checklists -record RECORD_ID -items false
+
+# With project context
+go run . read-checklists -record RECORD_ID -project PROJECT_ID
+```
+
+**Required Parameters**:
+- `-record` (record/todo ID) - The record to list checklists from
+
+**Optional Parameters**:
+- `-project` (project ID or slug) - For project context
+- `-simple` - Show simplified output
+- `-items` (default: true) - Show checklist items
+
+**Output Details**:
+- Shows all checklists for the specified record
+- Displays checklist progress (completed/total items)
+- Shows each checklist item with done status (☐ or ☑)
+- Includes item assignments, due dates, and creation info
+- Full metadata: IDs, positions, timestamps, creators
+
+### Updating Checklist Items (`update-checklist-item`) - NEW
+```bash
+# Mark an item as done
+go run . update-checklist-item -item ITEM_ID -done true
+
+# Mark an item as not done
+go run . update-checklist-item -item ITEM_ID -done false
+
+# Update the title
+go run . update-checklist-item -item ITEM_ID -title "Updated task title"
+
+# Change position/order
+go run . update-checklist-item -item ITEM_ID -position 1500.0
+
+# Move item to a different checklist
+go run . update-checklist-item -item ITEM_ID -move-to-checklist CHECKLIST_ID
+
+# Update multiple properties at once
+go run . update-checklist-item -item ITEM_ID -title "New Title" -done true -position 2000.0 -simple
+```
+
+**Required Parameters**:
+- `-item` (checklist item ID) - The item to update
+
+**Optional Parameters** (at least one required):
+- `-title` (string) - New title for the item
+- `-position` (float) - New position/order
+- `-done` (true/false) - Mark as done or not done
+- `-move-to-checklist` (checklist ID) - Move to different checklist
+- `-project` (project ID or slug) - For project context
+- `-simple` - Show simplified output
+
+**Use Cases**:
+- **Task Completion**: Mark items as done when tasks are completed
+- **Reordering**: Change item positions to reorder tasks
+- **Renaming**: Update item titles for clarity
+- **Moving**: Transfer items between checklists
+- **Bulk Updates**: Update multiple properties in one command
+
+### Deleting Checklists (`delete-checklist`) - NEW
+```bash
+# Delete a checklist (requires confirmation)
+go run . delete-checklist -checklist CHECKLIST_ID -confirm
+
+# Delete with project context
+go run . delete-checklist -checklist CHECKLIST_ID -project PROJECT_ID -confirm -simple
+```
+
+**Required Parameters**:
+- `-checklist` (checklist ID) - The checklist to delete
+- `-confirm` - Safety confirmation flag (required)
+
+**Optional Parameters**:
+- `-project` (project ID or slug) - For project context
+- `-simple` - Show simplified output
+
+**Important**:
+- ⚠️ This permanently deletes the checklist AND all its items
+- Cannot be undone
+- Requires `-confirm` flag for safety
+
+### Deleting Checklist Items (`delete-checklist-item`) - NEW
+```bash
+# Delete a checklist item (requires confirmation)
+go run . delete-checklist-item -item ITEM_ID -confirm
+
+# Delete with project context
+go run . delete-checklist-item -item ITEM_ID -project PROJECT_ID -confirm -simple
+```
+
+**Required Parameters**:
+- `-item` (checklist item ID) - The item to delete
+- `-confirm` - Safety confirmation flag (required)
+
+**Optional Parameters**:
+- `-project` (project ID or slug) - For project context
+- `-simple` - Show simplified output
+
+**Important**:
+- ⚠️ This permanently deletes the checklist item
+- Cannot be undone
+- Requires `-confirm` flag for safety
+
+### Complete Checklist Workflow Example
+```bash
+# 1. Create a record/task
+go run . create-record -list LIST_ID -title "Product Launch"
+# Output: Record ID: rec123
+
+# 2. Create a checklist on the record
+go run . create-checklist -record rec123 -title "Pre-Launch Tasks"
+# Output: Checklist ID: cl456
+
+# 3. Add checklist items
+go run . create-checklist-item -checklist cl456 -title "Design review" -position 1000.0
+go run . create-checklist-item -checklist cl456 -title "QA testing" -position 2000.0
+go run . create-checklist-item -checklist cl456 -title "Marketing materials" -position 3000.0
+go run . create-checklist-item -checklist cl456 -title "Deploy to production" -position 4000.0
+
+# 4. View all checklists and items
+go run . read-checklists -record rec123
+
+# 5. Mark items as done as work progresses
+go run . update-checklist-item -item item1 -done true
+go run . update-checklist-item -item item2 -done true
+
+# 6. Update an item title
+go run . update-checklist-item -item item3 -title "Marketing materials ready"
+
+# 7. View progress
+go run . read-checklists -record rec123 -simple
+
+# 8. Delete completed items (optional)
+go run . delete-checklist-item -item item1 -confirm
+go run . delete-checklist-item -item item2 -confirm
+
+# 9. Or delete entire checklist when done
+go run . delete-checklist -checklist cl456 -confirm
 ```
 
 ### Dependencies

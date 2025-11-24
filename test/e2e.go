@@ -20,6 +20,8 @@ type TestContext struct {
 	recordIDs            []string
 	automationIDs        []string
 	commentIDs           []string
+	checklistIDs         []string
+	checklistItemIDs     []string
 	testsFailed          int
 	testsPassed          int
 }
@@ -33,6 +35,30 @@ func runCommand(command string, args ...string) (string, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("command failed: %v\nstderr: %s", err, stderr.String())
+	}
+
+	return stdout.String(), nil
+}
+
+// Helper function to run a command with environment variables
+func runCommandWithEnv(command string, env map[string]string, args ...string) (string, error) {
+	// Build command arguments for new structure
+	fullArgs := append([]string{"run", ".", command}, args...)
+
+	cmd := exec.Command("go", fullArgs...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Set environment variables
+	cmd.Env = os.Environ()
+	for key, value := range env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	err := cmd.Run()
 	if err != nil {
@@ -61,7 +87,13 @@ func generateTestName(prefix string) string {
 // Extract ID from output using simple string parsing
 func extractID(output string) string {
 	lines := strings.Split(output, "\n")
+
+	// First pass: look for "cm" IDs (checklist, project, list, etc) - these are prioritized
 	for _, line := range lines {
+		// Skip lines with "Record ID:" to avoid confusion
+		if strings.Contains(line, "Record ID:") {
+			continue
+		}
 		// Look for "ID:" pattern anywhere in the line
 		if idx := strings.Index(line, "ID:"); idx != -1 {
 			idPart := strings.TrimSpace(line[idx+3:])
@@ -69,24 +101,53 @@ func extractID(output string) string {
 			parts := strings.Fields(idPart)
 			if len(parts) > 0 {
 				id := strings.TrimSuffix(parts[0], ")")
-				return id
+				// Prefer cm-prefixed IDs
+				if strings.HasPrefix(id, "cm") && len(id) > 20 {
+					return id
+				}
 			}
 		}
-		// Also check for patterns like "cm..." which are typical Blue IDs
-		// or 32-character hex strings (record IDs)
+	}
+
+	// Second pass: look for any cm... IDs in the output
+	for _, line := range lines {
 		fields := strings.Fields(line)
 		for _, field := range fields {
 			cleanField := strings.Trim(field, "(),")
-			// Check for Blue project/list/tag IDs (cm...)
+			// Check for Blue project/list/tag/checklist IDs (cm...)
 			if strings.HasPrefix(cleanField, "cm") && len(cleanField) > 20 {
 				return cleanField
 			}
+		}
+	}
+
+	// Third pass: look for 32-character hex strings (record IDs) only if no cm ID found
+	for _, line := range lines {
+		// Skip lines with "Record ID:" prefix
+		if strings.Contains(line, "Record ID:") {
+			continue
+		}
+		if idx := strings.Index(line, "ID:"); idx != -1 {
+			idPart := strings.TrimSpace(line[idx+3:])
+			parts := strings.Fields(idPart)
+			if len(parts) > 0 {
+				id := strings.TrimSuffix(parts[0], ")")
+				if len(id) == 32 && isHexString(id) {
+					return id
+				}
+			}
+		}
+
+		fields := strings.Fields(line)
+		for _, field := range fields {
+			cleanField := strings.Trim(field, "(),")
 			// Check for record IDs (32 character hex strings)
 			if len(cleanField) == 32 && isHexString(cleanField) {
 				return cleanField
 			}
 		}
 	}
+
 	return ""
 }
 
@@ -1318,6 +1379,206 @@ func testUpdateComment(ctx *TestContext) bool {
 	return true
 }
 
+// Test: Create checklist
+func testCreateChecklist(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 {
+		fmt.Println("⚠️  No records available for checklist creation test")
+		ctx.testsFailed++
+		return false
+	}
+
+	output, err := runCommand("create-checklist",
+		"-record", ctx.recordIDs[0],
+		"-title", "E2E Test Checklist",
+		"-position", "1000.0",
+		"-project", ctx.projectID)
+
+	if !printTestResult("Create checklist", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	checklistID := extractID(output)
+	if checklistID == "" {
+		fmt.Println("❌ Failed to extract checklist ID from output")
+		ctx.testsFailed++
+		return false
+	}
+
+	ctx.checklistIDs = append(ctx.checklistIDs, checklistID)
+	fmt.Printf("   Created checklist: %s\n", checklistID)
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Create checklist items
+func testCreateChecklistItems(ctx *TestContext) bool {
+	if len(ctx.checklistIDs) == 0 {
+		fmt.Println("⚠️  No checklists available for checklist item creation test")
+		ctx.testsFailed++
+		return false
+	}
+
+	items := []string{"Task 1: Setup environment", "Task 2: Run tests", "Task 3: Deploy"}
+	positions := []string{"1000.0", "2000.0", "3000.0"}
+
+	for i, title := range items {
+		output, err := runCommand("create-checklist-item",
+			"-checklist", ctx.checklistIDs[0],
+			"-title", title,
+			"-position", positions[i],
+			"-project", ctx.projectID,
+			"-simple")
+
+		if !printTestResult(fmt.Sprintf("Create checklist item %d", i+1), err) {
+			ctx.testsFailed++
+			continue
+		}
+
+		itemID := extractID(output)
+		if itemID != "" {
+			ctx.checklistItemIDs = append(ctx.checklistItemIDs, itemID)
+			fmt.Printf("   Created item: %s\n", title)
+		}
+		ctx.testsPassed++
+	}
+
+	return true
+}
+
+// Test: Read checklists
+func testReadChecklists(ctx *TestContext) bool {
+	if len(ctx.recordIDs) == 0 {
+		fmt.Println("⚠️  No records available for read checklists test")
+		ctx.testsFailed++
+		return false
+	}
+
+	output, err := runCommand("read-checklists",
+		"-record", ctx.recordIDs[0],
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Read checklists", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	// Check if output contains checklist info
+	if !strings.Contains(output, "Checklists:") {
+		fmt.Println("❌ Output doesn't contain expected checklist information")
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Read checklists successfully\n")
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update checklist item (mark as done)
+func testUpdateChecklistItemDone(ctx *TestContext) bool {
+	if len(ctx.checklistItemIDs) == 0 {
+		fmt.Println("⚠️  No checklist items available for update test")
+		ctx.testsFailed++
+		return false
+	}
+
+	_, err := runCommand("update-checklist-item",
+		"-item", ctx.checklistItemIDs[0],
+		"-done", "true",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Update checklist item (mark as done)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Marked item as done: %s\n", ctx.checklistItemIDs[0])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Update checklist item (title and position)
+func testUpdateChecklistItemTitlePosition(ctx *TestContext) bool {
+	if len(ctx.checklistItemIDs) < 2 {
+		fmt.Println("⚠️  Not enough checklist items for update test")
+		ctx.testsFailed++
+		return false
+	}
+
+	_, err := runCommand("update-checklist-item",
+		"-item", ctx.checklistItemIDs[1],
+		"-title", "Task 2: Run all tests (updated)",
+		"-position", "1500.0",
+		"-project", ctx.projectID,
+		"-simple")
+
+	if !printTestResult("Update checklist item (title & position)", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Updated item title and position: %s\n", ctx.checklistItemIDs[1])
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Delete checklist item
+func testDeleteChecklistItem(ctx *TestContext) bool {
+	if len(ctx.checklistItemIDs) < 3 {
+		fmt.Println("⚠️  Not enough checklist items for delete test")
+		ctx.testsFailed++
+		return false
+	}
+
+	itemToDelete := ctx.checklistItemIDs[2]
+
+	_, err := runCommand("delete-checklist-item",
+		"-item", itemToDelete,
+		"-project", ctx.projectID,
+		"-confirm",
+		"-simple")
+
+	if !printTestResult("Delete checklist item", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted checklist item: %s\n", itemToDelete)
+	// Remove from list
+	ctx.checklistItemIDs = ctx.checklistItemIDs[:2]
+	ctx.testsPassed++
+	return true
+}
+
+// Test: Delete checklist
+func testDeleteChecklist(ctx *TestContext) bool {
+	if len(ctx.checklistIDs) == 0 {
+		fmt.Println("⚠️  No checklists available for delete test")
+		ctx.testsFailed++
+		return false
+	}
+
+	checklistToDelete := ctx.checklistIDs[0]
+
+	_, err := runCommand("delete-checklist",
+		"-checklist", checklistToDelete,
+		"-project", ctx.projectID,
+		"-confirm",
+		"-simple")
+
+	if !printTestResult("Delete checklist", err) {
+		ctx.testsFailed++
+		return false
+	}
+
+	fmt.Printf("   Deleted checklist: %s\n", checklistToDelete)
+	ctx.testsPassed++
+	return true
+}
+
 // Test: Update record properties
 func testUpdateRecord(ctx *TestContext) bool {
 	if len(ctx.recordIDs) == 0 {
@@ -1405,6 +1666,58 @@ func testReadProjectUserRoles(ctx *TestContext) bool {
 	roleCount := strings.Count(output, "Role ID:")
 	fmt.Printf("   Found %d custom roles in project\n", roleCount)
 	ctx.testsPassed++
+	return true
+}
+
+// Test: Download files from project
+func testDownloadFiles(ctx *TestContext) bool {
+	if ctx.projectID == "" {
+		fmt.Println("⚠️  No project available for download test")
+		return true
+	}
+
+	// Generate unique output filename for this test
+	outputFile := fmt.Sprintf("e2e-test-download-%s.zip", time.Now().Format("20060102-150405"))
+
+	// Run download-files with environment variables
+	env := map[string]string{
+		"PROJECT_ID": ctx.projectID,
+		"FOLDER_ID":  "", // Empty string for root folder
+	}
+
+	_, err := runCommandWithEnv("download-files", env,
+		"-use-env",
+		"-output", outputFile,
+		"-parallel", "5")
+
+	// Check if output file was created
+	_, statErr := os.Stat(outputFile)
+	fileCreated := statErr == nil
+
+	// Clean up the zip file if it was created
+	if fileCreated {
+		os.Remove(outputFile)
+	}
+
+	// The command might fail if there are no files in the project, which is acceptable
+	if err != nil && !strings.Contains(err.Error(), "no files found") && !strings.Contains(err.Error(), "0 files") {
+		// If error is not about missing files, it's a real failure
+		if !printTestResult("Download files from project", err) {
+			ctx.testsFailed++
+			return false
+		}
+	} else {
+		// Command succeeded or failed gracefully (no files)
+		if fileCreated {
+			fmt.Printf("✅ Download files from project\n")
+			fmt.Printf("   Successfully created zip file (cleaned up)\n")
+		} else {
+			fmt.Printf("✅ Download files from project\n")
+			fmt.Printf("   No files to download (expected for empty project)\n")
+		}
+		ctx.testsPassed++
+	}
+
 	return true
 }
 
@@ -1663,10 +1976,24 @@ func main() {
 	testUpdateRecord(ctx)
 	testMoveRecord(ctx)
 
+	// Checklist Operations
+	fmt.Println("\n📋 Checklist Operations:")
+	testCreateChecklist(ctx)
+	testCreateChecklistItems(ctx)
+	testReadChecklists(ctx)
+	testUpdateChecklistItemDone(ctx)
+	testUpdateChecklistItemTitlePosition(ctx)
+	testDeleteChecklistItem(ctx)
+	testDeleteChecklist(ctx)
+
 	// User Management
 	fmt.Println("\n👥 User Management:")
 	testReadUserProfiles(ctx)
 	testReadProjectUserRoles(ctx)
+
+	// File Operations
+	fmt.Println("\n📁 File Operations:")
+	testDownloadFiles(ctx)
 
 	// Automation Operations
 	fmt.Println("\n🤖 Automation Operations:")

@@ -31,6 +31,7 @@ func printUsage() {
 	fmt.Println("  read-automations            List automations in a project")
 	fmt.Println("  read-user-profiles          List user profiles in a company")
 	fmt.Println("  read-project-user-roles     List custom user roles in projects")
+	fmt.Println("  read-checklists             List checklists from a record")
 	fmt.Println("  download-files              Download files from a project and create zip archive")
 	fmt.Println()
 	fmt.Println("CREATE operations:")
@@ -38,6 +39,8 @@ func printUsage() {
 	fmt.Println("  create-list                 Create a new todo list")
 	fmt.Println("  create-record               Create a new record/todo")
 	fmt.Println("  create-comment              Create a comment on a record")
+	fmt.Println("  create-checklist            Create a checklist on a record")
+	fmt.Println("  create-checklist-item       Create a checklist item")
 	fmt.Println("  create-tags                 Create new tags")
 	fmt.Println("  create-record-tags          Add tags to a record")
 	fmt.Println("  create-custom-field         Create a custom field")
@@ -55,6 +58,7 @@ func printUsage() {
 	fmt.Println("  manage-field-groups         Manage custom field groups (create/delete/rename/move)")
 	fmt.Println("  update-automation           Update an existing automation")
 	fmt.Println("  update-automation-multi     Update automation with multiple actions")
+	fmt.Println("  update-checklist-item       Update a checklist item")
 	fmt.Println("  move-record                 Move a record to a different list/project")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
@@ -63,6 +67,8 @@ func printUsage() {
 	fmt.Println("  delete-custom-field         Delete a custom field")
 	fmt.Println("  delete-custom-field-options Delete options from custom fields")
 	fmt.Println("  delete-automation           Delete an automation")
+	fmt.Println("  delete-checklist            Delete a checklist")
+	fmt.Println("  delete-checklist-item       Delete a checklist item")
 	fmt.Println()
 	fmt.Println("Testing:")
 	fmt.Println("  e2e                         Run end-to-end tests")
@@ -118,6 +124,8 @@ func main() {
 		err = tools.RunReadUserProfiles(args)
 	case "read-project-user-roles":
 		err = tools.RunReadProjectUserRoles(args)
+	case "read-checklists":
+		err = tools.RunReadChecklists(args)
 	case "download-files":
 		err = tools.RunDownloadFiles(args)
 
@@ -130,6 +138,10 @@ func main() {
 		err = tools.RunCreateRecord(args)
 	case "create-comment":
 		err = tools.RunCreateComment(args)
+	case "create-checklist":
+		err = tools.RunCreateChecklist(args)
+	case "create-checklist-item":
+		err = tools.RunCreateChecklistItem(args)
 	case "create-tags":
 		err = tools.RunCreateTags(args)
 	case "create-record-tags":
@@ -160,6 +172,8 @@ func main() {
 		err = tools.RunUpdateAutomation(args)
 	case "update-automation-multi":
 		err = tools.RunUpdateAutomationMulti(args)
+	case "update-checklist-item":
+		err = tools.RunUpdateChecklistItem(args)
 	case "move-record":
 		err = tools.RunMoveRecord(args)
 	case "test-custom-fields":
@@ -180,7 +194,11 @@ func main() {
 		err = tools.RunDeleteList(args)
 	case "delete-automation":
 		err = tools.RunDeleteAutomation(args)
-	
+	case "delete-checklist":
+		err = tools.RunDeleteChecklist(args)
+	case "delete-checklist-item":
+		err = tools.RunDeleteChecklistItem(args)
+
 	// Testing
 	case "e2e":
 		err = runE2E(args)
