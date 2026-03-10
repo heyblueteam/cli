@@ -48,6 +48,7 @@ func printUsage() {
 	fmt.Println("  create-automation           Create a new automation")
 	fmt.Println("  create-automation-multi     Create automation with multiple actions")
 	fmt.Println("  invite-user                 Invite a user to the company or project")
+	fmt.Println("  create-dependency           Create a dependency between two records")
 	fmt.Println()
 	fmt.Println("UPDATE operations:")
 	fmt.Println("  update-project              Update project settings")
@@ -60,6 +61,7 @@ func printUsage() {
 	fmt.Println("  update-automation-multi     Update automation with multiple actions")
 	fmt.Println("  update-checklist-item       Update a checklist item")
 	fmt.Println("  move-record                 Move a record to a different list/project")
+	fmt.Println("  update-dependency           Update a dependency between two records")
 	fmt.Println()
 	fmt.Println("DELETE operations:")
 	fmt.Println("  delete-project              Delete a project")
@@ -69,6 +71,7 @@ func printUsage() {
 	fmt.Println("  delete-automation           Delete an automation")
 	fmt.Println("  delete-checklist            Delete a checklist")
 	fmt.Println("  delete-checklist-item       Delete a checklist item")
+	fmt.Println("  delete-dependency           Delete a dependency between two records")
 	fmt.Println()
 	fmt.Println("Testing:")
 	fmt.Println("  e2e                         Run end-to-end tests")
@@ -156,6 +159,8 @@ func main() {
 		err = tools.RunCreateAutomationMulti(args)
 	case "invite-user":
 		err = tools.RunInviteUser(args)
+	case "create-dependency":
+		err = tools.RunCreateDependency(args)
 	
 	// UPDATE operations
 	case "update-project":
@@ -176,6 +181,8 @@ func main() {
 		err = tools.RunUpdateChecklistItem(args)
 	case "move-record":
 		err = tools.RunMoveRecord(args)
+	case "update-dependency":
+		err = tools.RunUpdateDependency(args)
 	case "test-custom-fields":
 		err = tools.RunTestCustomFields(args)
 	case "manage-field-groups":
@@ -198,6 +205,8 @@ func main() {
 		err = tools.RunDeleteChecklist(args)
 	case "delete-checklist-item":
 		err = tools.RunDeleteChecklistItem(args)
+	case "delete-dependency":
+		err = tools.RunDeleteDependency(args)
 
 	// Testing
 	case "e2e":
