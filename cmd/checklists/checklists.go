@@ -1,7 +1,7 @@
 package checklists
 
 import (
-	"demo-builder/cmd/checklists/items"
+	"blue-cli/cmd/checklists/items"
 
 	"github.com/spf13/cobra"
 )

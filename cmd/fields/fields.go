@@ -1,8 +1,8 @@
 package fields
 
 import (
-	"demo-builder/cmd/fields/groups"
-	"demo-builder/cmd/fields/options"
+	"blue-cli/cmd/fields/groups"
+	"blue-cli/cmd/fields/options"
 
 	"github.com/spf13/cobra"
 )

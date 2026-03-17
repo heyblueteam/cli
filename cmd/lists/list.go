@@ -3,7 +3,7 @@ package lists
 import (
 	"fmt"
 
-	"demo-builder/common"
+	"blue-cli/common"
 
 	"github.com/spf13/cobra"
 )

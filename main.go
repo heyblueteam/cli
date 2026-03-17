@@ -1,6 +1,6 @@
 package main
 
-import "demo-builder/cmd"
+import "blue-cli/cmd"
 
 func main() {
 	cmd.Execute()

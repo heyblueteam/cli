@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"demo-builder/common"
+	"blue-cli/common"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"

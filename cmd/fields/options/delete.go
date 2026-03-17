@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"demo-builder/common"
+	"blue-cli/common"
 
 	"github.com/spf13/cobra"
 )

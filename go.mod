@@ -1,4 +1,4 @@
-module demo-builder
+module blue-cli
 
 go 1.21
 
