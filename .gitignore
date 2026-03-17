@@ -21,3 +21,4 @@ vendor/
 Thumbs.db
 demo-builder
 blue
+dist/

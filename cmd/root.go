@@ -23,6 +23,7 @@ import (
 var (
 	version = "dev"
 	commit  = "none"
+	date    = "unknown"
 )
 
 var rootCmd = &cobra.Command{
@@ -51,7 +52,7 @@ func init() {
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("blue %s (commit: %s)\n", version, commit)
+			fmt.Printf("blue %s (commit: %s, built: %s)\n", version, commit, date)
 		},
 	})
 }

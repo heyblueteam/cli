@@ -473,10 +473,10 @@ The following files MUST be updated after the refactor. These are critical becau
 - [x] Migrate dependencies commands — created, help verified
 - [x] Migrate files commands — created, help verified
 - [x] Remove old `main.go` switch statement — replaced with cobra
-- [ ] Rename module from `demo-builder`
-- [ ] Add version injection via ldflags
-- [ ] Set up `.goreleaser.yml`
-- [ ] Set up GitHub Actions release workflow
+- [x] Rename module from `demo-builder` to `blue-cli`
+- [x] Add version injection via ldflags
+- [x] Set up `.goreleaser.yml`
+- [x] Set up GitHub Actions release workflow
 - [x] Add `blue completion` command — built-in with cobra
 - [x] Add command aliases (ws, rec, auto, deps)
 - [ ] Ensure `--format json` works on all commands

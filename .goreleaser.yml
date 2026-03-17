@@ -1,0 +1,56 @@
+version: 2
+
+project_name: blue
+
+builds:
+  - main: ./main.go
+    binary: blue
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X blue-cli/cmd.version={{.Version}}
+      - -X blue-cli/cmd.commit={{.Commit}}
+      - -X blue-cli/cmd.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "blue_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: heyblueteam
+      name: homebrew-tap
+    homepage: https://blue.cc
+    description: CLI for Blue workspace management
+    license: Proprietary
+    install: |
+      bin.install "blue"
+    test: |
+      system "#{bin}/blue", "version"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: heyblueteam
+    name: cli
