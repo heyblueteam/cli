@@ -4,716 +4,230 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a CLI tool for interacting with the Blue GraphQL API. It provides a comprehensive set of commands for managing projects, lists, records, tags, custom fields, automations, and more.
+This is the Blue CLI — a Go CLI tool built with [cobra](https://github.com/spf13/cobra) for interacting with the Blue GraphQL API. It provides a comprehensive set of commands organized as `blue <group> <action> [flags]`.
+
+**Note:** "Workspaces" in the CLI maps to "projects" in the API. The CLI uses workspace terminology throughout, but GraphQL queries still reference the project API.
 
 ## Development Commands
+
+### Building
+```bash
+go build -o blue .         # Build the binary
+go mod tidy                # Install/update dependencies
+```
 
 ### Running Commands
 All commands follow this pattern:
 ```bash
-go run . <command> [flags]
+./blue <group> <action> [flags]
 ```
 
-**Note**: Scripts that require a project context can accept either a Project ID or Project slug. The system automatically detects which type is provided.
+Workspace ID or slug can be used interchangeably wherever `--workspace` is required.
 
-### Available Scripts & Usage
+## Command Reference
+
+### Workspaces (`blue workspaces` / `blue ws`)
 ```bash
-# READ operations - List/view data
-go run . read-projects -simple
-go run . read-projects -search "CRM" -sort updatedAt_DESC
-go run . read-lists -project PROJECT_ID_OR_SLUG -simple
-go run . read-record -record RECORD_ID -project PROJECT_ID -simple
-go run . read-records -project PROJECT_ID -done false -assignee USER_ID -simple
-go run . read-records -project PROJECT_ID -custom-field "field_id:GT:1000" -stats
-go run . read-records -project PROJECT_ID -custom-field "field_id:CONTAINS:urgent" -limit 10
-go run . read-project-records -project PROJECT_ID
-go run . read-list-records -list LIST_ID -simple
-go run . read-tags -project PROJECT_ID
-go run . read-project-custom-fields -project PROJECT_ID
-go run . read-custom-fields -project PROJECT_ID -simple
-go run . read-custom-fields -project PROJECT_ID -examples
-go run . read-custom-fields -project PROJECT_ID -format json
-go run . read-records-count -project PROJECT_ID
-go run . read-records-count -project PROJECT_ID -done false
-go run . read-automations -project PROJECT_ID
-go run . read-automations -project PROJECT_ID -simple
-go run . read-automations -project PROJECT_ID -page 2 -size 10
-go run . read-automations -project PROJECT_ID -skip 20 -limit 5
-go run . read-user-profiles -simple
-go run . read-user-profiles -search "john" -page 1 -size 10
-go run . read-project-user-roles -project PROJECT_ID -simple
-go run . read-project-user-roles -projects "PROJECT_ID1,PROJECT_ID2" -format json
-go run . read-checklists -record RECORD_ID -simple
-go run . read-checklists -record RECORD_ID -items false  # Without items
-go run . download-files                                                                    # Interactive mode
-PROJECT_ID=PROJECT_ID FOLDER_ID="" go run . download-files -use-env                    # Use .env credentials
-PROJECT_ID=PROJECT_ID FOLDER_ID="" go run . download-files -use-env -output "backup.zip" -parallel 10
-
-# CREATE operations - Add new data
-go run . create-project -name "Project Name" -color blue -icon rocket -category ENGINEERING
-go run . create-list -project PROJECT_ID -names "To Do,In Progress,Done"
-go run . create-tags -project PROJECT_ID -title "Bug" -color "red"
-go run . create-custom-field -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
-go run . create-custom-field -name "Story Points" -type "NUMBER" -min 1 -max 13
-go run . create-custom-field -name "Cost" -type "CURRENCY" -currency "USD"
-go run . create-custom-field-options -field FIELD_ID -options "High:red,Medium:yellow,Low:green"
-go run . create-record -list LIST_ID -title "Task Name" -description "Description" -simple
-go run . create-record -list LIST_ID -title "Task" -custom-fields "cf123:option_id_123,;cf456:42"
-go run . create-comment -record RECORD_ID -text "This is a comment" -project PROJECT_ID -simple
-go run . create-checklist -record RECORD_ID -title "Checklist Title" -position 1000.0 -simple
-go run . create-checklist-item -checklist CHECKLIST_ID -title "Item Title" -position 1000.0 -simple
-go run . create-record-tags -record RECORD_ID -tag-ids "tag1,tag2" -simple
-go run . create-automation -project PROJECT_ID -trigger-type "TODO_MARKED_AS_COMPLETE" -action-type "SEND_EMAIL" -email-to "user@example.com"
-go run . create-automation -project PROJECT_ID -trigger-type "TAG_ADDED" -trigger-tags "TAG_ID" -action-type "MAKE_HTTP_REQUEST" -http-url "https://example.com/webhook"
-go run . create-automation-multi -project PROJECT_ID -trigger-type "TAG_ADDED" -action1-type "SEND_EMAIL" -action1-email-to "manager@company.com" -action2-type "ADD_COLOR" -action2-color "#ff0000"
-go run . invite-user -email "user@example.com" -access-level "MEMBER" -project PROJECT_ID
-go run . invite-user -email "admin@example.com" -access-level "ADMIN" -projects "PROJECT_ID1,PROJECT_ID2"
-
-# UPDATE operations - Modify existing data
-go run . update-project -project PROJECT_ID -name "New Name" -features "Chat:true,Files:false"
-go run . update-record -record RECORD_ID -title "New Title" -description "Updated description"
-go run . update-record -record RECORD_ID -move-to-list LIST_ID -assignees "user1,user2"
-go run . update-record -record RECORD_ID -custom-fields "cf123:Updated Value;cf456:42"
-# For SELECT fields, MUST use option IDs with trailing comma:
-go run . update-record -record RECORD_ID -custom-fields "cf123:option_id_123,;cf456:42"
-go run . update-comment -comment COMMENT_ID -text "Updated comment text" -project PROJECT_ID -simple
-go run . update-custom-field -field FIELD_ID -project PROJECT_ID -name "New Field Name" -description "Updated description"
-go run . update-list -list LIST_ID -title "New List Name" -position 1000.0 -locked true
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -active true
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -trigger-type "TODO_MARKED_AS_COMPLETE" -action-type "SEND_EMAIL"
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID -email-to "new@example.com" -email-subject "Updated subject"
-go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID -action1-type "SEND_EMAIL" -action1-email-to "manager@company.com" -action2-type "ADD_COLOR" -action2-color "#00ff00"
-go run . update-checklist-item -item ITEM_ID -done true -simple
-go run . update-checklist-item -item ITEM_ID -title "Updated Title" -position 2000.0
-go run . update-checklist-item -item ITEM_ID -move-to-checklist CHECKLIST_ID
-go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID
-
-# DELETE operations - Remove data
-go run . delete-project -project PROJECT_ID -confirm
-go run . delete-record -record RECORD_ID -confirm
-go run . delete-custom-field -field FIELD_ID -project PROJECT_ID -confirm
-go run . delete-custom-field-options -field FIELD_ID -option-ids "id1,id2" -confirm
-go run . delete-list -project PROJECT_ID -list LIST_ID -confirm
-go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confirm
-go run . delete-checklist -checklist CHECKLIST_ID -confirm
-go run . delete-checklist-item -item ITEM_ID -confirm
+blue ws list --simple
+blue ws list --search "CRM" --sort updatedAt_DESC --page 2 --size 50
+blue ws create --name "Workspace Name" --color blue --icon rocket --category ENGINEERING
+blue ws update --workspace <ID> --name "New Name" --features "Chat:true,Files:false"
+blue ws delete --workspace <ID> --confirm
 ```
 
-## Key Command Details
-
-### Download Files (`download-files`) - NEW
+### Lists (`blue lists`)
 ```bash
-# Interactive mode - prompts for all credentials
-go run . download-files
-
-# Use credentials from .env file (set PROJECT_ID and FOLDER_ID in environment)
-PROJECT_ID=cmffabi5k0b6fqe1e2qn2ojl1 FOLDER_ID="" go run . download-files -use-env
-
-# Custom output and parallel downloads
-PROJECT_ID=your_project_id FOLDER_ID="" go run . download-files -use-env -output "project-backup.zip" -parallel 10
-
-# Download from specific folder
-PROJECT_ID=your_project_id FOLDER_ID=your_folder_id go run . download-files -use-env
-```
-**Options**: `-use-env` (use .env credentials), `-output` (custom zip path), `-parallel` (concurrent downloads, default: 5)
-
-**Required Environment Variables** (when using `-use-env`):
-- `PROJECT_ID`: Project ID or slug (required, will prompt if not set)
-- `FOLDER_ID`: Folder ID (optional, set to empty string `""` for root folder, will prompt if not set)
-
-**Features**:
-- **Interactive Mode**: Prompts for AUTH_TOKEN, CLIENT_ID, COMPANY_ID, PROJECT_ID, and optional FOLDER_ID
-- **Environment Mode**: Reads credentials from .env, requires PROJECT_ID and FOLDER_ID as environment variables
-- **Parallel Downloads**: Configurable 1-20+ concurrent downloads for performance
-- **ZIP Archive**: Creates single zip file with all downloaded files
-- **Progress Tracking**: Shows download progress with success/failure counts
-- **Filename Sanitization**: Automatically handles invalid filename characters
-
-**Important Notes**:
-- Project context is set via `X-Bloo-Project-Id` header - minimal filter is used for file queries
-- To avoid prompts in non-interactive environments, always set both PROJECT_ID and FOLDER_ID environment variables
-
-### Project Listing (`read-projects`) - ENHANCED
-```bash
-go run . read-projects -simple
-go run . read-projects -search "CRM" -sort updatedAt_DESC -page 1 -size 10
-go run . read-projects -all -archived -templates
-```
-**Options**: `-simple`, `-search`, `-sort` (name_ASC/DESC, createdAt_ASC/DESC, updatedAt_ASC/DESC, position_ASC/DESC), `-page`, `-size`, `-all`, `-archived`, `-templates`
-
-### Automation Listing (`read-automations`) - ENHANCED
-```bash
-go run . read-automations -project PROJECT_ID
-go run . read-automations -project PROJECT_ID -simple
-go run . read-automations -project PROJECT_ID -page 2 -size 10
-go run . read-automations -project PROJECT_ID -skip 20 -limit 5
-```
-**Options**: `-project` (required), `-simple`, `-page` (default: 1), `-size` (default: 50, max: 100), `-skip` (overrides page), `-limit` (overrides size)
-
-**Pagination Features**:
-- Page-based navigation with `-page` and `-size`
-- Direct skip/limit control with `-skip` and `-limit`
-- Visual pagination summary with navigation hints
-- Enhanced detailed output with icons and tree structure
-
-Shows all automations in a project with comprehensive information including:
-- Automation ID, UID, and active status
-- Creation and update timestamps  
-- **Trigger details with full metadata:**
-  - Type and associated todo list
-  - Custom fields and field options  
-  - Tags and assignees
-  - Metadata (e.g., incomplete only flag)
-  - Color settings
-- **Action details with full metadata:**
-  - Type, target todo list, tags, and assignees
-  - **Email metadata:** from/to/cc/bcc, subject, content, attachments
-  - **Checklist metadata:** checklist items with positions, due dates, assignees
-  - **Copy todo metadata:** copy options
-  - **HTTP webhook metadata:** URL, method, headers, parameters, auth
-  - Custom fields, color settings, assignee triggerer
-- Complete automation structure and response format for understanding automation behavior
-
-### User Profiles Listing (`read-user-profiles`) - ENHANCED
-```bash
-# Project-specific users (from record assignments)
-go run . read-user-profiles -project PROJECT_ID -simple
-go run . read-user-profiles -project PROJECT_ID -stats
-go run . read-user-profiles -project PROJECT_ID -search "john"
-
-# Company-wide users (aggregated from all projects)
-go run . read-user-profiles -simple
-go run . read-user-profiles -search "developer" -company COMPANY_ID
-go run . read-user-profiles -first 100
-```
-**Options**: `-project`, `-simple`, `-search`, `-first` (default: 50), `-company`
-
-**Implementation Details**:
-- **Project Mode** (`-project`): Uses `projectUserList` GraphQL endpoint for project-specific users
-- **Company Mode** (no `-project`): Uses `companyUserList` GraphQL endpoint for all company users
-- **Search**: Server-side search (company mode) or client-side filtering (project mode)
-- **Pagination**: Control with `-first` parameter (default: 50 users)
-
-**✅ Verified Working Endpoints**:
-- `companyUserList(companyId, search, first, orderBy)` - Company-wide users with search
-- `projectUserList(filter: {projectIds}, first, orderBy)` - Project-specific users  
-- Fallback to `userList` with filters if primary endpoints unavailable
-
-### Advanced Record Querying (`read-records`) - ENHANCED
-```bash
-go run . read-records -project PROJECT_ID -custom-field "cf123:GT:50000" -calc -simple
-go run . read-records -project PROJECT_ID -custom-field "cf456:CONTAINS:urgent" -stats
-```
-**Standard Options**: `-project` (required), `-list`, `-assignee`, `-tags`, `-done`, `-archived`, `-order`, `-limit`, `-skip`, `-simple`
-
-**Custom Field Filtering (CLIENT-SIDE)**:
-- Format: `-custom-field "field_id:operator:value"`
-- Operators: `EQ`, `NE`, `GT`, `GTE`, `LT`, `LTE`, `IN`, `NIN`, `CONTAINS`, `IS`, `NOT`
-- Examples: `"cf123:GT:50000"`, `"cf456:CONTAINS:urgent"`, `"cf789:EQ:high"`
-
-**Numerical Statistics**:
-- `-calc`: Auto-detect and calculate stats for all numerical fields
-- `-stats`: Show numerical statistics (sum, average, min, max)
-- `-calc-fields`: Specify custom field IDs to calculate
-
-### Custom Fields Reference (`read-custom-fields`)
-```bash
-go run . read-custom-fields -project PROJECT_ID -simple
-go run . read-custom-fields -project PROJECT_ID -examples -format json
-```
-**Options**: `-simple`, `-examples`, `-format` (table, json, csv), `-page`, `-size`
-
-### Creating Records with Custom Fields
-```bash
-go run . create-record -project PROJECT_ID -list LIST_ID -title "Task" -custom-fields "cf123:option_id_123,;cf456:42"
+blue lists list --workspace <ID> --simple
+blue lists create --workspace <ID> --names "To Do,In Progress,Done"
+blue lists create --workspace <ID> --names "Done,In Progress,To Do" --reverse
+blue lists update --list <ID> --workspace <ID> --title "New Title" --locked true
+blue lists delete --workspace <ID> --list <ID> --confirm
 ```
 
-**⚠️ CRITICAL: SELECT Field Values**
-For SELECT_SINGLE and SELECT_MULTI fields, MUST use Option IDs with trailing comma:
-- ✅ Correct: `"cf123:option_id_123,"` (trailing comma required)
-- ❌ Wrong: `"cf123:High"` or `"cf123:option_id_123"` (no comma)
-
-**Custom Field Format Examples**:
-- Text: `"cf123:Hello World"`
-- Number: `"cf456:42.5"`
-- Boolean: `"cf789:true"`
-- SELECT (single): `"cf123:option_id_123,"`
-- SELECT (multi): `"cf123:option_id_1,option_id_2,"`
-- Multiple: `"cf123:option_id_123,;cf456:42;cf789:true"`
-
-**Get Option IDs**:
-1. `go run . read-project-custom-fields -project PROJECT_ID` - Shows: `Title [option_id] (color)`
-2. `go run . read-custom-fields -project PROJECT_ID -examples`
-
-**IMPORTANT**: Always use option IDs (not option titles) for SELECT fields. The read-project-custom-fields command shows the actual option IDs in brackets that you must use.
-
-### Automations (`create-automation`) - NEW
+### Records (`blue records` / `blue rec`)
 ```bash
-# Simple email automation on task completion
-go run . create-automation -project PROJECT_ID \
-  -trigger-type "TODO_MARKED_AS_COMPLETE" \
-  -action-type "SEND_EMAIL" \
-  -email-to "user@example.com" \
-  -email-subject "Task completed" \
-  -email-content "<p>Task has been completed!</p>"
+# List/query records
+blue rec list --workspace <ID> --simple
+blue rec list --workspace <ID> --done false --assignee <USER_ID> --tags "tag1,tag2"
+blue rec list --workspace <ID> --custom-field "field_id:GT:50000" --stats
+blue rec list --workspace <ID> --custom-field "field_id:CONTAINS:urgent" --calc
+blue rec list --list <ID> --limit 50 --skip 100
 
-# HTTP webhook when tag is added
-go run . create-automation -project PROJECT_ID \
-  -trigger-type "TAG_ADDED" -trigger-tags "TAG_ID" \
-  -action-type "MAKE_HTTP_REQUEST" \
-  -http-url "https://example.com/webhook" \
-  -http-method "POST" \
-  -http-body '{"event": "tag_added"}'
+# Get single record
+blue rec get --record <ID> --workspace <ID>
+blue rec get --record <ID> --workspace <ID> --simple
 
-# Auto-assign tag and user on task creation
-go run . create-automation -project PROJECT_ID \
-  -trigger-type "TODO_CREATED" -trigger-todo-list "LIST_ID" \
-  -action-type "ADD_TAG" \
-  -action-tags "TAG_ID"
+# Create records
+blue rec create --workspace <ID> --list <ID> --title "Task Name"
+blue rec create -w <ID> -l <ID> -t "Task" --description "Details" --assignees "user1,user2"
+blue rec create -w <ID> -l <ID> -t "Task" --custom-fields "cf123:option_id_123,;cf456:42"
 
-# Set color when moving to specific list
-go run . create-automation -project PROJECT_ID \
-  -trigger-type "TODO_LIST_CHANGED" -trigger-todo-list "LIST_ID" \
-  -action-type "ADD_COLOR" \
-  -action-color "#ff6b6b"
+# Update records
+blue rec update --record <ID> --workspace <ID> --title "New Title"
+blue rec update -r <ID> -w <ID> --assignees "user1,user2" --tag-ids "tag1,tag2"
+blue rec update -r <ID> -w <ID> --custom-fields "cf123:Updated Value;cf456:42"
+blue rec update -r <ID> --due-date "2026-12-31" --timezone "UTC"
+
+# Move records
+blue rec move --record <ID> --list <ID> --workspace <ID>
+
+# Count records
+blue rec count --workspace <ID>
+blue rec count --workspace <ID> --done false --list <ID>
+
+# Delete records
+blue rec delete --record <ID> --confirm
 ```
 
-**Supported Trigger Types**: `TODO_CREATED`, `TODO_MARKED_AS_COMPLETE`, `TODO_MARKED_AS_INCOMPLETE`, `TODO_LIST_CHANGED`, `TAG_ADDED`, `TAG_REMOVED`, `ASSIGNEE_ADDED`, `ASSIGNEE_REMOVED`, `CUSTOM_FIELD_CHANGED`, `TODO_OVERDUE`
+**Custom Field Filter Operators:** `EQ`, `NE`, `GT`, `GTE`, `LT`, `LTE`, `IN`, `NIN`, `CONTAINS`, `IS`, `NOT`
 
-**Supported Action Types**: `SEND_EMAIL`, `MAKE_HTTP_REQUEST`, `ADD_TAG`, `REMOVE_TAG`, `ADD_ASSIGNEE`, `REMOVE_ASSIGNEE`, `ADD_COLOR`, `CHANGE_TODO_LIST`, `MARK_AS_COMPLETE`, `MARK_AS_INCOMPLETE`, `CREATE_TODO`, `COPY_TODO`, `DELETE_TODO`, `ARCHIVE_TODO`, `CREATE_CHECKLIST`
+**Custom Field Values for SELECT fields MUST use option IDs with trailing comma:**
+- Correct: `"cf123:option_id_123,"`
+- Wrong: `"cf123:High"` (don't use display names)
 
-**Email Options**: Use `-email-from`, `-email-to`, `-email-subject`, `-email-content` for SEND_EMAIL actions.
-
-**HTTP Options**: Use `-http-url`, `-http-method`, `-http-content-type`, `-http-body`, `-http-headers`, `-http-params`, `-http-auth-type`, `-http-auth-value` for MAKE_HTTP_REQUEST actions.
-
-### Multi-Action Automations (`create-automation-multi`) - NEW
+### Tags (`blue tags`)
 ```bash
-# Create automation with multiple different actions
-go run . create-automation-multi -project PROJECT_ID \
-  -trigger-type "TAG_ADDED" \
-  -trigger-tags "HIGH_PRIORITY_TAG_ID" \
-  -action1-type "SEND_EMAIL" \
-  -action1-email-to "manager@company.com" \
-  -action1-email-subject "🚨 High Priority Alert" \
-  -action1-email-content "<h2>Manager Alert</h2><p>High priority issue needs attention</p>" \
-  -action2-type "SEND_EMAIL" \
-  -action2-email-to "team@company.com" \
-  -action2-email-subject "📋 Team Notification" \
-  -action2-email-content "<h2>Team Alert</h2><p>New high priority task assigned</p>" \
-  -action3-type "ADD_COLOR" \
-  -action3-color "#ff4444"
-
-# Single action using clean syntax (no numbering needed)
-go run . create-automation-multi -project PROJECT_ID \
-  -trigger-type "TODO_COMPLETED" \
-  -action-type "SEND_EMAIL" \
-  -email-to "success@company.com" \
-  -email-subject "Task Completed!" \
-  -email-content "<p>Another task completed successfully!</p>"
+blue tags list --workspace <ID>
+blue tags create --workspace <ID> --title "Bug" --color red
+blue tags add --record <ID> --tag-ids "tag1,tag2"
+blue tags add --record <ID> --tag-titles "Bug,Priority" --workspace <ID>
 ```
 
-**Key Features**:
-- **Per-Action Settings**: Each action can have different email/HTTP settings
-- **Unnumbered Flags**: Use `-action-type` for single actions (clean syntax)
-- **Numbered Flags**: Use `-action1-type`, `-action2-type`, etc. for multiple actions
-- **Mixed Support**: Can combine unnumbered and numbered flags
-- **Up to 3 Actions**: Support for action1, action2, and action3
-
-### Automations Update (`update-automation`) - NEW
+### Custom Fields (`blue fields` / `blue cf`)
 ```bash
-# Enable/disable automation
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID \
-  -active true
+# List fields
+blue cf list --workspace <ID> --simple
+blue cf list --workspace <ID> --detailed --examples --format json
 
-# Update trigger settings
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID \
-  -trigger-type "TODO_MARKED_AS_COMPLETE" \
-  -trigger-todo-list "NEW_LIST_ID"
+# Create fields
+blue cf create --workspace <ID> --name "Priority" --type "SELECT_SINGLE" --options "High:red,Medium:yellow,Low:green"
+blue cf create --workspace <ID> --name "Story Points" --type "NUMBER" --min 1 --max 13
+blue cf create --workspace <ID> --name "Cost" --type "CURRENCY" --currency "USD"
 
-# Update email action settings
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID \
-  -email-to "newemail@example.com" \
-  -email-subject "Updated subject" \
-  -email-content "<p>Updated content</p>"
+# Update/delete fields
+blue cf update --field <ID> --workspace <ID> --name "New Name" --description "Updated"
+blue cf delete --field <ID> --workspace <ID> --confirm
 
-# Update HTTP webhook settings
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID \
-  -http-url "https://newwebhook.com/endpoint" \
-  -http-method "PUT" \
-  -http-body '{"updated": true}'
+# Field options
+blue cf options create --field <ID> --workspace <ID> --options "High:red,Medium:yellow,Low:green"
+blue cf options delete --field <ID> --workspace <ID> --option-ids "id1,id2" --confirm
 
-# Update action type and settings
-go run . update-automation -automation AUTOMATION_ID -project PROJECT_ID \
-  -action-type "ADD_TAG" \
-  -action-tags "new_tag_id"
+# Field groups
+blue cf groups list --workspace <ID>
+blue cf groups manage --workspace <ID> --action create --name "Group Name" --color "#ff0000"
 ```
 
-**Required Parameters**: `-automation` (automation ID), `-project` (project ID for context)
+**Available Field Types:** `TEXT_SINGLE`, `TEXT_MULTI`, `NUMBER`, `CURRENCY`, `PERCENT`, `DATE`, `TIME_DURATION`, `SELECT_SINGLE`, `SELECT_MULTI`, `CHECKBOX`, `RATING`, `EMAIL`, `PHONE`, `URL`, `LOCATION`, `COUNTRY`, `FILE`, `UNIQUE_ID`, `FORMULA`, `REFERENCE`, `LOOKUP`, `BUTTON`, `CURRENCY_CONVERSION`
 
-**Update Options**:
-- **Active Status**: `-active` (true/false)
-- **Trigger Updates**: All trigger options from create-automation
-- **Action Updates**: All action options from create-automation
-- **Partial Updates**: Only specified fields are updated; others remain unchanged
-
-**Important Notes**:
-- At least one field must be provided to update
-- Partial updates are supported - only specified fields are changed  
-- Use same trigger/action types and options as create-automation
-- Project context required for proper authorization
-- **⚠️ CRITICAL**: Action updates REPLACE the entire actions array. For multi-action automations, you must specify ALL existing actions to avoid losing any
-
-### Multi-Action Automation Updates (`update-automation-multi`) - NEW
+### Automations (`blue automations` / `blue auto`)
 ```bash
-# Update single action using clean syntax
-go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID \
-  -action-type "SEND_EMAIL" \
-  -email-subject "Updated Subject" \
-  -email-content "<h2>Updated Content</h2>"
+# List
+blue auto list --workspace <ID> --simple
+blue auto list --workspace <ID> --page 2 --size 10
 
-# Update multiple actions with different settings
-go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID \
-  -action1-type "SEND_EMAIL" \
-  -action1-email-to "manager@company.com" \
-  -action1-email-subject "Updated Manager Alert" \
-  -action2-type "SEND_EMAIL" \
-  -action2-email-to "team@company.com" \
-  -action2-email-subject "Updated Team Alert" \
-  -action3-type "ADD_COLOR" \
-  -action3-color "#00ff00"
+# Create (single action)
+blue auto create --workspace <ID> --trigger-type "TODO_MARKED_AS_COMPLETE" --action-type "SEND_EMAIL" --email-to "user@example.com" --email-subject "Task done"
 
-# Update only automation status (safe)
-go run . update-automation-multi -automation AUTOMATION_ID -project PROJECT_ID \
-  -active false
+# Create (multi-action with numbered flags)
+blue auto create --workspace <ID> --trigger-type "TAG_ADDED" --trigger-tags "TAG_ID" \
+  --action1-type "SEND_EMAIL" --action1-email-to "mgr@co.com" \
+  --action2-type "ADD_COLOR" --action2-color "#ff0000"
+
+# Update
+blue auto update --automation <ID> --workspace <ID> --active true
+blue auto update --automation <ID> --workspace <ID> --action-type "SEND_EMAIL" --email-to "new@example.com"
+
+# Delete
+blue auto delete --automation <ID> --workspace <ID> --confirm
 ```
 
-**Enhanced Features**:
-- **Per-Action Email/HTTP Settings**: Different settings for each action
-- **Unnumbered + Numbered Flags**: Same flexibility as create-automation-multi
-- **Partial Updates**: Update only specified actions
-- **⚠️ WARNING**: Displays warning when updating actions to prevent data loss
+**Trigger Types:** `TODO_CREATED`, `TODO_MARKED_AS_COMPLETE`, `TODO_MARKED_AS_INCOMPLETE`, `TODO_LIST_CHANGED`, `TAG_ADDED`, `TAG_REMOVED`, `ASSIGNEE_ADDED`, `ASSIGNEE_REMOVED`, `CUSTOM_FIELD_CHANGED`, `TODO_OVERDUE`
 
-**Critical Warning**: Action updates replace the entire actions array. For multi-action automations, specify ALL existing actions to avoid losing any.
+**Action Types:** `SEND_EMAIL`, `MAKE_HTTP_REQUEST`, `ADD_TAG`, `REMOVE_TAG`, `ADD_ASSIGNEE`, `REMOVE_ASSIGNEE`, `ADD_COLOR`, `CHANGE_TODO_LIST`, `MARK_AS_COMPLETE`, `MARK_AS_INCOMPLETE`, `CREATE_TODO`, `COPY_TODO`, `DELETE_TODO`, `ARCHIVE_TODO`, `CREATE_CHECKLIST`
 
-### Automation Deletion (`delete-automation`) - NEW
+### Checklists (`blue checklists`)
 ```bash
-# Delete an automation (requires confirmation)
-go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confirm
+blue checklists list --record <ID> --workspace <ID> --simple
+blue checklists create --record <ID> --title "Pre-launch Tasks" --workspace <ID>
+blue checklists delete --checklist <ID> --confirm
 
-# Simple output format
-go run . delete-automation -automation AUTOMATION_ID -project PROJECT_ID -confirm -simple
+# Checklist items
+blue checklists items create --checklist <ID> --title "Review docs" --position 1000.0
+blue checklists items update --item <ID> --done true
+blue checklists items update --item <ID> --title "Updated" --move-to-checklist <ID>
+blue checklists items delete --item <ID> --confirm
 ```
 
-**Required Parameters**: `-automation` (automation ID), `-project` (project ID), `-confirm` (safety confirmation)
-
-**Safety Features**:
-- **Confirmation Required**: Must use `-confirm` flag to prevent accidents
-- **Project Context**: Requires project ID for authorization
-- **Permanent Action**: Cannot be undone once deleted
-- **Clear Feedback**: Shows success/failure status
-
-### Record Moving (`move-record`) - NEW
+### Comments (`blue comments`)
 ```bash
-# Move record to different list in same project
-go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID
-
-# Move record to different project (cross-project move)
-go run . move-record -record RECORD_ID -list LIST_ID -project SOURCE_PROJECT_ID
-
-# Move record with simple output
-go run . move-record -record RECORD_ID -list LIST_ID -project PROJECT_ID -simple
+blue comments create --record <ID> --workspace <ID> --text "Comment text"
+blue comments create --record <ID> --workspace <ID> --text "Comment" --html "<p><strong>Comment</strong></p>"
+blue comments update --comment <ID> --workspace <ID> --text "Updated text"
 ```
 
-**Required Parameters**:
-- `-record` (record ID to move)
-- `-list` (destination list ID)
-- `-project` (source project ID where record currently exists)
-
-**Key Features**:
-- **Cross-Project Moves**: Automatically handles moving records between different projects
-- **Same-Project Moves**: Move records between lists within the same project
-- **Position Management**: Record position is automatically set in destination list
-- **Source Project Context**: Uses source project ID for authorization header
-- **Simple Interface**: Clean, focused command for just moving records
-
-**Implementation Details**:
-- Uses the `updateTodos` mutation with `todoListId` and `filter.todoIds` parameters
-- More focused than `update-record -list` command - dedicated to moving operations
-- Project header is set to the source project ID (where record currently is)
-- Cross-project moves work automatically - mutation detects destination project from list ID
-- Returns boolean success status
-
-### User Invitations (`invite-user`) - NEW
+### Users (`blue users`)
 ```bash
-# Invite user to company with basic member access
-go run . invite-user -email "user@example.com" -access-level "MEMBER"
+# List users
+blue users list --simple                                     # Company-wide
+blue users list --workspace <ID> --simple                    # Workspace-specific
+blue users list --search "john" --first 100
 
-# Invite user to specific project with admin access
-go run . invite-user -email "admin@example.com" -access-level "ADMIN" \
-  -project PROJECT_ID
+# Invite users
+blue users invite --email "user@example.com" --access-level "MEMBER" --workspace <ID>
+blue users invite --email "admin@example.com" --access-level "ADMIN" --workspaces "ID1,ID2"
 
-# Invite user to multiple projects with client access
-go run . invite-user -email "client@example.com" -access-level "CLIENT" \
-  -projects "PROJECT_ID1,PROJECT_ID2,PROJECT_ID3"
-
-# Invite user with custom project role
-go run . invite-user -email "user@example.com" -access-level "MEMBER" \
-  -project PROJECT_ID -role "CUSTOM_ROLE_ID"
+# List roles
+blue users roles --workspace <ID> --simple
+blue users roles --workspaces "ID1,ID2" --format json
 ```
 
-**Required Parameters**: `-email` (email address), `-access-level` (OWNER, ADMIN, MEMBER, CLIENT, COMMENT_ONLY)
+**Access Levels:** `OWNER`, `ADMIN`, `MEMBER`, `CLIENT`, `COMMENT_ONLY`
 
-**Optional Parameters**:
-- `-project` (single project ID)
-- `-projects` (comma-separated project IDs)
-- `-company` (company ID, uses default if not specified)
-- `-role` (custom role ID for project-specific invitations)
-
-**Access Levels**:
-- `OWNER`: Full company/project access
-- `ADMIN`: Administrative access
-- `MEMBER`: Standard member access
-- `CLIENT`: Client-level access (limited permissions)
-- `COMMENT_ONLY`: Can only view and comment
-
-### Project User Roles (`read-project-user-roles`) - NEW
+### Dependencies (`blue dependencies` / `blue deps`)
 ```bash
-# List custom roles for a single project
-go run . read-project-user-roles -project PROJECT_ID -simple
-
-# List roles across multiple projects with detailed info
-go run . read-project-user-roles -projects "PROJECT_ID1,PROJECT_ID2"
-
-# Export role data as JSON
-go run . read-project-user-roles -project PROJECT_ID -format json
-
-# Export role data as CSV
-go run . read-project-user-roles -project PROJECT_ID -format csv
+blue deps create --record <ID> --other-record <ID> --type "BLOCKED_BY" --workspace <ID>
+blue deps update --record <ID> --other-record <ID> --type "BLOCKS" --workspace <ID>
+blue deps delete --record <ID> --other-record <ID> --confirm --workspace <ID>
 ```
 
-**Required Parameters**: Either `-project` (single project) or `-projects` (comma-separated list)
-
-**Output Options**: 
-- `-simple`: Basic role information only
-- `-format`: Output format (table, json, csv)
-
-**Role Information Displayed**:
-- Role ID, UID, name, and description
-- Permission flags (invite others, mark records done, delete records, etc.)
-- Feature access (activity, chat, discussions, forms, wiki, files, records, people)
-- Visibility settings (assigned todos only, mentioned comments only)
-- Associated custom fields and todo lists
-- Creation and update timestamps
-
-### Comments
+### Files (`blue files`)
 ```bash
-go run . create-comment -record RECORD_ID -text "Progress update" -html "<p><strong>Update</strong></p>"
-go run . update-comment -comment COMMENT_ID -text "Updated text" -html "<p><em>Updated</em></p>"
-```
-
-### Checklists (`create-checklist`, `create-checklist-item`) - NEW
-```bash
-# Create a checklist on a record
-go run . create-checklist -record RECORD_ID -title "Pre-launch Checklist" -position 1000.0
-
-# Create a checklist with project context
-go run . create-checklist -record RECORD_ID -title "QA Tasks" -project PROJECT_ID -simple
-
-# Add items to a checklist
-go run . create-checklist-item -checklist CHECKLIST_ID -title "Review documentation" -position 1000.0
-go run . create-checklist-item -checklist CHECKLIST_ID -title "Run tests" -position 2000.0 -simple
-go run . create-checklist-item -checklist CHECKLIST_ID -title "Deploy to staging" -position 3000.0
-```
-
-**Required Parameters**:
-- `create-checklist`: `-record` (record/todo ID), `-title` (checklist title)
-- `create-checklist-item`: `-checklist` (checklist ID), `-title` (item title)
-
-**Optional Parameters**:
-- `-position` (float, default: 1000.0) - Position/order of the checklist or item
-- `-project` (project ID or slug) - For project context
-- `-simple` - Show simplified output
-
-**Workflow Example**:
-```bash
-# 1. Create a checklist on a record
-go run . create-checklist -record cm123abc -title "Deployment Checklist" -position 1000.0
-# Output: Checklist ID: cl456def
-
-# 2. Add multiple items to the checklist
-go run . create-checklist-item -checklist cl456def -title "Update dependencies" -position 1000.0
-go run . create-checklist-item -checklist cl456def -title "Run integration tests" -position 2000.0
-go run . create-checklist-item -checklist cl456def -title "Deploy to production" -position 3000.0
-go run . create-checklist-item -checklist cl456def -title "Monitor for errors" -position 4000.0
-```
-
-### Reading Checklists (`read-checklists`) - NEW
-```bash
-# List all checklists from a record with detailed output
-go run . read-checklists -record RECORD_ID
-
-# Simple output with checklist items
-go run . read-checklists -record RECORD_ID -simple
-
-# List checklists without showing items
-go run . read-checklists -record RECORD_ID -items false
-
-# With project context
-go run . read-checklists -record RECORD_ID -project PROJECT_ID
-```
-
-**Required Parameters**:
-- `-record` (record/todo ID) - The record to list checklists from
-
-**Optional Parameters**:
-- `-project` (project ID or slug) - For project context
-- `-simple` - Show simplified output
-- `-items` (default: true) - Show checklist items
-
-**Output Details**:
-- Shows all checklists for the specified record
-- Displays checklist progress (completed/total items)
-- Shows each checklist item with done status (☐ or ☑)
-- Includes item assignments, due dates, and creation info
-- Full metadata: IDs, positions, timestamps, creators
-
-### Updating Checklist Items (`update-checklist-item`) - NEW
-```bash
-# Mark an item as done
-go run . update-checklist-item -item ITEM_ID -done true
-
-# Mark an item as not done
-go run . update-checklist-item -item ITEM_ID -done false
-
-# Update the title
-go run . update-checklist-item -item ITEM_ID -title "Updated task title"
-
-# Change position/order
-go run . update-checklist-item -item ITEM_ID -position 1500.0
-
-# Move item to a different checklist
-go run . update-checklist-item -item ITEM_ID -move-to-checklist CHECKLIST_ID
-
-# Update multiple properties at once
-go run . update-checklist-item -item ITEM_ID -title "New Title" -done true -position 2000.0 -simple
-```
-
-**Required Parameters**:
-- `-item` (checklist item ID) - The item to update
-
-**Optional Parameters** (at least one required):
-- `-title` (string) - New title for the item
-- `-position` (float) - New position/order
-- `-done` (true/false) - Mark as done or not done
-- `-move-to-checklist` (checklist ID) - Move to different checklist
-- `-project` (project ID or slug) - For project context
-- `-simple` - Show simplified output
-
-**Use Cases**:
-- **Task Completion**: Mark items as done when tasks are completed
-- **Reordering**: Change item positions to reorder tasks
-- **Renaming**: Update item titles for clarity
-- **Moving**: Transfer items between checklists
-- **Bulk Updates**: Update multiple properties in one command
-
-### Deleting Checklists (`delete-checklist`) - NEW
-```bash
-# Delete a checklist (requires confirmation)
-go run . delete-checklist -checklist CHECKLIST_ID -confirm
-
-# Delete with project context
-go run . delete-checklist -checklist CHECKLIST_ID -project PROJECT_ID -confirm -simple
-```
-
-**Required Parameters**:
-- `-checklist` (checklist ID) - The checklist to delete
-- `-confirm` - Safety confirmation flag (required)
-
-**Optional Parameters**:
-- `-project` (project ID or slug) - For project context
-- `-simple` - Show simplified output
-
-**Important**:
-- ⚠️ This permanently deletes the checklist AND all its items
-- Cannot be undone
-- Requires `-confirm` flag for safety
-
-### Deleting Checklist Items (`delete-checklist-item`) - NEW
-```bash
-# Delete a checklist item (requires confirmation)
-go run . delete-checklist-item -item ITEM_ID -confirm
-
-# Delete with project context
-go run . delete-checklist-item -item ITEM_ID -project PROJECT_ID -confirm -simple
-```
-
-**Required Parameters**:
-- `-item` (checklist item ID) - The item to delete
-- `-confirm` - Safety confirmation flag (required)
-
-**Optional Parameters**:
-- `-project` (project ID or slug) - For project context
-- `-simple` - Show simplified output
-
-**Important**:
-- ⚠️ This permanently deletes the checklist item
-- Cannot be undone
-- Requires `-confirm` flag for safety
-
-### Complete Checklist Workflow Example
-```bash
-# 1. Create a record/task
-go run . create-record -list LIST_ID -title "Product Launch"
-# Output: Record ID: rec123
-
-# 2. Create a checklist on the record
-go run . create-checklist -record rec123 -title "Pre-Launch Tasks"
-# Output: Checklist ID: cl456
-
-# 3. Add checklist items
-go run . create-checklist-item -checklist cl456 -title "Design review" -position 1000.0
-go run . create-checklist-item -checklist cl456 -title "QA testing" -position 2000.0
-go run . create-checklist-item -checklist cl456 -title "Marketing materials" -position 3000.0
-go run . create-checklist-item -checklist cl456 -title "Deploy to production" -position 4000.0
-
-# 4. View all checklists and items
-go run . read-checklists -record rec123
-
-# 5. Mark items as done as work progresses
-go run . update-checklist-item -item item1 -done true
-go run . update-checklist-item -item item2 -done true
-
-# 6. Update an item title
-go run . update-checklist-item -item item3 -title "Marketing materials ready"
-
-# 7. View progress
-go run . read-checklists -record rec123 -simple
-
-# 8. Delete completed items (optional)
-go run . delete-checklist-item -item item1 -confirm
-go run . delete-checklist-item -item item2 -confirm
-
-# 9. Or delete entire checklist when done
-go run . delete-checklist -checklist cl456 -confirm
-```
-
-### Dependencies
-```bash
-go mod tidy  # Install/update dependencies
+blue files download                                          # Interactive mode
+blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
 ## Architecture
 
 ### Project Structure
-- `main.go` - Single entry point with command router
-- `tools/` - All command implementations  
-- `common/` - Shared code (authentication, types, utilities)
-- `test/` - End-to-end test suite
+```
+cli/
+├── main.go              # Entry point — calls cmd.Execute()
+├── cmd/                 # All cobra command definitions
+│   ├── root.go          # Root command, version, global setup
+│   ├── workspaces/      # blue workspaces *
+│   ├── records/         # blue records *
+│   ├── lists/           # blue lists *
+│   ├── tags/            # blue tags *
+│   ├── fields/          # blue fields *
+│   │   ├── options/     # blue fields options *
+│   │   └── groups/      # blue fields groups *
+│   ├── automations/     # blue automations *
+│   ├── checklists/      # blue checklists *
+│   │   └── items/       # blue checklists items *
+│   ├── comments/        # blue comments *
+│   ├── users/           # blue users *
+│   ├── dependencies/    # blue dependencies *
+│   └── files/           # blue files *
+├── common/              # Shared code (auth, types, utils)
+│   ├── auth.go          # GraphQL client & authentication
+│   ├── types.go         # Shared type definitions
+│   └── utils.go         # Utility functions
+```
 
 ### Authentication (`common/auth.go`)
 - `Client` struct with GraphQL request method
 - Environment variables from `.env` file
-- Project context via `X-Bloo-Project-Id` header
+- Workspace context via `X-Bloo-Project-Id` header (API still uses project terminology)
 - 30-second timeout for requests
 
 ### Required Environment Variables
@@ -724,81 +238,25 @@ CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
 ```
 
-## Testing
-
-### End-to-End Test
-```bash
-go run . e2e
-```
-- Tests all CRUD operations
-- 25+ test cases covering major functionality
-- Automatic cleanup
-- Exit code 0 for success, 1 for failure
-
-## Implementation Status
-
-### Completed Features ✅
-- Enhanced project listing with sorting, pagination, search
-- Create/update/delete projects, lists, records, tags, custom fields
-- Client-side custom field filtering with all operators
-- Automatic numerical calculations and statistics
-- Comprehensive record details with custom field display
-- Comments creation and updates
-- Project features toggle with intelligent merging
-- End-to-end test suite
-
-### Planned Features
-- Custom field groups
-- Automations
-- Custom user roles
-- Bulk operations
-- Advanced export/import
-- Real-time notifications
+### GraphQL API Details
+- Endpoint: `https://api.blue.cc/graphql`
+- Headers: `X-Bloo-Token-ID`, `X-Bloo-Token-Secret`, `X-Bloo-Company-ID`, `X-Bloo-Project-Id`
+- 30-second timeout, POST method with JSON body
 
 ## Implementation Guidelines
 
-1. Create new files in `tools/` directory
-2. Use common package with dot imports
-3. Follow command-line flag patterns
-4. Add commands to `main.go` switch statement
-5. Use `client.SetProjectID()` for project context
-6. Include `-simple` and detailed output options
-7. Handle errors consistently
-8. Update CLAUDE.md with usage examples
-9. Add test cases to `test/e2e.go`
+When adding new commands:
+1. Create a new directory under `cmd/` for the command group
+2. Create a parent command file (e.g., `mygroup.go`) with exported `Cmd` variable
+3. Create individual command files (e.g., `list.go`, `create.go`)
+4. Register the group in `cmd/root.go` with `rootCmd.AddCommand(mygroup.Cmd)`
+5. Use `--workspace`/`-w` for workspace context (maps to `client.SetProject()`)
+6. Use `--simple`/`-s` for simplified output
+7. Use `--confirm`/`-y` for destructive operations
+8. Import `blue-cli/common` for shared types and auth
 
-## GraphQL API Details
-- Endpoint: `https://api.blue.cc/graphql`
-- Headers: `X-Bloo-Token-ID`, `X-Bloo-Token-Secret`, `X-Bloo-Company-ID`
-- 30-second timeout, POST method with JSON body
-
-## Usage Examples
-
-### CRM System Setup
-```bash
-# Create CRM project and lists
-go run . create-project -name "CRM System" -color blue -icon "office-building"
-go run . create-list -project PROJECT_ID -names "Leads,Prospects,Customers,Closed Won,Closed Lost"
-
-# Create custom fields
-go run . create-custom-field -project PROJECT_ID -name "Deal Value" -type "CURRENCY" -currency "USD"
-go run . create-custom-field -project PROJECT_ID -name "Priority" -type "SELECT_SINGLE" -options "High:red,Medium:yellow,Low:green"
-
-# Add records with custom fields (note: SELECT fields require option IDs with trailing comma)
-go run . create-record -project PROJECT_ID -list LIST_ID -title "TechCorp Deal" -custom-fields "cf123:75000;cf456:option_id_123,"
-
-# Query and analyze
-go run . read-records -project PROJECT_ID -custom-field "cf123:GT:50000" -calc -simple
-go run . read-records -project PROJECT_ID -stats -calc-fields "cf123"
-```
-
-### Data Analysis
-```bash
-# Project statistics
-go run . read-records-count -project PROJECT_ID
-go run . read-records -project PROJECT_ID -calc -simple
-
-# Advanced filtering
-go run . read-records -project PROJECT_ID -custom-field "cf456:CONTAINS:urgent" -limit 10
-go run . read-projects -search "CRM" -sort updatedAt_DESC -simple
-```
+## Key Technologies
+- Go with [cobra](https://github.com/spf13/cobra) for CLI framework
+- GraphQL (raw queries, no client library)
+- godotenv for `.env` configuration
+- promptui for interactive prompts
