@@ -28,4 +28,9 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
+          # GITHUB_TOKEN: used for creating the GitHub Release on this repo
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # TAP_GITHUB_TOKEN: fine-grained PAT scoped to heyblueteam/homebrew-tap
+          # with contents:write permission. Required to push the Homebrew formula.
+          # Create at: GitHub Settings > Developer settings > Fine-grained tokens
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
