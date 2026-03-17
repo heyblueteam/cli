@@ -2,29 +2,37 @@
 
 A command-line interface for managing Blue workspaces, records, lists, tags, custom fields, automations, and more.
 
-## Quick Start
+## Install
 
-### Prerequisites
-- Go 1.21+
-- Blue API credentials (personal access token, client ID, company ID)
-
-### Setup
 ```bash
-# Install dependencies
-go mod tidy
-
-# Copy .env.example to .env and fill in your credentials
-cp .env.example .env
-
-# Build the binary
-go build -o blue .
-
-# Verify it works
-./blue --help
+brew install heyblueteam/tap/blue-cli
 ```
 
-### Configuration
-Create a `.env` file with your Blue API credentials:
+## Setup
+
+```bash
+blue init
+```
+
+This prompts for your API credentials (get them from Account Settings > API > Generate Token) and saves them to `~/.config/blue/config.env`.
+
+## Verify
+
+```bash
+blue workspaces list --simple
+```
+
+## Development
+
+If you're working on the CLI itself:
+
+```bash
+go mod tidy              # Install dependencies
+go build -o blue .       # Build the binary
+./blue --help            # Verify it works
+```
+
+You can also create a `.env` file in the project directory — it takes priority over the global config:
 
 ```env
 API_URL=https://api.blue.cc/graphql
