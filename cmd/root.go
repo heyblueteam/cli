@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"blue-cli/cmd/automations"
+	"blue-cli/cmd/charts"
 	"blue-cli/cmd/checklists"
 	"blue-cli/cmd/dashboards"
 	"blue-cli/cmd/comments"
@@ -37,6 +38,7 @@ Manage workspaces, records, lists, tags, custom fields, automations, and more.`,
 func init() {
 	// Add subcommand groups
 	rootCmd.AddCommand(automations.Cmd)
+	rootCmd.AddCommand(charts.Cmd)
 	rootCmd.AddCommand(checklists.Cmd)
 	rootCmd.AddCommand(dashboards.Cmd)
 	rootCmd.AddCommand(workspaces.Cmd)
