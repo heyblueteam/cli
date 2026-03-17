@@ -6,6 +6,7 @@ import (
 
 	"blue-cli/cmd/automations"
 	"blue-cli/cmd/checklists"
+	"blue-cli/cmd/dashboards"
 	"blue-cli/cmd/comments"
 	"blue-cli/cmd/dependencies"
 	"blue-cli/cmd/fields"
@@ -37,6 +38,7 @@ func init() {
 	// Add subcommand groups
 	rootCmd.AddCommand(automations.Cmd)
 	rootCmd.AddCommand(checklists.Cmd)
+	rootCmd.AddCommand(dashboards.Cmd)
 	rootCmd.AddCommand(workspaces.Cmd)
 	rootCmd.AddCommand(lists.Cmd)
 	rootCmd.AddCommand(records.Cmd)

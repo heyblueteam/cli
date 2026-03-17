@@ -229,9 +229,25 @@ func (c *Client) GetProjectContext() string {
 	return c.projectSlug
 }
 
-// GetCompanyID returns the configured company ID
+// GetCompanyID returns the configured company ID (slug)
 func (c *Client) GetCompanyID() string {
 	return c.config.CompanyID
+}
+
+// ResolveCompanyID resolves the company slug to the actual company ID (cuid).
+// Some GraphQL queries (like dashboards) require the real ID, not the slug.
+func (c *Client) ResolveCompanyID() (string, error) {
+	query := fmt.Sprintf(`query { company(id: "%s") { id } }`, c.config.CompanyID)
+	data, err := c.ExecuteQuery(query, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve company ID: %w", err)
+	}
+	if company, ok := data["company"].(map[string]interface{}); ok {
+		if id, ok := company["id"].(string); ok {
+			return id, nil
+		}
+	}
+	return "", fmt.Errorf("could not resolve company ID from slug '%s'", c.config.CompanyID)
 }
 
 // DownloadFile downloads a file from the given URL using the authenticated client
