@@ -34,9 +34,8 @@ COMPANY_ID=your_company_slug
 ```
 
 **Getting Your Credentials:**
-1. **Personal Access Token**: Blue settings → API & Integrations → Personal Access Tokens
-2. **Client ID**: Blue settings → API & Integrations
-3. **Company ID**: Your company slug (e.g., if your URL is `https://acme.blue.cc`, use `acme`)
+1. **Client ID & Auth Token**: Account Settings → API → Generate Token
+2. **Company ID**: Your org slug from the URL (e.g., `acme` from `blue.cc/org/acme`)
 
 ## Commands
 

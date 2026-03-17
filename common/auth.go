@@ -7,10 +7,14 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
 )
+
+// Default API URL
+const DefaultAPIUrl = "https://api.blue.cc/graphql"
 
 // Config holds API configuration
 type Config struct {
@@ -40,10 +44,41 @@ type Client struct {
 	projectSlug   string
 }
 
-// LoadConfig loads configuration from .env file
+// ConfigDir returns the path to the Blue CLI config directory
+func ConfigDir() string {
+	// Check XDG_CONFIG_HOME first
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		return filepath.Join(xdg, "blue")
+	}
+	// Fall back to ~/.config/blue
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".config", "blue")
+}
+
+// ConfigPath returns the path to the Blue CLI config file
+func ConfigPath() string {
+	dir := ConfigDir()
+	if dir == "" {
+		return ""
+	}
+	return filepath.Join(dir, "config.env")
+}
+
+// LoadConfig loads configuration with the following priority:
+// 1. Environment variables (always win)
+// 2. .env file in current directory
+// 3. ~/.config/blue/config.env (global config from "blue init")
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
+	// Try loading .env from current directory (silently ignore if not found)
+	_ = godotenv.Load()
+
+	// Try loading global config (silently ignore if not found)
+	globalConfig := ConfigPath()
+	if globalConfig != "" {
+		_ = godotenv.Load(globalConfig)
 	}
 
 	config := &Config{
@@ -53,8 +88,13 @@ func LoadConfig() (*Config, error) {
 		CompanyID: os.Getenv("COMPANY_ID"),
 	}
 
-	if config.APIUrl == "" || config.AuthToken == "" || config.ClientID == "" || config.CompanyID == "" {
-		return nil, fmt.Errorf("missing required environment variables")
+	// Default API URL
+	if config.APIUrl == "" {
+		config.APIUrl = DefaultAPIUrl
+	}
+
+	if config.AuthToken == "" || config.ClientID == "" || config.CompanyID == "" {
+		return nil, fmt.Errorf("missing credentials. Run 'blue init' to set up your configuration")
 	}
 
 	return config, nil
@@ -92,9 +132,8 @@ func (c *Client) ExecuteQuery(query string, variables map[string]interface{}) (m
 	req.Header.Set("X-Bloo-Token-ID", c.config.ClientID)
 	req.Header.Set("X-Bloo-Token-Secret", c.config.AuthToken)
 	req.Header.Set("X-Bloo-Company-ID", c.config.CompanyID)
-	
+
 	// Include project context header if project context is set
-	// Use Project ID if available, otherwise use Project slug
 	if c.projectID != "" {
 		req.Header.Set("X-Bloo-Project-Id", c.projectID)
 	} else if c.projectSlug != "" {
@@ -139,7 +178,6 @@ func (c *Client) ExecuteQueryWithResult(query string, variables map[string]inter
 		return err
 	}
 
-	// Marshal and unmarshal to convert to the result type
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("error marshaling data: %w", err)
@@ -155,20 +193,17 @@ func (c *Client) ExecuteQueryWithResult(query string, variables map[string]inter
 // SetProjectID sets the project ID for requests that require project context
 func (c *Client) SetProjectID(projectID string) {
 	c.projectID = projectID
-	c.projectSlug = "" // Clear slug when setting ID
+	c.projectSlug = ""
 }
 
 // SetProjectSlug sets the project slug for requests that require project context
 func (c *Client) SetProjectSlug(projectSlug string) {
 	c.projectSlug = projectSlug
-	c.projectID = "" // Clear ID when setting slug
+	c.projectID = ""
 }
 
 // SetProject sets the project ID or slug for requests that require project context
-// This method automatically detects whether the input is an ID or slug
 func (c *Client) SetProject(project string) {
-	// Simple heuristic: if it looks like a UUID/ID (contains hyphens), treat as ID
-	// Otherwise treat as slug
 	if len(project) > 20 && (project[8] == '-' || project[13] == '-' || project[18] == '-') {
 		c.SetProjectID(project)
 	} else {
@@ -206,12 +241,10 @@ func (c *Client) DownloadFile(url string) ([]byte, error) {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
-	// Set authentication headers
 	req.Header.Set("X-Bloo-Token-ID", c.config.ClientID)
 	req.Header.Set("X-Bloo-Token-Secret", c.config.AuthToken)
 	req.Header.Set("X-Bloo-Company-ID", c.config.CompanyID)
 
-	// Include project context header if project context is set
 	if c.projectID != "" {
 		req.Header.Set("X-Bloo-Project-Id", c.projectID)
 	} else if c.projectSlug != "" {
