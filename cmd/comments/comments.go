@@ -8,10 +8,11 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "comments",
 	Short: "Manage comments",
-	Long:  "Create and update comments on records.",
+	Long:  "Create, list, and update comments on records.",
 }
 
 func init() {
+	Cmd.AddCommand(listCmd)
 	Cmd.AddCommand(createCmd)
 	Cmd.AddCommand(updateCmd)
 }
