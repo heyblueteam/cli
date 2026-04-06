@@ -90,6 +90,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
+	// Add to known companies list
+	if err := common.AddCompany(companyID); err != nil {
+		fmt.Printf("Warning: could not update companies list: %v\n", err)
+	}
+
 	fmt.Println()
 	fmt.Printf("Config saved to %s\n", configPath)
 	fmt.Println()
