@@ -110,11 +110,11 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	// Set custom fields if provided
 	if createCustomFields != "" {
-		customFieldValues, err := parseCustomFieldValues(createCustomFields)
+		customFieldValues, err := common.ParseCustomFieldValues(createCustomFields)
 		if err != nil {
 			return fmt.Errorf("failed to parse custom fields: %w", err)
 		}
-		if err := executeSetCustomFields(client, record.ID, customFieldValues); err != nil {
+		if err := common.SetCustomFields(client, record.ID, customFieldValues); err != nil {
 			return fmt.Errorf("record created but failed to set custom fields: %w", err)
 		}
 	}
@@ -132,75 +132,3 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// parseCustomFieldValues parses custom field values from the CLI format
-func parseCustomFieldValues(customFieldsStr string) ([]common.CustomFieldValue, error) {
-	if customFieldsStr == "" {
-		return nil, nil
-	}
-
-	var values []common.CustomFieldValue
-	fieldPairs := strings.Split(customFieldsStr, ";")
-
-	for _, pair := range fieldPairs {
-		parts := strings.SplitN(strings.TrimSpace(pair), ":", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid custom field format: %s (expected field_id:value)", pair)
-		}
-
-		values = append(values, common.CustomFieldValue{
-			CustomFieldID: strings.TrimSpace(parts[0]),
-			Value:         strings.TrimSpace(parts[1]),
-		})
-	}
-
-	return values, nil
-}
-
-// SetCustomFieldResponse represents the response from setTodoCustomField mutation
-type SetCustomFieldResponse struct {
-	SetTodoCustomField bool `json:"setTodoCustomField"`
-}
-
-// executeSetCustomFields sets custom field values on a record
-func executeSetCustomFields(client *common.Client, todoID string, customFields []common.CustomFieldValue) error {
-	for _, cfv := range customFields {
-		var valueStr string
-
-		switch v := cfv.Value.(type) {
-		case string:
-			if strings.Contains(v, ",") {
-				items := strings.Split(v, ",")
-				var arrayItems []string
-				for _, item := range items {
-					arrayItems = append(arrayItems, fmt.Sprintf(`"%s"`, strings.TrimSpace(item)))
-				}
-				valueStr = fmt.Sprintf(`customFieldOptionIds: [%s]`, strings.Join(arrayItems, ", "))
-			} else {
-				valueStr = fmt.Sprintf(`text: "%s"`, strings.ReplaceAll(v, `"`, `\"`))
-			}
-		case float64:
-			valueStr = fmt.Sprintf(`number: %g`, v)
-		case bool:
-			valueStr = fmt.Sprintf(`checked: %t`, v)
-		default:
-			valueStr = fmt.Sprintf(`text: "%v"`, v)
-		}
-
-		mutation := fmt.Sprintf(`
-			mutation SetTodoCustomField {
-				setTodoCustomField(input: {
-					todoId: "%s"
-					customFieldId: "%s"
-					%s
-				})
-			}
-		`, todoID, cfv.CustomFieldID, valueStr)
-
-		var response SetCustomFieldResponse
-		if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
-			return fmt.Errorf("failed to set custom field %s: %w", cfv.CustomFieldID, err)
-		}
-	}
-
-	return nil
-}

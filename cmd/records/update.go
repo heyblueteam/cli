@@ -1,7 +1,6 @@
 package records
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -152,16 +151,23 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	// If timezone is provided with dates, use dedicated mutation
 	if resolvedTz != "" && (resolvedStart != "" || resolvedDue != "") {
+		var dateFields []string
+		dateFields = append(dateFields, fmt.Sprintf(`todoId: "%s"`, updateRecord))
+		if resolvedStart != "" {
+			dateFields = append(dateFields, fmt.Sprintf(`startedAt: "%s"`, resolvedStart))
+		}
+		if resolvedDue != "" {
+			dateFields = append(dateFields, fmt.Sprintf(`duedAt: "%s"`, resolvedDue))
+		}
+		dateFields = append(dateFields, fmt.Sprintf(`timezone: "%s"`, resolvedTz))
+
 		dueDateMutation := fmt.Sprintf(`
 			mutation UpdateTodoDueDate {
 				updateTodoDueDate(
-					todoId: "%s"
-					startedAt: "%s"
-					duedAt: "%s"
-					timezone: "%s"
+					%s
 				) { id startedAt duedAt timezone }
 			}
-		`, updateRecord, resolvedStart, resolvedDue, resolvedTz)
+		`, strings.Join(dateFields, "\n\t\t\t\t\t"))
 
 		var dueDateResponse struct {
 			UpdateTodoDueDate struct {
@@ -180,24 +186,26 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Execute editTodo mutation
-	mutation := fmt.Sprintf(`
-		mutation EditTodo {
-			editTodo(input: {
-				todoId: "%s"
-				%s
-			}) {
-				id title position color startedAt duedAt
-				todoList { id title }
-				users { id firstName lastName }
-				tags { id title color }
-			}
-		}
-	`, updateRecord, strings.Join(fields, "\n\t\t\t\t"))
-
+	// Execute editTodo mutation only if there are fields to update
 	var response UpdateRecordResponse
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
-		return fmt.Errorf("failed to update record: %w", err)
+	if len(fields) > 0 {
+		mutation := fmt.Sprintf(`
+			mutation EditTodo {
+				editTodo(input: {
+					todoId: "%s"
+					%s
+				}) {
+					id title position color startedAt duedAt
+					todoList { id title }
+					users { id firstName lastName }
+					tags { id title color }
+				}
+			}
+		`, updateRecord, strings.Join(fields, "\n\t\t\t\t"))
+
+		if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+			return fmt.Errorf("failed to update record: %w", err)
+		}
 	}
 
 	// Check if workspace required for advanced ops
@@ -274,11 +282,11 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	// Set custom fields
 	if updateCustomFields != "" {
-		cfValues, err := parseUpdateCustomFieldValues(updateCustomFields)
+		cfValues, err := common.ParseCustomFieldValues(updateCustomFields)
 		if err != nil {
 			return fmt.Errorf("failed to parse custom fields: %w", err)
 		}
-		if err := executeSetCustomFields(client, updateRecord, cfValues); err != nil {
+		if err := common.SetCustomFields(client, updateRecord, cfValues); err != nil {
 			return fmt.Errorf("failed to update custom fields: %w", err)
 		}
 	}
@@ -310,41 +318,3 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// parseUpdateCustomFieldValues handles typed parsing (numbers, booleans, arrays)
-func parseUpdateCustomFieldValues(customFieldsStr string) ([]common.CustomFieldValue, error) {
-	var values []common.CustomFieldValue
-	fieldPairs := strings.Split(customFieldsStr, ";")
-
-	for _, pair := range fieldPairs {
-		parts := strings.SplitN(strings.TrimSpace(pair), ":", 2)
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("invalid custom field format: %s (expected field_id:value)", pair)
-		}
-
-		fieldID := strings.TrimSpace(parts[0])
-		valueStr := strings.TrimSpace(parts[1])
-
-		var value interface{}
-		if valueStr == "true" || valueStr == "false" {
-			value, _ = strconv.ParseBool(valueStr)
-		} else if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
-			value = floatVal
-		} else if strings.HasPrefix(valueStr, "[") && strings.HasSuffix(valueStr, "]") {
-			var arr []string
-			if err := json.Unmarshal([]byte(valueStr), &arr); err == nil {
-				value = arr
-			} else {
-				value = valueStr
-			}
-		} else {
-			value = valueStr
-		}
-
-		values = append(values, common.CustomFieldValue{
-			CustomFieldID: fieldID,
-			Value:         value,
-		})
-	}
-
-	return values, nil
-}
