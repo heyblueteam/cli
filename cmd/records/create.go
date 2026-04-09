@@ -27,6 +27,7 @@ var createCmd = &cobra.Command{
 	Long:  "Create a new record/todo within a list.",
 	Example: `  blue records create --workspace <id> --list <id> --title "Fix login bug"
   blue records create -w <id> -l <id> -t "Task" --description "Details here"
+  blue records create -w <id> -l <id> -t "Task" --due-date "2026-12-31"
   blue records create -w <id> -l <id> -t "Task" --custom-fields "cf123:value;cf456:42"`,
 	RunE: runCreate,
 }
@@ -40,6 +41,9 @@ var (
 	createAssignees    string
 	createCustomFields string
 	createSimple       bool
+	createDueDate      string
+	createStartDate    string
+	createTimezone     string
 )
 
 func init() {
@@ -50,6 +54,9 @@ func init() {
 	createCmd.Flags().StringVar(&createPlacement, "placement", "", "Placement in list: TOP or BOTTOM")
 	createCmd.Flags().StringVar(&createAssignees, "assignees", "", "Comma-separated assignee IDs")
 	createCmd.Flags().StringVar(&createCustomFields, "custom-fields", "", "Custom field values (format: field_id1:value1;field_id2:value2)")
+	createCmd.Flags().StringVar(&createDueDate, "due-date", "", "Due date (ISO format or YYYY-MM-DD)")
+	createCmd.Flags().StringVar(&createStartDate, "start-date", "", "Start date (ISO format or YYYY-MM-DD)")
+	createCmd.Flags().StringVar(&createTimezone, "timezone", "", "Timezone for dates (e.g., UTC, America/New_York)")
 	createCmd.Flags().BoolVarP(&createSimple, "simple", "s", false, "Simple output format")
 }
 
@@ -107,6 +114,55 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	record := response.CreateTodo
+
+	// Set due date / start date if provided
+	if createDueDate != "" || createStartDate != "" {
+		resolvedStart := createStartDate
+		resolvedDue := createDueDate
+		resolvedTz := createTimezone
+
+		if resolvedStart != "" && len(resolvedStart) == 10 {
+			resolvedStart = resolvedStart + "T00:00:00Z"
+			if resolvedTz == "" {
+				resolvedTz = "UTC"
+			}
+		}
+		if resolvedDue != "" && len(resolvedDue) == 10 {
+			resolvedDue = resolvedDue + "T23:59:00Z"
+			if resolvedTz == "" {
+				resolvedTz = "UTC"
+			}
+		}
+
+		var dateFields []string
+		dateFields = append(dateFields, fmt.Sprintf(`todoId: "%s"`, record.ID))
+		if resolvedStart != "" {
+			dateFields = append(dateFields, fmt.Sprintf(`startedAt: "%s"`, resolvedStart))
+		}
+		if resolvedDue != "" {
+			dateFields = append(dateFields, fmt.Sprintf(`duedAt: "%s"`, resolvedDue))
+		}
+		if resolvedTz != "" {
+			dateFields = append(dateFields, fmt.Sprintf(`timezone: "%s"`, resolvedTz))
+		}
+
+		dueDateMutation := fmt.Sprintf(`
+			mutation UpdateTodoDueDate {
+				updateTodoDueDate(
+					%s
+				) { id startedAt duedAt timezone }
+			}
+		`, strings.Join(dateFields, "\n\t\t\t\t\t"))
+
+		var dueDateResponse struct {
+			UpdateTodoDueDate struct {
+				ID string `json:"id"`
+			} `json:"updateTodoDueDate"`
+		}
+		if err := client.ExecuteQueryWithResult(dueDateMutation, nil, &dueDateResponse); err != nil {
+			return fmt.Errorf("record created but failed to set dates: %w", err)
+		}
+	}
 
 	// Set custom fields if provided
 	if createCustomFields != "" {
