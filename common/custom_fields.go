@@ -174,7 +174,20 @@ func formatFieldValue(fieldType, value string) (string, error) {
 		return fmt.Sprintf("number: %g", n), nil
 
 	case "DATE":
-		return fmt.Sprintf(`text: "%s"`, escapeGraphQL(value)), nil
+		// Accepts "YYYY-MM-DD" (single date) or "YYYY-MM-DD..YYYY-MM-DD" (range).
+		// The API stores dates in startDate/endDate (DateTime); endDate is the canonical
+		// "has date" signal used by automations.
+		start, end := value, value
+		if parts := strings.SplitN(value, "..", 2); len(parts) == 2 {
+			start, end = strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		}
+		if len(start) == 10 {
+			start = start + "T00:00:00.000Z"
+		}
+		if len(end) == 10 {
+			end = end + "T23:59:59.000Z"
+		}
+		return fmt.Sprintf(`startDate: "%s", endDate: "%s", timezone: "UTC"`, start, end), nil
 
 	case "EMAIL", "PHONE", "URL", "TEXT_SINGLE", "TEXT_MULTI":
 		return fmt.Sprintf(`text: "%s"`, escapeGraphQL(value)), nil
