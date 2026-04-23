@@ -12,7 +12,7 @@ This is the Blue CLI — a Go CLI tool built with [cobra](https://github.com/spf
 
 ### Building
 ```bash
-go build -o blue .         # Build the binary
+go build -o blue ./cmd/blue  # Build the binary
 go mod tidy                # Install/update dependencies
 ```
 
@@ -201,8 +201,9 @@ blue files download --use-env --output "backup.zip" --parallel 10
 ### Project Structure
 ```
 cli/
-├── main.go              # Entry point — calls cmd.Execute()
 ├── cmd/                 # All cobra command definitions
+│   ├── blue/            # main package — `go install` target, binary name
+│   │   └── main.go      # Entry point — calls cmd.Execute()
 │   ├── root.go          # Root command, version, global setup
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *

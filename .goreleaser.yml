@@ -3,7 +3,7 @@ version: 2
 project_name: blue
 
 builds:
-  - main: ./main.go
+  - main: ./cmd/blue
     binary: blue
     env:
       - CGO_ENABLED=0

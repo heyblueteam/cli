@@ -19,6 +19,6 @@ vendor/
 # OS
 .DS_Store
 Thumbs.db
-demo-builder
-blue
+/demo-builder
+/blue
 dist/

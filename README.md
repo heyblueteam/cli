@@ -28,7 +28,7 @@ If you're working on the CLI itself:
 
 ```bash
 go mod tidy              # Install dependencies
-go build -o blue .       # Build the binary
+go build -o blue ./cmd/blue  # Build the binary
 ./blue --help            # Verify it works
 ```
 
@@ -216,8 +216,9 @@ Get option IDs with: `blue fields list --workspace <id> --detailed`
 
 ```
 cli/
-├── main.go              # Entry point
 ├── cmd/                 # Cobra command definitions
+│   ├── blue/            # main package — `go install` target
+│   │   └── main.go      # Entry point
 │   ├── root.go          # Root command, global config
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
