@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/heyblueteam/cli/cmd/automations"
 	"github.com/heyblueteam/cli/cmd/charts"
@@ -66,7 +67,8 @@ func init() {
 		Use:   "version",
 		Short: "Print version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("blue %s (commit: %s, built: %s)\n", version, commit, date)
+			v, c, d := resolveVersion()
+			fmt.Printf("blue %s (commit: %s, built: %s)\n", v, c, d)
 		},
 	})
 }
@@ -76,4 +78,39 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+// resolveVersion returns (version, commit, date), preferring values injected
+// by GoReleaser via ldflags. For `go install` builds (where ldflags aren't
+// set), it falls back to the module version and VCS metadata that Go embeds
+// in the binary.
+func resolveVersion() (string, string, string) {
+	v, c, d := version, commit, date
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return v, c, d
+	}
+
+	if v == "dev" && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		v = info.Main.Version
+	}
+
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			if c == "none" && s.Value != "" {
+				c = s.Value
+				if len(c) > 7 {
+					c = c[:7]
+				}
+			}
+		case "vcs.time":
+			if d == "unknown" && s.Value != "" {
+				d = s.Value
+			}
+		}
+	}
+
+	return v, c, d
 }
