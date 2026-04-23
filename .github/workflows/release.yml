@@ -31,6 +31,7 @@ jobs:
           # GITHUB_TOKEN: used for creating the GitHub Release on this repo
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # TAP_GITHUB_TOKEN: fine-grained PAT scoped to heyblueteam/homebrew-tap
-          # with contents:write permission. Required to push the Homebrew formula.
+          # AND heyblueteam/scoop-bucket, with contents:write permission.
+          # Required to push the Homebrew formula and Scoop manifest.
           # Create at: GitHub Settings > Developer settings > Fine-grained tokens
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
