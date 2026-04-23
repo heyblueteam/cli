@@ -3,7 +3,7 @@ package workspaces
 import (
 	"fmt"
 
-	"blue-cli/common"
+	"github.com/heyblueteam/cli/common"
 
 	"github.com/spf13/cobra"
 )

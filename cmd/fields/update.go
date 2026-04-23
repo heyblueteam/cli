@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"blue-cli/common"
+	"github.com/heyblueteam/cli/common"
 
 	"github.com/spf13/cobra"
 )

@@ -1,8 +1,8 @@
 package fields
 
 import (
-	"blue-cli/cmd/fields/groups"
-	"blue-cli/cmd/fields/options"
+	"github.com/heyblueteam/cli/cmd/fields/groups"
+	"github.com/heyblueteam/cli/cmd/fields/options"
 
 	"github.com/spf13/cobra"
 )

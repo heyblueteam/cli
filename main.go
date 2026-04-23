@@ -1,6 +1,6 @@
 package main
 
-import "blue-cli/cmd"
+import "github.com/heyblueteam/cli/cmd"
 
 func main() {
 	cmd.Execute()

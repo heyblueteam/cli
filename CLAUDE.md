@@ -253,7 +253,7 @@ When adding new commands:
 5. Use `--workspace`/`-w` for workspace context (maps to `client.SetProject()`)
 6. Use `--simple`/`-s` for simplified output
 7. Use `--confirm`/`-y` for destructive operations
-8. Import `blue-cli/common` for shared types and auth
+8. Import `github.com/heyblueteam/cli/common` for shared types and auth
 
 ## Key Technologies
 - Go with [cobra](https://github.com/spf13/cobra) for CLI framework

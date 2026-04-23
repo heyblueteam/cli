@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"blue-cli/common"
+	"github.com/heyblueteam/cli/common"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"

@@ -1,7 +1,7 @@
 package checklists
 
 import (
-	"blue-cli/cmd/checklists/items"
+	"github.com/heyblueteam/cli/cmd/checklists/items"
 
 	"github.com/spf13/cobra"
 )
