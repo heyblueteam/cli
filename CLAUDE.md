@@ -196,6 +196,85 @@ blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
+### Forms (`blue forms` / `blue form`)
+
+The Blue API splits form creation across two mutations: `createForm` accepts
+only `title`/`description`/`primaryColor`/`hideBranding`; everything else
+(theme, copy, list, assignees, tags, fields, active state) goes through
+`updateForm` and `upsertFormField`. The CLI hides this — `blue forms create`
+accepts the full flag set and chains the calls, printing `[1/3]`, `[2/3]`,
+`[3/3]` progress to stderr so a partial failure leaves a recoverable form ID.
+
+**Field types:** `title`, `description`, `tags`, `startedAt`, `duedAt`,
+`custom`. Only `custom` carries a `customField` (custom field ID).
+
+```bash
+# List / get
+blue forms list --workspace <ID> --simple
+blue forms list --workspace <ID> --sort title_ASC --page 2 --size 50 --format json
+blue forms get --form <ID> --workspace <ID> [--simple] [--format json]
+
+# Create — minimal
+blue forms create -w <ws> --title "Contact us"
+
+# Create — full (carries through updateForm + upsertFormField)
+blue forms create -w <ws> --title "Lead intake" \
+  --description "Tell us about your project" \
+  --primary-color "#0066ff" --theme dark --hide-branding \
+  --submit-text "Send" --response-text "Thanks!" \
+  --redirect-url "https://example.com/thanks" \
+  --list <list-id> --active \
+  --field "type=title;name=Full name;required=true;position=1000" \
+  --field "type=description;name=Project details;placeholder=Tell us more;position=2000" \
+  --field "type=custom;customField=cf_xxx;name=Budget;required=true;position=3000"
+
+# Create — fields from JSON file (preferred for >2 fields)
+blue forms create -w <ws> --title "Lead intake" --fields-file ./form-fields.json
+
+# Update (workspace optional — only needed when using slug-based form references)
+blue forms update --form <ID> --active true
+blue forms update --form <ID> --primary-color "#ff0000" --redirect-url "https://example.com/done"
+blue forms update --form <ID> --list <list-id> --assignees "u1,u2"
+blue forms update --form <ID> --field "type=custom;customField=cf_xxx;name=Phone;required=true"
+
+# Copy / delete / share URL — all require --workspace for project context
+blue forms copy --form <ID> --workspace <ID>
+blue forms delete --form <ID> --workspace <ID> --confirm
+blue forms url --form <ID> --workspace <ID>                                   # https://blue.cc/forms/<uid>
+blue forms url --form <ID> --workspace <ID> --base-url https://forms.acme.com # white-label override
+BLUE_FORMS_BASE_URL=https://forms.acme.com blue forms url --form <ID> --workspace <ID>
+
+# Granular field ops — all require --workspace
+blue forms fields list   --form <ID> --workspace <ID> [--simple] [--format json]
+blue forms fields add    --form <ID> --workspace <ID> --type title --name "Full name" --required --position 1000
+blue forms fields add    --form <ID> --workspace <ID> --type custom --custom-field <cf-id> \
+                         --name "Priority" --required --position 2000 --add-to-description
+blue forms fields update --field <ff-id> --form <ID> --workspace <ID> --name "New label" --required true --position 1500
+blue forms fields delete --field <ff-id> --workspace <ID> --confirm
+```
+
+**`--field` syntax:** `key=value` pairs separated by `;`. Keys: `type`,
+`customField`, `name`, `placeholder`, `position`, `required`, `hidden`,
+`addToDescription`, `extraInfo`, `id` (only for updates from a JSON file).
+
+**`--fields-file` JSON:** array of objects with `field` (the type),
+`customFieldId`, `name`, `placeholder`, `position`, `required`, `hidden`,
+`addToDescription`, `extraInfo`. Example:
+
+```json
+[
+  { "field": "title",       "name": "Full name",       "required": true,  "position": 1000 },
+  { "field": "description", "name": "Project details", "placeholder": "Tell us more", "position": 2000 },
+  { "field": "custom", "customFieldId": "cf_xxx", "name": "Budget", "required": true, "position": 3000, "addToDescription": true }
+]
+```
+
+If both `--fields-file` and `--field` are passed to `update`, the file wins
+(with a stderr warning). On `create`, file entries are processed first, then
+inline `--field` entries are appended.
+
+**Sort options:** `updatedAt_DESC` (default), `title_ASC`.
+
 ## Architecture
 
 ### Project Structure
@@ -218,7 +297,9 @@ cli/
 │   ├── comments/        # blue comments *
 │   ├── users/           # blue users *
 │   ├── dependencies/    # blue dependencies *
-│   └── files/           # blue files *
+│   ├── files/           # blue files *
+│   └── forms/           # blue forms *
+│       └── fields/      # blue forms fields *
 ├── common/              # Shared code (auth, types, utils)
 │   ├── auth.go          # GraphQL client & authentication
 │   ├── types.go         # Shared type definitions

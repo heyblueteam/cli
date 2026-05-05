@@ -14,6 +14,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/dependencies"
 	"github.com/heyblueteam/cli/cmd/fields"
 	"github.com/heyblueteam/cli/cmd/files"
+	"github.com/heyblueteam/cli/cmd/forms"
 	"github.com/heyblueteam/cli/cmd/lists"
 	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/tags"
@@ -61,6 +62,7 @@ func init() {
 	rootCmd.AddCommand(dependencies.Cmd)
 	rootCmd.AddCommand(fields.Cmd)
 	rootCmd.AddCommand(files.Cmd)
+	rootCmd.AddCommand(forms.Cmd)
 
 	// Version command
 	rootCmd.AddCommand(&cobra.Command{

@@ -187,6 +187,59 @@ blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
+### Forms
+
+Field types: `title`, `description`, `tags`, `startedAt`, `duedAt`, `custom`. Only `custom` carries a `customField` ID.
+
+```bash
+# List / get (--workspace required for get)
+blue forms list --workspace <ID> --simple
+blue forms get --form <ID> --workspace <ID>
+
+# Create — minimal
+blue forms create -w <ws> --title "Contact us"
+
+# Create — full (composite: createForm -> updateForm -> upsertFormField)
+blue forms create -w <ws> --title "Lead intake" \
+  --primary-color "#0066ff" --theme dark --hide-branding --active \
+  --submit-text "Send" --redirect-url "https://example.com/thanks" \
+  --list <list-id> \
+  --field "type=title;name=Full name;required=true;position=1000" \
+  --field "type=custom;customField=cf_xxx;name=Budget;required=true;position=2000"
+
+# Create — fields defined in JSON
+blue forms create -w <ws> --title "Lead intake" --fields-file ./form-fields.json
+
+# Update / copy / delete (copy + delete require --workspace)
+blue forms update --form <ID> --active true
+blue forms update --form <ID> --primary-color "#ff0000"
+blue forms copy --form <ID> --workspace <ID>
+blue forms delete --form <ID> --workspace <ID> --confirm
+
+# Public submit URL (default https://blue.cc/forms/<uid>)
+blue forms url --form <ID> --workspace <ID>
+blue forms url --form <ID> --workspace <ID> --base-url https://forms.acme.com
+
+# Field-level ops (all require --workspace)
+blue forms fields list   --form <ID> --workspace <ID>
+blue forms fields add    --form <ID> --workspace <ID> --type title --name "Full name" --required --position 1000
+blue forms fields add    --form <ID> --workspace <ID> --type custom --custom-field <cf-id> --name "Priority" --required
+blue forms fields update --field <ff-id> --form <ID> --workspace <ID> --name "New label" --position 1500
+blue forms fields delete --field <ff-id> --workspace <ID> --confirm
+```
+
+**`--field` inline syntax:** `key=value` pairs separated by `;`. Keys: `type`, `customField`, `name`, `placeholder`, `position`, `required`, `hidden`, `addToDescription`, `extraInfo`.
+
+**`--fields-file` JSON shape:**
+
+```json
+[
+  { "field": "title",       "name": "Full name",       "required": true,  "position": 1000 },
+  { "field": "description", "name": "Project details", "placeholder": "Tell us more", "position": 2000 },
+  { "field": "custom", "customFieldId": "cf_xxx", "name": "Budget", "required": true, "position": 3000 }
+]
+```
+
 ### Shell Completions
 
 ```bash
