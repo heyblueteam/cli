@@ -38,10 +38,10 @@ type GraphQLError struct {
 
 // Client handles Blue API communication
 type Client struct {
-	config        *Config
-	httpClient    *http.Client
-	projectID     string
-	projectSlug   string
+	config      *Config
+	httpClient  *http.Client
+	projectID   string
+	projectSlug string
 }
 
 // ConfigDir returns the path to the Blue CLI config directory
@@ -248,6 +248,35 @@ func (c *Client) ResolveCompanyID() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("could not resolve company ID from slug '%s'", c.config.CompanyID)
+}
+
+// ResolveProjectID resolves a workspace ID or slug to the actual project ID.
+func (c *Client) ResolveProjectID(project string) (string, error) {
+	query := `query ResolveProject($project: String!) {
+		project(id: $project) {
+			id
+		}
+	}`
+
+	variables := map[string]interface{}{
+		"project": project,
+	}
+
+	var response struct {
+		Project struct {
+			ID string `json:"id"`
+		} `json:"project"`
+	}
+
+	if err := c.ExecuteQueryWithResult(query, variables, &response); err != nil {
+		return "", err
+	}
+
+	if response.Project.ID == "" {
+		return "", fmt.Errorf("could not resolve workspace ID from %q", project)
+	}
+
+	return response.Project.ID, nil
 }
 
 // DownloadFile downloads a file from the given URL using the authenticated client

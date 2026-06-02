@@ -41,6 +41,7 @@ blue lists list --workspace <ID> --simple
 blue lists create --workspace <ID> --names "To Do,In Progress,Done"
 blue lists create --workspace <ID> --names "Done,In Progress,To Do" --reverse
 blue lists update --list <ID> --workspace <ID> --title "New Title" --locked true
+blue lists update --list <ID> --workspace <ID> --color "#ff0000"
 blue lists delete --workspace <ID> --list <ID> --confirm
 ```
 
@@ -88,7 +89,8 @@ blue rec delete --record <ID> --confirm
 ### Tags (`blue tags`)
 ```bash
 blue tags list --workspace <ID>
-blue tags create --workspace <ID> --title "Bug" --color red
+blue tags create --workspace <ID> --title "Bug" --color "#ff0000"
+blue tags update --tag <ID> --color "#0066ff"
 blue tags add --record <ID> --tag-ids "tag1,tag2"
 blue tags add --record <ID> --tag-titles "Bug,Priority" --workspace <ID>
 ```

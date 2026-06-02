@@ -100,6 +100,7 @@ blue records delete --record <id> --confirm
 blue lists list --workspace <id> --simple
 blue lists create --workspace <id> --names "To Do,In Progress,Done"
 blue lists update --list <id> --workspace <id> --title "Backlog" --locked true
+blue lists update --list <id> --workspace <id> --color "#ff0000"
 blue lists delete --workspace <id> --list <id> --confirm
 ```
 
@@ -107,7 +108,8 @@ blue lists delete --workspace <id> --list <id> --confirm
 
 ```bash
 blue tags list --workspace <id>
-blue tags create --workspace <id> --title "Bug" --color red
+blue tags create --workspace <id> --title "Bug" --color "#ff0000"
+blue tags update --tag <id> --color "#0066ff"
 blue tags add --record <id> --tag-ids "tag1,tag2"
 blue tags add --record <id> --tag-titles "Bug,Priority" --workspace <id>
 ```

@@ -8,11 +8,12 @@ import (
 var Cmd = &cobra.Command{
 	Use:   "tags",
 	Short: "Manage tags",
-	Long:  "Create, list, and add tags to records within workspaces.",
+	Long:  "Create, list, update, and add tags to records within workspaces.",
 }
 
 func init() {
 	Cmd.AddCommand(listCmd)
 	Cmd.AddCommand(createCmd)
+	Cmd.AddCommand(updateCmd)
 	Cmd.AddCommand(addCmd)
 }

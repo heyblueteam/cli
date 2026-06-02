@@ -13,8 +13,8 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new tag",
 	Long:  "Create a new tag within a workspace.",
-	Example: `  blue tags create --workspace <id> --title "Bug" --color red
-  blue tags create -w <id> -t "Feature" --color blue`,
+	Example: `  blue tags create --workspace <id> --title "Bug" --color "#ff0000"
+  blue tags create -w <id> -t "Feature" --color "#0066ff"`,
 	RunE: runCreate,
 }
 
@@ -27,7 +27,7 @@ var (
 func init() {
 	createCmd.Flags().StringVarP(&createWorkspace, "workspace", "w", "", "Workspace ID (required)")
 	createCmd.Flags().StringVarP(&createTitle, "title", "t", "", "Tag title (required)")
-	createCmd.Flags().StringVar(&createColor, "color", "", "Tag color (required)")
+	createCmd.Flags().StringVar(&createColor, "color", "", "Tag hex color (required)")
 }
 
 func runCreate(cmd *cobra.Command, args []string) error {
@@ -39,6 +39,11 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 	if createColor == "" {
 		return fmt.Errorf("tag color is required. Use --color flag")
+	}
+
+	color, err := common.NormalizeHexColor(createColor)
+	if err != nil {
+		return err
 	}
 
 	config, err := common.LoadConfig()
@@ -64,7 +69,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	variables := map[string]interface{}{
 		"input": map[string]interface{}{
 			"title": strings.TrimSpace(createTitle),
-			"color": strings.TrimSpace(createColor),
+			"color": color,
 		},
 	}
 
