@@ -292,7 +292,7 @@ func writeInventoryCSV(writer io.Writer, files []inventoryFile) error {
 			userID,
 			userName,
 			userEmail,
-			fmt.Sprintf("https://api.blue.cc/uploads/%s", file.UID),
+			fmt.Sprintf("https://api.blue.app/uploads/%s", file.UID),
 		}); err != nil {
 			return err
 		}

@@ -10,14 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultFormsBaseURL = "https://blue.cc"
+const defaultFormsBaseURL = "https://blue.app"
 
 var urlCmd = &cobra.Command{
 	Use:   "url",
 	Short: "Print the public submit URL for a form",
 	Long: `Print the public submit URL using the form's uid.
 
-Defaults to https://blue.cc/forms/<uid>. Override the base via --base-url or
+Defaults to https://blue.app/forms/<uid>. Override the base via --base-url or
 the BLUE_FORMS_BASE_URL environment variable for white-label / self-hosted
 deployments.`,
 	Example: `  blue forms url --form <id>
@@ -35,7 +35,7 @@ var (
 func init() {
 	urlCmd.Flags().StringVarP(&urlForm, "form", "f", "", "Form ID (required)")
 	urlCmd.Flags().StringVarP(&urlWorkspace, "workspace", "w", "", "Workspace ID or slug (required)")
-	urlCmd.Flags().StringVar(&urlBase, "base-url", "", "Base URL for forms (default: $BLUE_FORMS_BASE_URL or https://blue.cc)")
+	urlCmd.Flags().StringVar(&urlBase, "base-url", "", "Base URL for forms (default: $BLUE_FORMS_BASE_URL or https://blue.app)")
 }
 
 func runURL(cmd *cobra.Command, args []string) error {

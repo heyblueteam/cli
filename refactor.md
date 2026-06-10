@@ -297,7 +297,7 @@ brews:
   - repository:
       owner: <github-org>
       name: homebrew-tap
-    homepage: https://blue.cc
+    homepage: https://blue.app
     description: CLI for Blue workspace management
     install: |
       bin.install "blue"
@@ -339,7 +339,7 @@ jobs:
 
 1. **GitHub Releases** (automatic via GoReleaser) — cross-platform binaries
 2. **Homebrew tap** (automatic via GoReleaser) — `brew install <org>/tap/blue`
-3. **curl install script** (optional, later) — `curl -fsSL https://cli.blue.cc/install.sh | sh`
+3. **curl install script** (optional, later) — `curl -fsSL https://cli.blue.app/install.sh | sh`
 
 **NOT recommended:**
 - npm — adds unnecessary Node.js dependency for a Go binary

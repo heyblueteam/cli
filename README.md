@@ -35,7 +35,7 @@ go build -o blue ./cmd/blue  # Build the binary
 You can also create a `.env` file in the project directory — it takes priority over the global config:
 
 ```env
-API_URL=https://api.blue.cc/graphql
+API_URL=https://api.blue.app/graphql
 AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
@@ -43,7 +43,7 @@ COMPANY_ID=your_company_slug
 
 **Getting Your Credentials:**
 1. **Client ID & Auth Token**: Account Settings → API → Generate Token
-2. **Company ID**: Your org slug from the URL (e.g., `acme` from `blue.cc/org/acme`)
+2. **Company ID**: Your org slug from the URL (e.g., `acme` from `blue.app/org/acme`)
 
 ## Commands
 
@@ -148,7 +148,7 @@ blue ids record --workspace <id> --search "Launch plan"
 ### Open
 
 ```bash
-blue open https://blue.cc/org/acme
+blue open https://blue.app/org/acme
 blue open workspace <id-or-slug>
 blue open record <id> --workspace <id-or-slug>
 blue open form <id> --workspace <id-or-slug>
@@ -406,7 +406,7 @@ blue forms update --form <ID> --primary-color "#ff0000"
 blue forms copy --form <ID> --workspace <ID>
 blue forms delete --form <ID> --workspace <ID> --confirm
 
-# Public submit URL (default https://blue.cc/forms/<uid>)
+# Public submit URL (default https://blue.app/forms/<uid>)
 blue forms url --form <ID> --workspace <ID>
 blue forms url --form <ID> --workspace <ID> --base-url https://forms.acme.com
 

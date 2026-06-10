@@ -22,7 +22,7 @@ your credentials at any time.
 
 You'll need:
   - Client ID and Auth Token from Account Settings > API > Generate Token
-  - Company ID (your org slug from the URL, e.g. "acme" from blue.cc/org/acme)`,
+  - Company ID (your org slug from the URL, e.g. "acme" from blue.app/org/acme)`,
 	RunE: runInit,
 }
 
@@ -64,7 +64,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Company ID
-	fmt.Print("Company ID (org slug from URL, e.g. \"acme\" from blue.cc/org/acme): ")
+	fmt.Print("Company ID (org slug from URL, e.g. \"acme\" from blue.app/org/acme): ")
 	companyID, _ := reader.ReadString('\n')
 	companyID = strings.TrimSpace(companyID)
 	if companyID == "" {

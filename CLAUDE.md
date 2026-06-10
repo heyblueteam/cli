@@ -242,7 +242,7 @@ blue forms update --form <ID> --field "type=custom;customField=cf_xxx;name=Phone
 # Copy / delete / share URL — all require --workspace for project context
 blue forms copy --form <ID> --workspace <ID>
 blue forms delete --form <ID> --workspace <ID> --confirm
-blue forms url --form <ID> --workspace <ID>                                   # https://blue.cc/forms/<uid>
+blue forms url --form <ID> --workspace <ID>                                   # https://blue.app/forms/<uid>
 blue forms url --form <ID> --workspace <ID> --base-url https://forms.acme.com # white-label override
 BLUE_FORMS_BASE_URL=https://forms.acme.com blue forms url --form <ID> --workspace <ID>
 
@@ -316,14 +316,14 @@ cli/
 
 ### Required Environment Variables
 ```
-API_URL=https://api.blue.cc/graphql
+API_URL=https://api.blue.app/graphql
 AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
 ```
 
 ### GraphQL API Details
-- Endpoint: `https://api.blue.cc/graphql`
+- Endpoint: `https://api.blue.app/graphql`
 - Headers: `X-Bloo-Token-ID`, `X-Bloo-Token-Secret`, `X-Bloo-Company-ID`, `X-Bloo-Project-Id`
 - 30-second timeout, POST method with JSON body
 

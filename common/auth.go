@@ -14,7 +14,7 @@ import (
 )
 
 // Default API URL
-const DefaultAPIUrl = "https://api.blue.cc/graphql"
+const DefaultAPIUrl = "https://api.blue.app/graphql"
 
 // Config holds API configuration
 type Config struct {

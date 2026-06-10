@@ -127,7 +127,7 @@ func runDownload(cmd *cobra.Command, args []string) error {
 		}
 
 		config = &common.Config{
-			APIUrl:    "https://api.blue.cc/graphql",
+			APIUrl:    common.DefaultAPIUrl,
 			AuthToken: authToken,
 			ClientID:  clientID,
 			CompanyID: companyID,
@@ -271,7 +271,7 @@ func downloadAndZipFiles(client *common.Client, files []common.File, zipPath str
 			for job := range jobs {
 				common.PrintInfo(fmt.Sprintf("[%d/%d] Downloading: %s", job.index+1, len(files), job.file.Name))
 
-				fileURL := fmt.Sprintf("https://api.blue.cc/uploads/%s", job.file.UID)
+				fileURL := fmt.Sprintf("https://api.blue.app/uploads/%s", job.file.UID)
 				data, err := client.DownloadFile(fileURL)
 
 				filename := job.file.Name

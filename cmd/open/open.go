@@ -16,7 +16,7 @@ var Cmd = &cobra.Command{
 	Use:   "open [url]",
 	Short: "Open Blue pages in a browser",
 	Long:  "Build and open Blue app URLs for workspaces, records, forms, documents, dashboards, reports, and files.",
-	Example: `  blue open https://blue.cc/org/acme
+	Example: `  blue open https://blue.app/org/acme
   blue open workspace <id-or-slug>
   blue open record <id> --workspace <id-or-slug>
   blue open dashboard <id>
@@ -38,7 +38,7 @@ type workspaceRef struct {
 
 func init() {
 	Cmd.PersistentFlags().StringVarP(&openWorkspace, "workspace", "w", "", "Workspace ID or slug for workspace-scoped entities")
-	Cmd.PersistentFlags().StringVar(&openBaseURL, "base-url", "https://blue.cc", "Blue app base URL")
+	Cmd.PersistentFlags().StringVar(&openBaseURL, "base-url", "https://blue.app", "Blue app base URL")
 	Cmd.PersistentFlags().BoolVar(&openPrintOnly, "print", false, "Print the URL instead of opening it")
 
 	Cmd.AddCommand(workspaceCmd)

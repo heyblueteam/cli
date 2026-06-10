@@ -18,7 +18,7 @@ var docsCmd = &cobra.Command{
 
 var docsPrint bool
 
-const docsURL = "https://blue.cc/api"
+const docsURL = "https://blue.app/api"
 
 func init() {
 	docsCmd.Flags().BoolVar(&docsPrint, "print", false, "Print the docs URL instead of opening it")
