@@ -51,6 +51,7 @@ COMPANY_ID=your_company_slug
 blue [command]
 
 Available Commands:
+  company             Manage known companies
   workspaces   (ws)    Manage workspaces
   records      (rec)   Manage records
   lists                Manage lists
@@ -62,11 +63,24 @@ Available Commands:
   users                Manage users
   dependencies (deps)  Manage record dependencies
   files                Manage files
+  forms        (form)  Manage forms
+  dashboards   (dash)  Manage dashboards
+  charts               Manage dashboard charts
   completion           Generate shell completions
   version              Print version information
 ```
 
 Use `blue <command> --help` for details on any command.
+
+### Company
+
+```bash
+blue company list
+blue company add <slug>
+blue company use <slug>
+blue company remove <slug>
+blue workspaces list --company <slug> --simple
+```
 
 ### Workspaces
 
@@ -189,6 +203,28 @@ blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
+### Dashboards
+
+```bash
+blue dashboards list --simple
+blue dashboards create --title "Sales Dashboard"
+blue dashboards create --title "Sprint Metrics" --workspace <id>
+blue dashboards get --dashboard <id>
+blue dashboards share --dashboard <id> --users "user1:EDITOR,user2:VIEWER"
+blue dashboards delete --dashboard <id> --confirm
+```
+
+### Charts
+
+```bash
+blue charts list --dashboard <id>
+blue charts create --dashboard <id> --type STAT --title "Total Records" --workspace <id> --function COUNT
+blue charts create --dashboard <id> --type BAR --title "By Assignee" --workspace <id> --group-by ASSIGNEE --function COUNT
+blue charts create --dashboard <id> --type PIE --title "By Status" --workspace <id> --group-by TODO_STATUS --function COUNT
+blue charts recalculate --charts "chart1,chart2"
+blue charts delete --chart <id> --confirm
+```
+
 ### Forms
 
 Field types: `title`, `description`, `tags`, `startedAt`, `duedAt`, `custom`. Only `custom` carries a `customField` ID.
@@ -283,12 +319,16 @@ cli/
 │   │   ├── options/     # blue fields options *
 │   │   └── groups/      # blue fields groups *
 │   ├── automations/     # blue automations *
+│   ├── charts/          # blue charts *
 │   ├── checklists/      # blue checklists *
 │   │   └── items/       # blue checklists items *
+│   ├── company/         # blue company *
 │   ├── comments/        # blue comments *
+│   ├── dashboards/      # blue dashboards *
 │   ├── users/           # blue users *
 │   ├── dependencies/    # blue dependencies *
-│   └── files/           # blue files *
+│   ├── files/           # blue files *
+│   └── forms/           # blue forms *
 ├── common/              # Shared code
 │   ├── auth.go          # GraphQL client & authentication
 │   ├── types.go         # Shared type definitions
