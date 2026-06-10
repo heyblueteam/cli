@@ -73,6 +73,7 @@ Available Commands:
   files                Manage files
   forms        (form)  Manage forms
   ids          (id)    Resolve Blue names to IDs
+  open                 Open Blue pages in a browser
   search               Search records by name
   dashboards   (dash)  Manage dashboards
   charts               Manage dashboard charts
@@ -142,6 +143,21 @@ blue ids list --workspace <id>
 blue ids tag --workspace <id> --format csv
 blue ids user --search alex --format json
 blue ids record --workspace <id> --search "Launch plan"
+```
+
+### Open
+
+```bash
+blue open https://blue.cc/org/acme
+blue open workspace <id-or-slug>
+blue open record <id> --workspace <id-or-slug>
+blue open form <id> --workspace <id-or-slug>
+blue open document <id> --workspace <id-or-slug>
+blue open dashboard <id>
+blue open report <id>
+blue open files --workspace <id-or-slug>
+blue open folder <id> --workspace <id-or-slug>
+blue open record <id> --workspace <id-or-slug> --print
 ```
 
 ### Search

@@ -23,6 +23,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/forms"
 	"github.com/heyblueteam/cli/cmd/ids"
 	"github.com/heyblueteam/cli/cmd/lists"
+	"github.com/heyblueteam/cli/cmd/open"
 	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/reports"
 	"github.com/heyblueteam/cli/cmd/savedviews"
@@ -68,6 +69,7 @@ func init() {
 	rootCmd.AddCommand(dashboards.Cmd)
 	rootCmd.AddCommand(workspaces.Cmd)
 	rootCmd.AddCommand(lists.Cmd)
+	rootCmd.AddCommand(open.Cmd)
 	rootCmd.AddCommand(records.Cmd)
 	rootCmd.AddCommand(reports.Cmd)
 	rootCmd.AddCommand(savedviews.Cmd)
