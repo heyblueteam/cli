@@ -66,6 +66,7 @@ Available Commands:
   forms        (form)  Manage forms
   dashboards   (dash)  Manage dashboards
   charts               Manage dashboard charts
+  webhooks     (wh)    Manage webhooks
   completion           Generate shell completions
   version              Print version information
 ```
@@ -225,6 +226,20 @@ blue charts recalculate --charts "chart1,chart2"
 blue charts delete --chart <id> --confirm
 ```
 
+### Webhooks
+
+```bash
+blue webhooks list --simple
+blue webhooks get --webhook <id>
+blue webhooks create --name "Production sync" --url https://example.com/webhooks/blue --events TODO_CREATED,COMMENT_CREATED
+blue webhooks update --webhook <id> --enabled false
+blue webhooks disable --webhook <id>
+blue webhooks delete --webhook <id> --confirm
+blue webhooks events
+blue webhooks verify-signature --secret <secret> --signature <hex> --body-file payload.json
+blue webhooks listen --port 8080 --secret <secret>
+```
+
 ### Forms
 
 Field types: `title`, `description`, `tags`, `startedAt`, `duedAt`, `custom`. Only `custom` carries a `customField` ID.
@@ -326,6 +341,7 @@ cli/
 │   ├── comments/        # blue comments *
 │   ├── dashboards/      # blue dashboards *
 │   ├── users/           # blue users *
+│   ├── webhooks/        # blue webhooks *
 │   ├── dependencies/    # blue dependencies *
 │   ├── files/           # blue files *
 │   └── forms/           # blue forms *

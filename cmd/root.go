@@ -8,8 +8,8 @@ import (
 	"github.com/heyblueteam/cli/cmd/automations"
 	"github.com/heyblueteam/cli/cmd/charts"
 	"github.com/heyblueteam/cli/cmd/checklists"
-	"github.com/heyblueteam/cli/cmd/company"
 	"github.com/heyblueteam/cli/cmd/comments"
+	"github.com/heyblueteam/cli/cmd/company"
 	"github.com/heyblueteam/cli/cmd/dashboards"
 	"github.com/heyblueteam/cli/cmd/dependencies"
 	"github.com/heyblueteam/cli/cmd/fields"
@@ -19,6 +19,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/tags"
 	"github.com/heyblueteam/cli/cmd/users"
+	"github.com/heyblueteam/cli/cmd/webhooks"
 	"github.com/heyblueteam/cli/cmd/workspaces"
 
 	"github.com/spf13/cobra"
@@ -63,6 +64,7 @@ func init() {
 	rootCmd.AddCommand(fields.Cmd)
 	rootCmd.AddCommand(files.Cmd)
 	rootCmd.AddCommand(forms.Cmd)
+	rootCmd.AddCommand(webhooks.Cmd)
 
 	// Version command
 	rootCmd.AddCommand(&cobra.Command{
