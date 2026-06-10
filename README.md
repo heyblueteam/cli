@@ -66,6 +66,7 @@ Available Commands:
   users                Manage users
   dependencies (deps)  Manage record dependencies
   documents    (docs)  Manage documents and wiki pages
+  doctor               Check CLI configuration and API access
   exports              Queue CSV exports
   files                Manage files
   forms        (form)  Manage forms
@@ -86,6 +87,13 @@ blue api query --file query.graphql --variables '{"id":"workspace_123"}'
 blue api schema
 blue api schema --introspect
 blue api docs --print
+```
+
+### Doctor
+
+```bash
+blue doctor
+blue doctor --workspace <id-or-slug>
 ```
 
 ### Company
@@ -412,6 +420,7 @@ cli/
 │   ├── webhooks/        # blue webhooks *
 │   ├── dependencies/    # blue dependencies *
 │   ├── documents/       # blue documents *
+│   ├── doctor/          # blue doctor
 │   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
 │   └── forms/           # blue forms *
