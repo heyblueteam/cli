@@ -73,6 +73,7 @@ Available Commands:
   files                Manage files
   forms        (form)  Manage forms
   ids          (id)    Resolve Blue names to IDs
+  search               Search records by name
   dashboards   (dash)  Manage dashboards
   charts               Manage dashboard charts
   webhooks     (wh)    Manage webhooks
@@ -141,6 +142,14 @@ blue ids list --workspace <id>
 blue ids tag --workspace <id> --format csv
 blue ids user --search alex --format json
 blue ids record --workspace <id> --search "Launch plan"
+```
+
+### Search
+
+```bash
+blue search "launch" --workspace <id>
+blue search "invoice" --workspace <id> --format json
+blue search "bug" --workspace <id> --done false --limit 50
 ```
 
 ### Workspaces

@@ -12,61 +12,55 @@ Commands:
 `workspace <id> --output backup.json`.
 Why: deeper than `bootstrap export`; include lists, tags, fields, automations, forms, saved views, dashboards, and document metadata.
 
-3. `blue search`
-Unified cross-resource search.
-Commands:
-`blue search "launch" --workspace <id>`.
-Why: search records, docs, comments, files, users, tags, and fields from one agent-friendly command.
-
-4. `blue permissions`
+3. `blue permissions`
 Explain effective access.
 Commands:
 `user <email-or-id> --workspace <id>`, `workspace <id>`.
 Why: show role, feature access, and why a user can or cannot do something.
 
-5. `blue open`
+4. `blue open`
 Open Blue URLs from IDs.
 Commands:
 `record <id>`, `workspace <id>`, `form <id>`, `dashboard <id>`, `report <id>`, `document <id>`.
 Why: CLI commands return IDs, but humans often need the matching app page.
 
-6. `blue audit`
+5. `blue audit`
 Workspace/admin audit.
 Commands:
 `workspace <id>`, `company`.
 Why: summarize users, roles, public forms/views, webhooks, automations, integrations, domains, SMTP, and risky configuration.
 
-7. `blue diff`
+6. `blue diff`
 Compare workspace setup.
 Commands:
 `workspace <source> <target>`.
 Why: useful for template/process standardization and spotting configuration drift.
 
-8. `blue clone`
+7. `blue clone`
 Clone process configuration.
 Commands:
 `workspace <source> --name "New workspace"`, with flags to include/exclude records, forms, automations, dashboards, and docs.
 Why: faster workspace setup using a known-good process.
 
-9. `blue import`
+8. `blue import`
 CLI-friendly import flow.
 Commands:
 `records --workspace <id> --csv file.csv`.
 Why: pairs with `blue exports template`; needs file upload support first.
 
-10. `blue runbook`
+9. `blue runbook`
 Agent-oriented automation recipes.
 Commands:
 `onboarding --workspace <id>`, `sales-crm --workspace <id>`, `support-queue --workspace <id>`.
 Why: create standard lists/tags/fields/forms/automations from named presets.
 
-11. `blue activity`
+10. `blue activity`
 Audit recent changes.
 Commands:
 `--workspace <id> --since 7d`, `record <id>`.
 Why: useful for support, debugging, and customer success.
 
-12. `blue files upload`
+11. `blue files upload`
 Upload and manage files from the CLI.
 Commands:
 `upload`, `upload-large`, `share`, `url`, `move`.
