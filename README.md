@@ -55,6 +55,7 @@ Available Commands:
   workspaces   (ws)    Manage workspaces
   records      (rec)   Manage records
   reports              Manage reports
+  saved-views  (views) Manage saved views
   lists                Manage lists
   tags                 Manage tags
   fields       (cf)    Manage custom fields
@@ -126,6 +127,17 @@ blue reports refresh --report <id>
 blue reports duplicate --report <id> --title "Working copy"
 blue reports export --report <id>
 blue reports delete --report <id> --confirm
+```
+
+### Saved Views
+
+```bash
+blue saved-views list --workspace <id> --simple
+blue saved-views get --view <id>
+blue saved-views update --view <id> --name "Sprint Board"
+blue saved-views update --view <id> --shared true --config-json '{"searchQuery":"launch"}'
+blue saved-views apply --view <id>
+blue saved-views delete --view <id> --confirm
 ```
 
 ### Lists
@@ -371,6 +383,7 @@ cli/
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
 │   ├── reports/         # blue reports *
+│   ├── savedviews/      # blue saved-views *
 │   ├── lists/           # blue lists *
 │   ├── tags/            # blue tags *
 │   ├── fields/          # blue fields *

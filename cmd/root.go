@@ -20,6 +20,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/lists"
 	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/reports"
+	"github.com/heyblueteam/cli/cmd/savedviews"
 	"github.com/heyblueteam/cli/cmd/tags"
 	"github.com/heyblueteam/cli/cmd/users"
 	"github.com/heyblueteam/cli/cmd/webhooks"
@@ -61,6 +62,7 @@ func init() {
 	rootCmd.AddCommand(lists.Cmd)
 	rootCmd.AddCommand(records.Cmd)
 	rootCmd.AddCommand(reports.Cmd)
+	rootCmd.AddCommand(savedviews.Cmd)
 	rootCmd.AddCommand(tags.Cmd)
 	rootCmd.AddCommand(comments.Cmd)
 	rootCmd.AddCommand(users.Cmd)
