@@ -287,6 +287,8 @@ blue dependencies delete --record <id> --other-record <id> --confirm
 ### Files
 
 ```bash
+blue files inventory > files.csv                            # Company-wide CSV
+blue files inventory --workspace <id> --output files.csv
 blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
