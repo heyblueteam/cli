@@ -54,6 +54,7 @@ Available Commands:
   company             Manage known companies
   workspaces   (ws)    Manage workspaces
   records      (rec)   Manage records
+  reports              Manage reports
   lists                Manage lists
   tags                 Manage tags
   fields       (cf)    Manage custom fields
@@ -108,6 +109,22 @@ blue records update -r <id> -w <id> --assignees "user1,user2" --tag-ids "tag1,ta
 blue records move --record <id> --list <id> --workspace <id>
 blue records count --workspace <id> --done false
 blue records delete --record <id> --confirm
+```
+
+### Reports
+
+```bash
+blue reports list --simple
+blue reports get --report <id>
+blue reports create --title "Open work" --workspaces "ws1,ws2" --filter-json '{"done":false}'
+blue reports update --report <id> --title "New title"
+blue reports share --report <id> --users "user1:EDITOR,user2:VIEWER"
+blue reports data --report <id> --limit 50
+blue reports aggregate --report <id> --field field_123:number
+blue reports refresh --report <id>
+blue reports duplicate --report <id> --title "Working copy"
+blue reports export --report <id>
+blue reports delete --report <id> --confirm
 ```
 
 ### Lists
@@ -340,6 +357,7 @@ cli/
 │   ├── root.go          # Root command, global config
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
+│   ├── reports/         # blue reports *
 │   ├── lists/           # blue lists *
 │   ├── tags/            # blue tags *
 │   ├── fields/          # blue fields *
