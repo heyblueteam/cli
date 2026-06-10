@@ -63,6 +63,7 @@ Available Commands:
   comments             Manage comments
   users                Manage users
   dependencies (deps)  Manage record dependencies
+  documents    (docs)  Manage documents and wiki pages
   exports              Queue CSV exports
   files                Manage files
   forms        (form)  Manage forms
@@ -222,6 +223,18 @@ blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
+### Documents
+
+```bash
+blue documents list --workspace <id> --simple
+blue documents list --workspace <id> --wiki true
+blue documents get --document <id> --content
+blue documents create --workspace <id> --title "Runbook" --content '<h1>Runbook</h1>'
+blue documents create --workspace <id> --title "Handbook" --wiki --content-file handbook.html
+blue documents update --document <id> --title "New title"
+blue documents delete --document <id> --confirm
+```
+
 ### Exports
 
 ```bash
@@ -373,6 +386,7 @@ cli/
 │   ├── users/           # blue users *
 │   ├── webhooks/        # blue webhooks *
 │   ├── dependencies/    # blue dependencies *
+│   ├── documents/       # blue documents *
 │   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
 │   └── forms/           # blue forms *
