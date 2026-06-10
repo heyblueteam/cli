@@ -1,5 +1,40 @@
 # Blue CLI Roadmap
 
+## v1.0 Readiness
+
+`v1.0` should mean the CLI is stable, trustworthy, and polished enough to treat command names, config, and output shapes as supported interfaces.
+
+Must-have before v1:
+
+- Stable command naming and aliases; avoid further breaking renames after v1.
+- Stable config format for `~/.config/blue/config.env`.
+- Strong `--help` coverage for every major command, with examples and required flags.
+- Verified release pipeline for GitHub Releases, Homebrew, and Scoop.
+- `blue doctor` covers common auth, config, API, and workspace-context failures.
+- `blue docs` and `blue api` stay reliable because they make the CLI self-serve.
+- README covers install, auth, common workflows, shell completions, and troubleshooting.
+- Production smoke tests for auth/init, workspace and record basics, raw GraphQL, docs search, activity, exports, automations, webhooks, forms, documents, and reports.
+- Consistent output behavior across major commands: `--format json`, `--simple`, errors, and exit codes.
+
+Strong candidates before v1:
+
+- `blue context` to manage default company/workspace and reduce repeated `--workspace` flags.
+- Generated CLI command docs from Cobra help, either as Markdown files or `blue help markdown`.
+- Better automation ergonomics, especially `blue automations create --file automation.json` for HTTP and multi-action automations.
+- `blue inspect` for pasting any Blue ID or URL and identifying the entity.
+- `blue describe` for rich metadata on known entity types.
+- `blue wait` for script-friendly async job polling.
+
+Do not block v1 on large workflow features like `blue backup`, `blue apply`, `blue clone`, `blue import`, or `blue files upload`; those can ship in `v1.x`.
+
+Recommended path:
+
+1. `v0.10`: `blue context`, generated CLI docs, automation `--file` support.
+2. `v0.11`: `blue inspect`, `blue describe`, output consistency cleanup.
+3. `v1.0`: stabilization release once the above feels solid.
+
+## Feature Backlog
+
 1. `blue inspect`
 Human/agent-friendly entity resolver.
 Commands:
