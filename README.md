@@ -78,6 +78,7 @@ Available Commands:
   dashboards   (dash)  Manage dashboards
   charts               Manage dashboard charts
   webhooks     (wh)    Manage webhooks
+  whoami               Show authenticated identity and context
   completion           Generate shell completions
   version              Print version information
 ```
@@ -99,6 +100,13 @@ blue api docs --print
 ```bash
 blue doctor
 blue doctor --workspace <id-or-slug>
+```
+
+### Whoami
+
+```bash
+blue whoami
+blue whoami --format json
 ```
 
 ### Bootstrap

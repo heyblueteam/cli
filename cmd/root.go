@@ -31,6 +31,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/tags"
 	"github.com/heyblueteam/cli/cmd/users"
 	"github.com/heyblueteam/cli/cmd/webhooks"
+	"github.com/heyblueteam/cli/cmd/whoami"
 	"github.com/heyblueteam/cli/cmd/workspaces"
 
 	"github.com/spf13/cobra"
@@ -87,6 +88,7 @@ func init() {
 	rootCmd.AddCommand(forms.Cmd)
 	rootCmd.AddCommand(ids.Cmd)
 	rootCmd.AddCommand(webhooks.Cmd)
+	rootCmd.AddCommand(whoami.Cmd)
 
 	// Version command
 	rootCmd.AddCommand(&cobra.Command{
