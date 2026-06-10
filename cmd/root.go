@@ -15,6 +15,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/company"
 	"github.com/heyblueteam/cli/cmd/dashboards"
 	"github.com/heyblueteam/cli/cmd/dependencies"
+	"github.com/heyblueteam/cli/cmd/docs"
 	"github.com/heyblueteam/cli/cmd/doctor"
 	"github.com/heyblueteam/cli/cmd/documents"
 	"github.com/heyblueteam/cli/cmd/domains"
@@ -83,6 +84,7 @@ func init() {
 	rootCmd.AddCommand(dependencies.Cmd)
 	rootCmd.AddCommand(documents.Cmd)
 	rootCmd.AddCommand(doctor.Cmd)
+	rootCmd.AddCommand(docs.Cmd)
 	rootCmd.AddCommand(domains.Cmd)
 	rootCmd.AddCommand(exports.Cmd)
 	rootCmd.AddCommand(fields.Cmd)

@@ -28,6 +28,7 @@ If you're working on the CLI itself:
 
 ```bash
 go mod tidy              # Install dependencies
+go run ./tools/sync-docs --source ../app/src/content/api  # Refresh embedded API docs
 go build -o blue ./cmd/blue  # Build the binary
 ./blue --help            # Verify it works
 ```
@@ -67,7 +68,8 @@ Available Commands:
   comments             Manage comments
   users                Manage users
   dependencies (deps)  Manage record dependencies
-  documents    (docs)  Manage documents and wiki pages
+  docs                 Browse and search Blue API docs
+  documents            Manage documents and wiki pages
   doctor               Check CLI configuration and API access
   domains              Manage custom domains and email settings
   exports              Queue CSV exports
@@ -94,6 +96,23 @@ blue api query --file query.graphql --variables '{"id":"workspace_123"}'
 blue api schema
 blue api schema --introspect
 blue api docs --print
+```
+
+### API Docs
+
+```bash
+blue docs
+blue docs list records
+blue docs search "automation trigger"
+blue docs show records/list-records
+blue docs records/list-records --print-url
+blue docs records/list-records --open
+```
+
+Before publishing a new CLI version, refresh the embedded API docs snapshot:
+
+```bash
+go run ./tools/sync-docs --source ../app/src/content/api
 ```
 
 ### Activity
