@@ -52,6 +52,7 @@ blue [command]
 
 Available Commands:
   api         (graphql, gql) Run raw Blue API requests
+  bootstrap           Bootstrap workspaces from JSON
   company             Manage known companies
   workspaces   (ws)    Manage workspaces
   records      (rec)   Manage records
@@ -94,6 +95,14 @@ blue api docs --print
 ```bash
 blue doctor
 blue doctor --workspace <id-or-slug>
+```
+
+### Bootstrap
+
+```bash
+blue bootstrap template > workspace.json
+blue bootstrap apply --file workspace.json --confirm
+blue bootstrap export --workspace <id> > workspace.json
 ```
 
 ### Company
@@ -400,6 +409,7 @@ cli/
 │   │   └── main.go      # Entry point
 │   ├── root.go          # Root command, global config
 │   ├── api/             # blue api *
+│   ├── bootstrap/       # blue bootstrap *
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
 │   ├── reports/         # blue reports *

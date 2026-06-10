@@ -7,6 +7,7 @@ import (
 
 	"github.com/heyblueteam/cli/cmd/api"
 	"github.com/heyblueteam/cli/cmd/automations"
+	"github.com/heyblueteam/cli/cmd/bootstrap"
 	"github.com/heyblueteam/cli/cmd/charts"
 	"github.com/heyblueteam/cli/cmd/checklists"
 	"github.com/heyblueteam/cli/cmd/comments"
@@ -57,6 +58,7 @@ func init() {
 	// Add subcommand groups
 	rootCmd.AddCommand(automations.Cmd)
 	rootCmd.AddCommand(api.Cmd)
+	rootCmd.AddCommand(bootstrap.Cmd)
 	rootCmd.AddCommand(charts.Cmd)
 	rootCmd.AddCommand(checklists.Cmd)
 	rootCmd.AddCommand(company.Cmd)
