@@ -62,6 +62,7 @@ Available Commands:
   comments             Manage comments
   users                Manage users
   dependencies (deps)  Manage record dependencies
+  exports              Queue CSV exports
   files                Manage files
   forms        (form)  Manage forms
   dashboards   (dash)  Manage dashboards
@@ -204,6 +205,17 @@ blue files download                                          # Interactive mode
 blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
+### Exports
+
+```bash
+blue exports records --workspace <id>
+blue exports records --workspace <id> --done false --q launch --assignees "user1,user2"
+blue exports records --workspace <id> --filter-json '{"hasDueDate":true}'
+blue exports report --report <id>
+blue exports chart --chart <id> --filter-json '{"showCompleted":false}'
+blue exports template --workspace <id>
+```
+
 ### Dashboards
 
 ```bash
@@ -343,6 +355,7 @@ cli/
 │   ├── users/           # blue users *
 │   ├── webhooks/        # blue webhooks *
 │   ├── dependencies/    # blue dependencies *
+│   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
 │   └── forms/           # blue forms *
 ├── common/              # Shared code
