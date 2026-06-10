@@ -72,6 +72,7 @@ Available Commands:
   exports              Queue CSV exports
   files                Manage files
   forms        (form)  Manage forms
+  ids          (id)    Resolve Blue names to IDs
   dashboards   (dash)  Manage dashboards
   charts               Manage dashboard charts
   webhooks     (wh)    Manage webhooks
@@ -129,6 +130,17 @@ blue company add <slug>
 blue company use <slug>
 blue company remove <slug>
 blue workspaces list --company <slug> --simple
+```
+
+### IDs
+
+```bash
+blue ids workspace --search CRM
+blue ids field --workspace <id> --search Priority
+blue ids list --workspace <id>
+blue ids tag --workspace <id> --format csv
+blue ids user --search alex --format json
+blue ids record --workspace <id> --search "Launch plan"
 ```
 
 ### Workspaces

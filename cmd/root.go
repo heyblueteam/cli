@@ -21,6 +21,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/fields"
 	"github.com/heyblueteam/cli/cmd/files"
 	"github.com/heyblueteam/cli/cmd/forms"
+	"github.com/heyblueteam/cli/cmd/ids"
 	"github.com/heyblueteam/cli/cmd/lists"
 	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/reports"
@@ -80,6 +81,7 @@ func init() {
 	rootCmd.AddCommand(fields.Cmd)
 	rootCmd.AddCommand(files.Cmd)
 	rootCmd.AddCommand(forms.Cmd)
+	rootCmd.AddCommand(ids.Cmd)
 	rootCmd.AddCommand(webhooks.Cmd)
 
 	// Version command
