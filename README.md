@@ -51,6 +51,7 @@ COMPANY_ID=your_company_slug
 blue [command]
 
 Available Commands:
+  api         (graphql, gql) Run raw Blue API requests
   company             Manage known companies
   workspaces   (ws)    Manage workspaces
   records      (rec)   Manage records
@@ -76,6 +77,16 @@ Available Commands:
 ```
 
 Use `blue <command> --help` for details on any command.
+
+### API
+
+```bash
+blue api query --raw 'query { __typename }'
+blue api query --file query.graphql --variables '{"id":"workspace_123"}'
+blue api schema
+blue api schema --introspect
+blue api docs --print
+```
 
 ### Company
 
@@ -380,6 +391,7 @@ cli/
 │   ├── blue/            # main package — `go install` target
 │   │   └── main.go      # Entry point
 │   ├── root.go          # Root command, global config
+│   ├── api/             # blue api *
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
 │   ├── reports/         # blue reports *

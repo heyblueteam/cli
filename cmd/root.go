@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/heyblueteam/cli/cmd/api"
 	"github.com/heyblueteam/cli/cmd/automations"
 	"github.com/heyblueteam/cli/cmd/charts"
 	"github.com/heyblueteam/cli/cmd/checklists"
@@ -54,6 +55,7 @@ func init() {
 
 	// Add subcommand groups
 	rootCmd.AddCommand(automations.Cmd)
+	rootCmd.AddCommand(api.Cmd)
 	rootCmd.AddCommand(charts.Cmd)
 	rootCmd.AddCommand(checklists.Cmd)
 	rootCmd.AddCommand(company.Cmd)
