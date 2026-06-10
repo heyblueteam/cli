@@ -23,6 +23,7 @@ var Cmd = &cobra.Command{
 	Example: `  blue activity
   blue activity --workspace <id-or-slug> --since 7d
   blue activity --workspace <id-or-slug> --category CREATE_TODO,CREATE_COMMENT
+  blue activity record <record-id> --workspace <id-or-slug>
   blue activity --format json`,
 	RunE: runActivity,
 }
@@ -299,7 +300,11 @@ func (item activityItem) DisplayText() string {
 	if strings.TrimSpace(item.Text) != "" {
 		return item.Text
 	}
-	plain := htmlTagPattern.ReplaceAllString(item.HTML, "")
+	return plainFromHTML(item.HTML)
+}
+
+func plainFromHTML(value string) string {
+	plain := htmlTagPattern.ReplaceAllString(value, "")
 	plain = html.UnescapeString(plain)
 	return strings.Join(strings.Fields(plain), " ")
 }

@@ -102,6 +102,8 @@ blue api docs --print
 blue activity
 blue activity --workspace <id> --since 7d
 blue activity --workspace <id> --category CREATE_TODO,CREATE_COMMENT
+blue activity record <record-id> --workspace <id>
+blue activity record <record-id> --workspace <id> --type comments
 blue activity --format json
 ```
 
