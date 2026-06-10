@@ -52,6 +52,7 @@ blue [command]
 
 Available Commands:
   api         (graphql, gql) Run raw Blue API requests
+  activity            Show recent activity
   bootstrap           Bootstrap workspaces from JSON
   company             Manage known companies
   workspaces   (ws)    Manage workspaces
@@ -93,6 +94,15 @@ blue api query --file query.graphql --variables '{"id":"workspace_123"}'
 blue api schema
 blue api schema --introspect
 blue api docs --print
+```
+
+### Activity
+
+```bash
+blue activity
+blue activity --workspace <id> --since 7d
+blue activity --workspace <id> --category CREATE_TODO,CREATE_COMMENT
+blue activity --format json
 ```
 
 ### Doctor
