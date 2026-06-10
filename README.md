@@ -68,6 +68,7 @@ Available Commands:
   dependencies (deps)  Manage record dependencies
   documents    (docs)  Manage documents and wiki pages
   doctor               Check CLI configuration and API access
+  domains              Manage custom domains and email settings
   exports              Queue CSV exports
   files                Manage files
   forms        (form)  Manage forms
@@ -103,6 +104,21 @@ blue doctor --workspace <id-or-slug>
 blue bootstrap template > workspace.json
 blue bootstrap apply --file workspace.json --confirm
 blue bootstrap export --workspace <id> > workspace.json
+```
+
+### Domains & Email
+
+```bash
+blue domains domains list
+blue domains domains create --name app.example.com --type APPLICATION
+blue domains domains verify --name app.example.com
+blue domains domains update --domain <id> --name app2.example.com
+blue domains domains delete --domain <id> --confirm
+blue domains smtp list
+blue domains smtp verify --host smtp.example.com --port 587 --username user --password pass
+blue domains templates list
+blue domains templates get --type INVITATION
+blue domains templates test --template <id> --email you@example.com
 ```
 
 ### Company
@@ -431,6 +447,7 @@ cli/
 │   ├── dependencies/    # blue dependencies *
 │   ├── documents/       # blue documents *
 │   ├── doctor/          # blue doctor
+│   ├── domains/         # blue domains *
 │   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
 │   └── forms/           # blue forms *
