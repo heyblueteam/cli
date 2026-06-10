@@ -1,60 +1,79 @@
 # Blue CLI Roadmap
 
-1. `blue webhooks`
-Highest leverage for developers.
+1. `blue ids`
+Resolve names/slugs to IDs.
 Commands:
-`list`, `get`, `create`, `update`, `disable`, `delete`, `events`, `verify-signature`, maybe `listen`.
-Why: API docs have a full webhook surface, but CLI has none. A CLI can make webhook setup/test loops much faster.
+`workspace`, `field --workspace <id>`, `list --workspace <id>`, `tag --workspace <id>`, `user`, `record --workspace <id>`.
+Why: agents constantly need stable IDs before calling API mutations, and humans rarely have them memorized.
 
-2. `blue exports`
-Unify async exports.
+2. `blue inspect`
+Human/agent-friendly entity resolver.
 Commands:
-`records`, `report`, `chart`, `template`, maybe `wait`.
-Why: export APIs email results and have progress subscriptions/rate limits. CLI can wrap that complexity and prevent accidental rate-limit failures.
+`blue inspect <id-or-url>`.
+Why: detect whether an ID or Blue URL is a record, workspace, form, dashboard, report, document, saved view, etc., then print useful metadata.
 
-3. `blue reports`
-Useful for admins and automation.
+3. `blue backup`
+Export a workspace configuration snapshot.
 Commands:
-`list`, `get`, `create`, `update`, `duplicate`, `delete`, `share`, `data`, `aggregate`, `export`.
-Why: reports are a whole API section and are currently absent from CLI.
+`workspace <id> --output backup.json`.
+Why: deeper than `bootstrap export`; include lists, tags, fields, automations, forms, saved views, dashboards, and document metadata.
 
-4. `blue documents`
-Especially useful if customers generate docs/PDFs from records.
+4. `blue search`
+Unified cross-resource search.
 Commands:
-`list`, `get`, `create`, `update`, `delete`, `wiki list`, `portable list/create/fields/print`.
-Why: the API supports rich documents, wiki pages, and portable PDF templates, but CLI has no surface for them.
+`blue search "launch" --workspace <id>`.
+Why: search records, docs, comments, files, users, tags, and fields from one agent-friendly command.
 
-5. `blue files upload`
-Current CLI has `files download`, but docs heavily cover upload flows.
+5. `blue permissions`
+Explain effective access.
+Commands:
+`user <email-or-id> --workspace <id>`, `workspace <id>`.
+Why: show role, feature access, and why a user can or cannot do something.
+
+6. `blue open`
+Open Blue URLs from IDs.
+Commands:
+`record <id>`, `workspace <id>`, `form <id>`, `dashboard <id>`, `report <id>`, `document <id>`.
+Why: CLI commands return IDs, but humans often need the matching app page.
+
+7. `blue audit`
+Workspace/admin audit.
+Commands:
+`workspace <id>`, `company`.
+Why: summarize users, roles, public forms/views, webhooks, automations, integrations, domains, SMTP, and risky configuration.
+
+8. `blue diff`
+Compare workspace setup.
+Commands:
+`workspace <source> <target>`.
+Why: useful for template/process standardization and spotting configuration drift.
+
+9. `blue clone`
+Clone process configuration.
+Commands:
+`workspace <source> --name "New workspace"`, with flags to include/exclude records, forms, automations, dashboards, and docs.
+Why: faster workspace setup using a known-good process.
+
+10. `blue import`
+CLI-friendly import flow.
+Commands:
+`records --workspace <id> --csv file.csv`.
+Why: pairs with `blue exports template`; needs file upload support first.
+
+11. `blue runbook`
+Agent-oriented automation recipes.
+Commands:
+`onboarding --workspace <id>`, `sales-crm --workspace <id>`, `support-queue --workspace <id>`.
+Why: create standard lists/tags/fields/forms/automations from named presets.
+
+12. `blue activity`
+Audit recent changes.
+Commands:
+`--workspace <id> --since 7d`, `record <id>`.
+Why: useful for support, debugging, and customer success.
+
+13. `blue files upload`
+Upload and manage files from the CLI.
 Commands:
 `upload`, `upload-large`, `share`, `url`, `move`.
-Why: file upload is a natural CLI use case, especially large files via presigned PUT.
-
-6. `blue saved-views`
-Commands:
-`list`, `update`, `delete`, maybe `apply`.
-Why: saved views are useful for scripting repeatable record filters.
-
-7. `blue domains`
-White-label/customer ops tool.
-Commands:
-`domains list/create/verify/delete`, `smtp list/create/verify/delete`, `email-templates list/update/test`.
-Why: great for customer onboarding/support, less broadly used than webhooks/reports.
-
-8. `blue gql`
-Generic API escape hatch.
-Commands:
-`query --file`, `query --raw`, `schema`, `docs`.
-Why: lets power users use new API features before a dedicated CLI command exists.
-
-9. `blue doctor`
-Diagnostics for credentials and access.
-Checks:
-auth headers, active company, workspace access, rate limits, API URL, token validity.
-Why: would reduce support/debugging friction for CLI users.
-
-10. `blue bootstrap`
-Opinionated setup workflows.
-Examples:
-create workspace from JSON/YAML, create lists/tags/fields/forms/automations in one run, export config from existing workspace.
-Why: this is where the CLI can become much more valuable than direct GraphQL CRUD.
+Why: file upload is a natural CLI use case, especially large files via presigned PUT. This was intentionally skipped in the first implementation pass.
