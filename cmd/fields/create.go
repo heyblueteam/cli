@@ -317,7 +317,7 @@ func executeCreateCustomField(client *common.Client, input LocalCreateCustomFiel
 				description
 			}
 		}
-	`, input.Name, input.Type, optionalFields)
+	`, common.EscapeGraphQLString(input.Name), input.Type, optionalFields)
 
 	var response CreateCustomFieldResponse
 	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
@@ -332,13 +332,13 @@ func buildOptionalFields(input LocalCreateCustomFieldInput) string {
 	var fields []string
 
 	if input.Description != "" {
-		fields = append(fields, fmt.Sprintf(`description: "%s"`, input.Description))
+		fields = append(fields, fmt.Sprintf(`description: "%s"`, common.EscapeGraphQLString(input.Description)))
 	}
 	if input.ButtonType != "" {
 		fields = append(fields, fmt.Sprintf(`buttonType: "%s"`, input.ButtonType))
 	}
 	if input.ButtonConfirmText != "" {
-		fields = append(fields, fmt.Sprintf(`buttonConfirmText: "%s"`, input.ButtonConfirmText))
+		fields = append(fields, fmt.Sprintf(`buttonConfirmText: "%s"`, common.EscapeGraphQLString(input.ButtonConfirmText)))
 	}
 	if input.CurrencyFieldID != "" {
 		fields = append(fields, fmt.Sprintf(`currencyFieldId: "%s"`, input.CurrencyFieldID))

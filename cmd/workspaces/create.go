@@ -146,7 +146,7 @@ func executeCreateProject(client *common.Client, input common.CreateProjectInput
 				category
 			}
 		}
-	`, input.Name, input.CompanyID, buildProjectOptionalFields(input))
+	`, common.EscapeGraphQLString(input.Name), input.CompanyID, buildProjectOptionalFields(input))
 
 	var response CreateProjectResponse
 	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
@@ -160,7 +160,7 @@ func buildProjectOptionalFields(input common.CreateProjectInput) string {
 	var fields []string
 
 	if input.Description != "" {
-		fields = append(fields, fmt.Sprintf(`description: "%s"`, input.Description))
+		fields = append(fields, fmt.Sprintf(`description: "%s"`, common.EscapeGraphQLString(input.Description)))
 	}
 	if input.Color != "" {
 		fields = append(fields, fmt.Sprintf(`color: "%s"`, input.Color))

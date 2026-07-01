@@ -76,7 +76,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	// Build optional fields
 	var optionalFields []string
 	if createDescription != "" {
-		optionalFields = append(optionalFields, fmt.Sprintf(`description: "%s"`, strings.ReplaceAll(createDescription, `"`, `\"`)))
+		optionalFields = append(optionalFields, fmt.Sprintf(`description: "%s"`, common.EscapeGraphQLString(createDescription)))
 	}
 	if createPlacement != "" {
 		optionalFields = append(optionalFields, fmt.Sprintf(`placement: %s`, createPlacement))
@@ -106,7 +106,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-	`, createList, strings.ReplaceAll(createTitle, `"`, `\"`), strings.Join(optionalFields, "\n\t\t\t\t"))
+	`, createList, common.EscapeGraphQLString(createTitle), strings.Join(optionalFields, "\n\t\t\t\t"))
 
 	var response CreateTodoResponse
 	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {

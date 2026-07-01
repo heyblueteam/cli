@@ -289,13 +289,13 @@ func buildEditFields(input EditProjectInput) string {
 	var fields []string
 
 	if input.Name != "" {
-		fields = append(fields, fmt.Sprintf(`name: "%s"`, input.Name))
+		fields = append(fields, fmt.Sprintf(`name: "%s"`, common.EscapeGraphQLString(input.Name)))
 	}
 	if input.Slug != "" {
-		fields = append(fields, fmt.Sprintf(`slug: "%s"`, input.Slug))
+		fields = append(fields, fmt.Sprintf(`slug: "%s"`, common.EscapeGraphQLString(input.Slug)))
 	}
 	if input.Description != "" {
-		fields = append(fields, fmt.Sprintf(`description: "%s"`, input.Description))
+		fields = append(fields, fmt.Sprintf(`description: "%s"`, common.EscapeGraphQLString(input.Description)))
 	}
 	if input.Color != "" {
 		fields = append(fields, fmt.Sprintf(`color: "%s"`, input.Color))
@@ -307,7 +307,7 @@ func buildEditFields(input EditProjectInput) string {
 		fields = append(fields, fmt.Sprintf(`category: %s`, input.Category))
 	}
 	if input.TodoAlias != "" {
-		fields = append(fields, fmt.Sprintf(`todoAlias: "%s"`, input.TodoAlias))
+		fields = append(fields, fmt.Sprintf(`todoAlias: "%s"`, common.EscapeGraphQLString(input.TodoAlias)))
 	}
 	if input.HideRecordCount != nil {
 		fields = append(fields, fmt.Sprintf(`hideRecordCount: %t`, *input.HideRecordCount))

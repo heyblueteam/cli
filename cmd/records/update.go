@@ -116,13 +116,13 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		fields = append(fields, fmt.Sprintf(`position: %g`, pos))
 	}
 	if updateTitle != "" {
-		fields = append(fields, fmt.Sprintf(`title: "%s"`, strings.ReplaceAll(updateTitle, `"`, `\"`)))
+		fields = append(fields, fmt.Sprintf(`title: "%s"`, common.EscapeGraphQLString(updateTitle)))
 	}
 	if updateHTML != "" {
-		fields = append(fields, fmt.Sprintf(`html: "%s"`, strings.ReplaceAll(updateHTML, `"`, `\"`)))
+		fields = append(fields, fmt.Sprintf(`html: "%s"`, common.EscapeGraphQLString(updateHTML)))
 	}
 	if updateDescription != "" {
-		fields = append(fields, fmt.Sprintf(`text: "%s"`, strings.ReplaceAll(updateDescription, `"`, `\"`)))
+		fields = append(fields, fmt.Sprintf(`text: "%s"`, common.EscapeGraphQLString(updateDescription)))
 	}
 	if updateColor != "" {
 		fields = append(fields, fmt.Sprintf(`color: "%s"`, updateColor))

@@ -66,7 +66,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-	`, companyID, createTitle, optionalFields)
+	`, companyID, common.EscapeGraphQLString(createTitle), optionalFields)
 
 	var response struct {
 		CreateDashboard struct {

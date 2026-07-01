@@ -204,7 +204,7 @@ func buildStatInput() string {
 				function: %s
 			}]
 		}]
-	}`, createDashboard, createTitle, display, createTitle, formula, uid, createTitle,
+	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, common.EscapeGraphQLString(createTitle), formula, uid, common.EscapeGraphQLString(createTitle),
 		createWorkspace, fieldParam(), createFunction)
 }
 
@@ -247,7 +247,7 @@ func buildBarInput(displayType string) string {
 				}
 			}
 		}
-	}`, createDashboard, createTitle, display, xAxisType, intervalStr,
+	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, xAxisType, intervalStr,
 		createFunction, yAxisField, createWorkspace)
 }
 
@@ -283,7 +283,7 @@ func buildPieInput(displayType string) string {
 				}
 			}
 		}
-	}`, createDashboard, createTitle, display, groupByType,
+	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, groupByType,
 		createFunction, valueField, createWorkspace)
 }
 
