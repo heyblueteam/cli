@@ -190,7 +190,7 @@ func formatFieldValue(fieldType, value string) (string, error) {
 		return fmt.Sprintf(`startDate: "%s", endDate: "%s", timezone: "UTC"`, start, end), nil
 
 	case "EMAIL", "PHONE", "URL", "TEXT_SINGLE", "TEXT_MULTI":
-		return fmt.Sprintf(`text: "%s"`, escapeGraphQL(value)), nil
+		return fmt.Sprintf(`text: "%s"`, EscapeGraphQLString(value)), nil
 
 	case "LOCATION":
 		// Expect "lat,lng" format
@@ -217,7 +217,7 @@ func formatFieldValue(fieldType, value string) (string, error) {
 		if n, err := strconv.ParseFloat(value, 64); err == nil {
 			return fmt.Sprintf("number: %g", n), nil
 		}
-		return fmt.Sprintf(`text: "%s"`, escapeGraphQL(value)), nil
+		return fmt.Sprintf(`text: "%s"`, EscapeGraphQLString(value)), nil
 	}
 }
 
@@ -241,16 +241,6 @@ func quoteAndJoin(items []string) string {
 		quoted = append(quoted, fmt.Sprintf(`"%s"`, item))
 	}
 	return strings.Join(quoted, ", ")
-}
-
-// escapeGraphQL escapes special characters for GraphQL string values.
-func escapeGraphQL(s string) string {
-	s = strings.ReplaceAll(s, `\`, `\\`)
-	s = strings.ReplaceAll(s, `"`, `\"`)
-	s = strings.ReplaceAll(s, "\n", `\n`)
-	s = strings.ReplaceAll(s, "\r", `\r`)
-	s = strings.ReplaceAll(s, "\t", `\t`)
-	return s
 }
 
 // FormatCustomFieldValueForJSON formats a custom field value for JSON output.

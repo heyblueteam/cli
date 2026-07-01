@@ -1,6 +1,23 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
+
+// EscapeGraphQLString escapes a Go string for safe interpolation into a
+// double-quoted GraphQL string literal. GraphQL string literals cannot
+// contain raw newlines/tabs/carriage returns or unescaped quotes/backslashes
+// — inserting free-text user input without this breaks the query (or, for
+// unescaped backslashes/quotes, can change what the query does).
+func EscapeGraphQLString(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `"`, `\"`)
+	s = strings.ReplaceAll(s, "\n", `\n`)
+	s = strings.ReplaceAll(s, "\r", `\r`)
+	s = strings.ReplaceAll(s, "\t", `\t`)
+	return s
+}
 
 // TruncateString truncates a string to the specified length
 func TruncateString(s string, maxLen int) string {

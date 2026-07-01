@@ -108,7 +108,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 					position
 				}
 			}
-		`, createWorkspace, name, position)
+		`, createWorkspace, common.EscapeGraphQLString(name), position)
 
 		var response CreateTodoListResponse
 		if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
