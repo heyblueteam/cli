@@ -22,53 +22,84 @@ your credentials at any time.
 
 You'll need:
   - Client ID and Auth Token from Account Settings > API > Generate Token
-  - Company ID (your org slug from the URL, e.g. "acme" from blue.app/org/acme)`,
+  - Company ID (your org slug from the URL, e.g. "acme" from blue.app/org/acme)
+
+Non-interactive use (scripts, agents): pass --client-id, --auth-token,
+and --company-id together to skip all prompts.`,
+	Example: `  blue init
+  blue init --client-id <ID> --auth-token <SECRET> --company-id acme`,
 	RunE: runInit,
 }
 
+var (
+	initAPIURL    string
+	initClientID  string
+	initAuthToken string
+	initCompanyID string
+)
+
 func init() {
 	rootCmd.AddCommand(initCmd)
+
+	initCmd.Flags().StringVar(&initAPIURL, "api-url", "", "API URL (default: "+common.DefaultAPIUrl+")")
+	initCmd.Flags().StringVar(&initClientID, "client-id", "", "Client ID (skips prompt)")
+	initCmd.Flags().StringVar(&initAuthToken, "auth-token", "", "Auth token / secret (skips prompt)")
+	initCmd.Flags().StringVar(&initCompanyID, "company-id", "", "Company ID / org slug (skips prompt)")
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	reader := bufio.NewReader(os.Stdin)
+	apiUrl, clientID, authToken, companyID := initAPIURL, initClientID, initAuthToken, initCompanyID
 
-	fmt.Println("Welcome to Blue CLI setup!")
-	fmt.Println()
-	fmt.Println("You'll need your API credentials from Blue.")
-	fmt.Println("Go to: Account Settings > API > Generate Token")
-	fmt.Println()
+	flagsProvided := clientID != "" || authToken != "" || companyID != ""
+	flagsComplete := clientID != "" && authToken != "" && companyID != ""
 
-	// API URL with default
-	fmt.Printf("API URL [%s]: ", common.DefaultAPIUrl)
-	apiUrl, _ := reader.ReadString('\n')
-	apiUrl = strings.TrimSpace(apiUrl)
+	if flagsProvided && !flagsComplete {
+		return fmt.Errorf("--client-id, --auth-token, and --company-id must all be provided together for non-interactive setup")
+	}
+
 	if apiUrl == "" {
 		apiUrl = common.DefaultAPIUrl
 	}
 
-	// Client ID
-	fmt.Print("Client ID: ")
-	clientID, _ := reader.ReadString('\n')
-	clientID = strings.TrimSpace(clientID)
-	if clientID == "" {
-		return fmt.Errorf("client ID is required")
-	}
+	if !flagsComplete {
+		reader := bufio.NewReader(os.Stdin)
 
-	// Auth Token
-	fmt.Print("Auth Token (Secret): ")
-	authToken, _ := reader.ReadString('\n')
-	authToken = strings.TrimSpace(authToken)
-	if authToken == "" {
-		return fmt.Errorf("auth token is required")
-	}
+		fmt.Println("Welcome to Blue CLI setup!")
+		fmt.Println()
+		fmt.Println("You'll need your API credentials from Blue.")
+		fmt.Println("Go to: Account Settings > API > Generate Token")
+		fmt.Println()
 
-	// Company ID
-	fmt.Print("Company ID (org slug from URL, e.g. \"acme\" from blue.app/org/acme): ")
-	companyID, _ := reader.ReadString('\n')
-	companyID = strings.TrimSpace(companyID)
-	if companyID == "" {
-		return fmt.Errorf("company ID is required")
+		// API URL with default
+		fmt.Printf("API URL [%s]: ", apiUrl)
+		input, _ := reader.ReadString('\n')
+		if input = strings.TrimSpace(input); input != "" {
+			apiUrl = input
+		}
+
+		// Client ID
+		fmt.Print("Client ID: ")
+		clientID, _ = reader.ReadString('\n')
+		clientID = strings.TrimSpace(clientID)
+		if clientID == "" {
+			return fmt.Errorf("client ID is required")
+		}
+
+		// Auth Token
+		fmt.Print("Auth Token (Secret): ")
+		authToken, _ = reader.ReadString('\n')
+		authToken = strings.TrimSpace(authToken)
+		if authToken == "" {
+			return fmt.Errorf("auth token is required")
+		}
+
+		// Company ID
+		fmt.Print("Company ID (org slug from URL, e.g. \"acme\" from blue.app/org/acme): ")
+		companyID, _ = reader.ReadString('\n')
+		companyID = strings.TrimSpace(companyID)
+		if companyID == "" {
+			return fmt.Errorf("company ID is required")
+		}
 	}
 
 	// Create config directory

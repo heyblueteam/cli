@@ -29,10 +29,12 @@ Interactive Mode (default):
   - PROJECT_ID: The workspace ID or slug
   - FOLDER_ID: (optional) Specific folder ID, leave empty for root
 
-Environment Mode (--use-env):
-  Reads from .env file in current directory`,
+Environment Mode (--use-env, non-interactive):
+  Reads credentials from .env file in current directory.
+  Requires PROJECT_ID in the environment (errors if missing, never prompts).
+  FOLDER_ID is optional; unset means root.`,
 	Example: `  blue files download
-  blue files download --use-env
+  PROJECT_ID=<id> blue files download --use-env
   PROJECT_ID=<id> FOLDER_ID="" blue files download --use-env --output "backup.zip" --parallel 10`,
 	RunE: runDownload,
 }
@@ -78,27 +80,14 @@ func runDownload(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		// Try to read PROJECT_ID from environment first
+		// --use-env is the non-interactive path: never fall back to a prompt.
 		projectID = os.Getenv("PROJECT_ID")
 		if projectID == "" {
-			// Prompt if not set
-			projectID, err = promptForInput("Project ID or slug", false)
-			if err != nil {
-				return err
-			}
+			return fmt.Errorf("PROJECT_ID environment variable is required with --use-env")
 		}
 
-		// Try to read FOLDER_ID from environment first
-		// Use os.LookupEnv to distinguish between unset and empty
-		var folderIDSet bool
-		folderID, folderIDSet = os.LookupEnv("FOLDER_ID")
-		if !folderIDSet {
-			// Prompt if not set
-			folderID, err = promptForInput("Folder ID (optional, press Enter to skip)", true)
-			if err != nil {
-				return err
-			}
-		}
+		// FOLDER_ID is optional; unset means root.
+		folderID = os.Getenv("FOLDER_ID")
 	} else {
 		// Interactive mode - prompt for all values
 		authToken, err := promptForInput("AUTH_TOKEN", false)
