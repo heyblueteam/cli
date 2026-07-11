@@ -194,9 +194,13 @@ blue deps delete --record <ID> --other-record <ID> --confirm --workspace <ID>
 
 ### Files (`blue files`)
 ```bash
-blue files download                                          # Interactive mode
-blue files download --use-env --output "backup.zip" --parallel 10
+blue files download                                                    # Interactive mode
+PROJECT_ID=<id> blue files download --use-env --output "backup.zip" --parallel 10
 ```
+
+`--use-env` is fully non-interactive: it requires `PROJECT_ID` in the
+environment and errors immediately if missing rather than prompting.
+`FOLDER_ID` is optional (unset means root).
 
 ### Forms (`blue forms` / `blue form`)
 
