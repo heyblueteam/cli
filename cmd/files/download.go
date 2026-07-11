@@ -326,6 +326,10 @@ func downloadAndZipFiles(client *common.Client, files []common.File, zipPath str
 
 	common.PrintInfo(fmt.Sprintf("Download complete: %d succeeded, %d failed", successCount, errorCount))
 
+	if errorCount > 0 {
+		return fmt.Errorf("%d of %d files failed to download", errorCount, successCount+errorCount)
+	}
+
 	return nil
 }
 
