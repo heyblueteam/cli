@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"reflect"
+	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/heyblueteam/cli/cmd/activity"
 	"github.com/heyblueteam/cli/cmd/api"
@@ -103,6 +106,52 @@ func init() {
 			fmt.Printf("blue %s (commit: %s, built: %s)\n", v, c, d)
 		},
 	})
+
+	// Append the defining source file to every command's errors, so an agent
+	// hitting an error can go straight to the implementation instead of
+	// guessing from the command name.
+	addSourceHints(rootCmd)
+}
+
+// addSourceHints walks the command tree and wraps each RunE so a failure's
+// error message is suffixed with the file it came from. The location is
+// read from the compiled binary's function metadata (runtime.FuncForPC),
+// not guessed from the command name, so it's accurate even where a file
+// holds multiple subcommands (e.g. cmd/docs/docs.go) or a command's Use
+// differs from its filename — and it survives release builds (-ldflags
+// "-s -w" strips symbols/DWARF but not the pcln table this relies on).
+func addSourceHints(c *cobra.Command) {
+	for _, sub := range c.Commands() {
+		addSourceHints(sub)
+
+		if sub.RunE == nil {
+			continue
+		}
+		hint := sourceHint(sub.RunE)
+		original := sub.RunE
+		sub.RunE = func(cmd *cobra.Command, args []string) error {
+			err := original(cmd, args)
+			if err != nil && hint != "" {
+				return fmt.Errorf("%w (see %s)", err, hint)
+			}
+			return err
+		}
+	}
+}
+
+// sourceHint returns the repo-relative path (e.g. "cmd/records/list.go")
+// where fn is defined, or "" if it can't be determined.
+func sourceHint(fn func(*cobra.Command, []string) error) string {
+	pc := reflect.ValueOf(fn).Pointer()
+	f := runtime.FuncForPC(pc)
+	if f == nil {
+		return ""
+	}
+	file, _ := f.FileLine(pc)
+	if idx := strings.LastIndex(file, "/cmd/"); idx != -1 {
+		return file[idx+1:]
+	}
+	return ""
 }
 
 // Execute runs the root command
