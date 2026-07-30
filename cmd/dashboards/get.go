@@ -27,7 +27,7 @@ type ChartSegment struct {
 	ChartSegmentValues []ChartSegmentValue `json:"chartSegmentValues"`
 	Formula            *struct {
 		Display *struct {
-			Type      string `json:"type"`
+			Type      string   `json:"type"`
 			Precision *float64 `json:"precision"`
 			Currency  *struct {
 				Code string `json:"code"`
@@ -39,16 +39,16 @@ type ChartSegment struct {
 }
 
 type ChartItem struct {
-	ID                       string         `json:"id"`
-	Title                    string         `json:"title"`
-	Position                 float64        `json:"position"`
-	Type                     string         `json:"type"`
-	IsCalculating            bool           `json:"isCalculating"`
-	IsCalculatingWithFilter  bool           `json:"isCalculatingWithFilter"`
-	NeedCalculation          bool           `json:"needCalculation"`
-	ChartSegments            []ChartSegment `json:"chartSegments"`
-	Display                  *struct {
-		Type      string `json:"type"`
+	ID                      string         `json:"id"`
+	Title                   string         `json:"title"`
+	Position                float64        `json:"position"`
+	Type                    string         `json:"type"`
+	IsCalculating           bool           `json:"isCalculating"`
+	IsCalculatingWithFilter bool           `json:"isCalculatingWithFilter"`
+	NeedCalculation         bool           `json:"needCalculation"`
+	ChartSegments           []ChartSegment `json:"chartSegments"`
+	Display                 *struct {
+		Type      string   `json:"type"`
 		Precision *float64 `json:"precision"`
 		Currency  *struct {
 			Code string `json:"code"`

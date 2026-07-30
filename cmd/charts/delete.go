@@ -3,17 +3,15 @@ package charts
 import (
 	"fmt"
 
-	"github.com/heyblueteam/cli/common"
-
 	"github.com/spf13/cobra"
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete a chart",
-	Long:  "Permanently delete a chart from a dashboard.",
+	Use:     "delete",
+	Short:   "Delete a chart",
+	Long:    "Permanently delete a chart from a dashboard.",
 	Example: `  blue charts delete --chart <id> --confirm`,
-	RunE: runDelete,
+	RunE:    runDelete,
 }
 
 var (
@@ -34,20 +32,18 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("deletion confirmation is required. Use --confirm flag")
 	}
 
-	config, err := common.LoadConfig()
+	client, err := newClient()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
 
-	client := common.NewClient(config)
-
-	mutation := fmt.Sprintf(`
-		mutation DeleteChart {
-			deleteChart(id: "%s") {
+	const mutation = `
+		mutation DeleteChart($id: String!) {
+			deleteChart(id: $id) {
 				success
 			}
 		}
-	`, deleteChart)
+	`
 
 	var response struct {
 		DeleteChart struct {
@@ -55,7 +51,8 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		} `json:"deleteChart"`
 	}
 
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+	variables := map[string]interface{}{"id": deleteChart}
+	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
 		return fmt.Errorf("failed to delete chart: %w", err)
 	}
 

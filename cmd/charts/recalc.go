@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/heyblueteam/cli/common"
-
 	"github.com/spf13/cobra"
 )
 
 var recalcCmd = &cobra.Command{
-	Use:   "recalculate",
-	Short: "Recalculate chart data",
-	Long:  "Force recalculation of one or more charts.",
+	Use:     "recalculate",
+	Short:   "Recalculate chart data",
+	Long:    "Force recalculation of one or more charts.",
 	Example: `  blue charts recalculate --charts "chart1,chart2"`,
-	RunE: runRecalc,
+	RunE:    runRecalc,
 }
 
 var (
@@ -30,32 +28,33 @@ func runRecalc(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("chart IDs are required. Use --charts flag")
 	}
 
-	config, err := common.LoadConfig()
+	client, err := newClient()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
 
-	client := common.NewClient(config)
-
-	ids := strings.Split(recalcCharts, ",")
-	var idStrings []string
-	for _, id := range ids {
-		idStrings = append(idStrings, fmt.Sprintf(`"%s"`, strings.TrimSpace(id)))
-	}
-
-	mutation := fmt.Sprintf(`
-		mutation RecalculateCharts {
-			recalculateCharts(input: {
-				chartIds: [%s]
-			})
+	var ids []string
+	for _, id := range strings.Split(recalcCharts, ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			ids = append(ids, id)
 		}
-	`, strings.Join(idStrings, ", "))
+	}
+	if len(ids) == 0 {
+		return fmt.Errorf("chart IDs are required. Use --charts flag")
+	}
+
+	const mutation = `
+		mutation RecalculateCharts($input: RecalculateChartsInput!) {
+			recalculateCharts(input: $input)
+		}
+	`
 
 	var response struct {
 		RecalculateCharts bool `json:"recalculateCharts"`
 	}
 
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+	variables := map[string]interface{}{"input": map[string]interface{}{"chartIds": ids}}
+	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
 		return fmt.Errorf("failed to recalculate charts: %w", err)
 	}
 

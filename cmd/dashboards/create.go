@@ -39,24 +39,27 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	client := common.NewClient(config)
 
-	// Build optional fields
-	optionalFields := ""
-	if createWorkspace != "" {
-		optionalFields = fmt.Sprintf(`projectId: "%s"`, createWorkspace)
-	}
-
 	companyID, err := client.ResolveCompanyID()
 	if err != nil {
 		return fmt.Errorf("failed to resolve company: %w", err)
 	}
 
-	mutation := fmt.Sprintf(`
-		mutation CreateDashboard {
-			createDashboard(input: {
-				companyId: "%s"
-				title: "%s"
-				%s
-			}) {
+	input := map[string]interface{}{
+		"companyId": companyID,
+		"title":     createTitle,
+	}
+	if createWorkspace != "" {
+		client.SetProject(createWorkspace)
+		workspaceID, err := client.ResolveProjectID(createWorkspace)
+		if err != nil {
+			return fmt.Errorf("failed to resolve workspace: %w", err)
+		}
+		input["projectId"] = workspaceID
+	}
+
+	const mutation = `
+		mutation CreateDashboard($input: CreateDashboardInput!) {
+			createDashboard(input: $input) {
 				id
 				title
 				createdAt
@@ -66,7 +69,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-	`, companyID, common.EscapeGraphQLString(createTitle), optionalFields)
+	`
 
 	var response struct {
 		CreateDashboard struct {
@@ -79,7 +82,8 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		} `json:"createDashboard"`
 	}
 
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+	variables := map[string]interface{}{"input": input}
+	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
 		return fmt.Errorf("failed to create dashboard: %w", err)
 	}
 

@@ -10,11 +10,11 @@ import (
 )
 
 var shareCmd = &cobra.Command{
-	Use:   "share",
-	Short: "Share a dashboard with users",
-	Long:  "Add or update user access to a dashboard.",
+	Use:     "share",
+	Short:   "Share a dashboard with users",
+	Long:    "Add or update user access to a dashboard.",
 	Example: `  blue dashboards share --dashboard <id> --users "user1:EDITOR,user2:VIEWER"`,
-	RunE: runShare,
+	RunE:    runShare,
 }
 
 var (
@@ -44,7 +44,7 @@ func runShare(cmd *cobra.Command, args []string) error {
 
 	// Parse users
 	pairs := strings.Split(shareUsers, ",")
-	var userInputs []string
+	var userInputs []interface{}
 	for _, pair := range pairs {
 		parts := strings.SplitN(strings.TrimSpace(pair), ":", 2)
 		if len(parts) != 2 {
@@ -55,15 +55,12 @@ func runShare(cmd *cobra.Command, args []string) error {
 		if role != "EDITOR" && role != "VIEWER" {
 			return fmt.Errorf("invalid role '%s'. Must be EDITOR or VIEWER", role)
 		}
-		userInputs = append(userInputs, fmt.Sprintf(`{userId: "%s", role: %s}`, userID, role))
+		userInputs = append(userInputs, map[string]interface{}{"userId": userID, "role": role})
 	}
 
-	mutation := fmt.Sprintf(`
-		mutation EditDashboard {
-			editDashboard(input: {
-				id: "%s"
-				dashboardUsers: [%s]
-			}) {
+	const mutation = `
+		mutation EditDashboard($input: EditDashboardInput!) {
+			editDashboard(input: $input) {
 				id
 				title
 				dashboardUsers {
@@ -75,7 +72,7 @@ func runShare(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}
-	`, shareDashboard, strings.Join(userInputs, ", "))
+	`
 
 	var response struct {
 		EditDashboard struct {
@@ -85,7 +82,13 @@ func runShare(cmd *cobra.Command, args []string) error {
 		} `json:"editDashboard"`
 	}
 
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
+	variables := map[string]interface{}{
+		"input": map[string]interface{}{
+			"id":             shareDashboard,
+			"dashboardUsers": userInputs,
+		},
+	}
+	if err := client.ExecuteQueryWithResult(mutation, variables, &response); err != nil {
 		return fmt.Errorf("failed to share dashboard: %w", err)
 	}
 

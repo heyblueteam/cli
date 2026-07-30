@@ -9,11 +9,11 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete a dashboard",
-	Long:  "Permanently delete a dashboard and all its charts.",
+	Use:     "delete",
+	Short:   "Delete a dashboard",
+	Long:    "Permanently delete a dashboard and all its charts.",
 	Example: `  blue dashboards delete --dashboard <id> --confirm`,
-	RunE: runDelete,
+	RunE:    runDelete,
 }
 
 var (
