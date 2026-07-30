@@ -16,6 +16,22 @@ go build -o blue ./cmd/blue  # Build the binary
 go mod tidy                # Install/update dependencies
 ```
 
+### Syncing vendored artifacts
+
+Two checked-in artifacts mirror the monorepo and have no build-time consumer,
+so nothing catches them going stale. Refresh both from a sibling checkout:
+
+```bash
+make schema        # schema.graphql   ← api/src/schema.graphql + generated/{aliases,prisma}.graphql
+make schema-check  # fail (don't write) if it has drifted — for CI
+make docs          # internal/apidocs ← app/src/content/api
+```
+
+`schema.graphql` is what `blue api schema` prints for users without a monorepo
+checkout. The runtime schema is *not* any single api file — `api/src/lib/schema.ts`
+merges three, and vendoring only `src/schema.graphql` silently drops most of the
+filter and vocabulary types. Override the source with `make schema BLUE_API=/path/to/api`.
+
 ### Running Commands
 All commands follow this pattern:
 ```bash
