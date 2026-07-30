@@ -16,6 +16,7 @@ func init() {
 	Cmd.AddCommand(listCmd)
 	Cmd.AddCommand(getCmd)
 	Cmd.AddCommand(createCmd)
+	Cmd.AddCommand(copyCmd)
 	Cmd.AddCommand(deleteCmd)
 	Cmd.AddCommand(shareCmd)
 }

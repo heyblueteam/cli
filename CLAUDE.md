@@ -297,6 +297,120 @@ inline `--field` entries are appended.
 
 **Sort options:** `updatedAt_DESC` (default), `title_ASC`.
 
+### Dashboards (`blue dashboards`)
+```bash
+blue dashboards list [--workspace <ID>] [--simple]
+blue dashboards get --dashboard <ID> [--simple]      # dashboard + every chart's current value
+blue dashboards create --title "Sales" [--workspace <ID>]
+blue dashboards copy --dashboard <ID> [--title "Sales (Q4)"]
+blue dashboards share --dashboard <ID> --users "user1:EDITOR,user2:VIEWER"
+blue dashboards delete --dashboard <ID> --confirm
+```
+
+`--workspace` on `create` scopes the dashboard to one workspace; omit it for a
+company-wide dashboard. Sharing roles are `EDITOR` and `VIEWER` only.
+
+### Charts (`blue charts`)
+
+Charts live inside a dashboard. Three types:
+
+| Type | What it is | Needs |
+|------|-----------|-------|
+| `STAT` | one number, optionally against a goal | `--workspace`, or `--source` for several |
+| `BAR`  | grouped totals, drawn as bars, a line, or an area | `--group-by` |
+| `PIE`  | grouped proportions | `--group-by` |
+
+```bash
+# Preview before saving — same flags as create, computes without writing
+blue charts preview --dashboard <ID> --type PIE --title "By Status" \
+  --workspace <ID> --group-by TODO_STATUS [--format json]
+
+blue charts create --dashboard <ID> --type STAT --title "Open Revenue" \
+  --workspace <ID> --field "Amount" --function SUM --display currency --currency USD
+
+# Goal card with progress bar
+blue charts create --dashboard <ID> --type STAT --title "Q3 Revenue" \
+  --workspace <ID> --field "Amount" --function SUM \
+  --target 500000 --direction HIGHER_IS_BETTER --bands 0.5,0.9 --stat-style PROGRESS
+
+# Rate across two slices of the same records
+blue charts create --dashboard <ID> --type STAT --title "Win rate" \
+  --source "workspace=<ID>;title=Won;lists=<won-list-id>" \
+  --source "workspace=<ID>;title=Total" \
+  --formula "Won / Total * 100" --display percentage
+
+blue charts create --dashboard <ID> --type BAR --title "Created" \
+  --workspace <ID> --group-by TODO_CREATED_AT --interval MONTH --render-style LINE
+
+blue charts list --dashboard <ID> [--simple]
+blue charts update --chart <ID> --title "New title" | --position 3000 |
+                                --display currency --currency EUR --precision 2 |
+                                --render-style AREA | --clear-target |
+                                --metadata-json '<ChartMetadataInput>'
+blue charts copy --chart <ID> --dashboard <destination-ID> [--title "..."]
+blue charts recalculate --charts "id1,id2"
+blue charts delete --chart <ID> --confirm
+blue exports chart --chart <ID> [--filter-json '{"showCompleted":false}']
+```
+
+**`--group-by`:** `ASSIGNEE`, `TAG`, `TODO_LIST`, `TODO_STATUS`, `PROJECT`,
+`CUSTOM_FIELD`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`,
+`TODO_COMPLETED_AT`. The date ones take `--interval DAY|WEEK|MONTH|QUARTER|YEAR`.
+
+**`--function`:** `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX`.
+
+**Fields are given by name or ID.** `--field` is what the chart measures (omit
+it to count records); `--group-by-field` is what it groups by, and is required
+with `--group-by CUSTOM_FIELD`.
+
+**Only some field types can be grouped by:** `SELECT_SINGLE`, `SELECT_MULTI`,
+`CHECKBOX`, `COUNTRY`, `DATE`, `REFERENCE`, `REFERENCED_BY`, `ASSIGNEE`. The
+API returns an empty chart rather than an error for anything else, so the CLI
+rejects it up front.
+
+**Record filters** narrow what a chart measures: `--show-completed`,
+`--archived`, `--unassigned`, `--assignees`, `--tags`, `--lists`, `--due-start`,
+`--due-end`, `--q`. Anything they can't express goes in `--filter-json`
+(per-field conditions, nested groups), which is merged last and wins.
+
+**`--source` syntax** (STAT only, repeatable): `key=value` pairs separated by
+`;`. Keys: `workspace` (required), `field`, `function`, `title`, `lists`,
+`tags`, `assignees`, `show-completed`. Several sources need a `--formula` that
+refers to them by title.
+
+**Gotchas:**
+- Segment identifiers are unique platform-wide, so the CLI mints them per call.
+  Never reuse a fixed uid.
+- Pie charts have their own metadata shape. Saving one in the bar shape computes
+  but the app won't recognise it as an automatic pie or open it for editing.
+- `charts update` replaces a chart's configuration wholesale rather than merging,
+  so `--render-style` reads the current configuration back first to avoid
+  dropping the axes and filter. Anything added to `TodoFilter` in the schema must
+  be added to `todoFilterFields` in `cmd/charts/update.go` or it will be dropped
+  on update.
+- A goal is removed with `--clear-target`, which writes a null target inside a
+  present `statCard`. Absent metadata is not the same thing — the API's metadata
+  union can't resolve an empty object and fails the whole charts query.
+- `create` runs a preview first to give the chart its values immediately;
+  `--no-preview` skips it. The background recalculation replaces those values
+  shortly after either way.
+
+### Reports (`blue reports`)
+```bash
+blue reports list [--format json]
+blue reports get --report <ID>
+blue reports create --title "Open work" [--workspaces ws1,ws2] [--filter-json '{"done":false}']
+blue reports create --title "Custom" --data-sources-json '[{"sourceType":"TODOS"}]'
+blue reports update --report <ID> --title "..." [--filter-json ...]
+blue reports data --report <ID>              # records + count
+blue reports aggregate --report <ID>         # field aggregations
+blue reports refresh --report <ID>           # refresh the aggregation cache
+blue reports duplicate --report <ID>
+blue reports share --report <ID> --users "..."
+blue reports export --report <ID>            # queue a CSV export
+blue reports delete --report <ID> --confirm
+```
+
 ## Architecture
 
 ### Project Structure
