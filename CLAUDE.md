@@ -40,6 +40,8 @@ If `--workspace` is not passed and `DEFAULT_WORKSPACE_ID` is set (via
 
 ```bash
 blue init                       # Interactive credential setup -> ~/.config/blue/config.env
+blue init --client-id <ID> --auth-token <SECRET> --company-id acme   # Non-interactive
+blue init --client-id <ID> --auth-token <SECRET> --company-id acme --api-url <URL>
 blue whoami                     # Current user, company, API URL, default workspace, config path
 blue whoami --format json
 blue doctor                     # Non-destructive config/credential/API checks
@@ -455,36 +457,73 @@ script can reuse the same filter.
 
 ```bash
 blue dashboards list --simple
+blue dashboards list --workspace <ID> --page 2 --size 50
 blue dashboards create --title "Sales Dashboard"
 blue dashboards create --title "Sprint Metrics" --workspace <ID>
 blue dashboards get --dashboard <ID>                   # Includes chart data
+blue dashboards update --dashboard <ID> --title "New title"
+blue dashboards update --dashboard <ID> --allow-viewer-chart-data true
 blue dashboards share --dashboard <ID> --users "user1:EDITOR,user2:VIEWER"
 blue dashboards delete --dashboard <ID> --confirm
 ```
 
+`--allow-viewer-chart-data` controls whether `VIEWER` shares can drill into the
+records behind a chart.
+
 ### Charts (`blue charts`)
 
+Two interfaces. Payload flags cover one-metric charts. `--input` takes an exact
+GraphQL `CreateChartInput` / `EditChartInput` JSON object and preserves the
+API's nested structure — use it for multiple metrics, targets, trends, and
+bands. The two are mutually exclusive.
+
 ```bash
-blue charts list --dashboard <ID>
-blue charts create --dashboard <ID> --type STAT --title "Total Records" \
-  --workspace <ID> --function COUNT
-blue charts create --dashboard <ID> --type STAT --title "Total Revenue" \
+blue charts list --dashboard <ID> --format json
+blue charts get --chart <ID> --format json
+
+# Flag form
+blue charts create --dashboard <ID> --title "By status" --display-type bar \
+  --workspace <ID> --group-by TODO_STATUS
+blue charts create --dashboard <ID> --title "Total Revenue" --display-type stat \
   --workspace <ID> --field <FIELD_ID> --function SUM --display currency --currency USD
-blue charts create --dashboard <ID> --type BAR --title "By Assignee" \
-  --workspace <ID> --group-by ASSIGNEE --function COUNT
-blue charts create --dashboard <ID> --type PIE --title "By Status" \
-  --workspace <ID> --group-by TODO_STATUS --function COUNT
+blue charts create --dashboard <ID> --title "Status by list" --display-type bar \
+  --workspace <ID> --group-by TODO_STATUS --breakout TODO_LIST --stack-mode PERCENT
+
+# JSON form (preferred for agents)
+blue charts create --input chart.json --format json
+cat chart.json | blue charts create --input - --format json
+
+# Preview without saving
+blue charts preview --dashboard <ID> --title "By status" --display-type bar \
+  --workspace <ID> --group-by TODO_STATUS
+blue charts preview --input chart.json --format json
+
+blue charts edit --chart <ID> --title "New title" --display-type line --width 4 --height 3
+blue charts edit --input edit.json --format json
 blue charts recalculate --charts "chart1,chart2"
 blue charts delete --chart <ID> --confirm
 ```
 
-**Chart types:** `STAT`, `BAR`, `PIE`.
+**Display types (`--display-type`):** `bar`, `line`, `area`, `row`,
+`leaderboard`, `table`, `pie`, `funnel`, `combo`, `stat`, `progress`, `gauge`.
+
+**`--type`** is the legacy GraphQL type (`STAT`, `BAR`, `PIE`). Prefer
+`--display-type` on new work.
 
 **Aggregation functions:** `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX`.
 
-**Group-by dimensions (BAR/PIE):** `ASSIGNEE`, `TAG`, `TODO_LIST`, `TODO_STATUS`, `PROJECT`, `CUSTOM_FIELD`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`.
+**Group-by / breakout dimensions:** `PROJECT`, `ASSIGNEE`, `TAG`,
+`CUSTOM_FIELD`, `TODO`, `TODO_LIST`, `TODO_STATUS`, or a `TODO_*` date field.
+With `CUSTOM_FIELD`, also pass `--group-field` or `--breakout-field`.
+
+**Number formats (`--display`):** `number`, `currency`, `percentage`.
 
 **Date intervals:** `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.
+
+**Stack modes:** `STACKED`, `PERCENT`.
+
+`--workspaces` accepts several workspaces for one chart. `--filter-json` takes
+a chart-level `TodoFilterInput`.
 
 ### Documents (`blue documents`)
 

@@ -16,6 +16,13 @@ blue init
 
 This prompts for your API credentials (get them from Account Settings > API > Generate Token) and saves them to `~/.config/blue/config.env`.
 
+For scripts and agents, pass all three credentials to skip every prompt:
+
+```bash
+blue init --client-id <id> --auth-token <secret> --company-id acme
+blue init --client-id <id> --auth-token <secret> --company-id acme --api-url https://api.blue.app/graphql
+```
+
 ## Verify
 
 ```bash
@@ -170,11 +177,12 @@ blue context clear
 
 When a default workspace is set, workspace-scoped commands use it if `--workspace` is omitted. Passing `--workspace` always wins.
 
-### Whoami
+### Whoami & Version
 
 ```bash
 blue whoami
 blue whoami --format json
+blue version
 ```
 
 ### Bootstrap
@@ -392,9 +400,14 @@ blue dependencies delete --record <id> --other-record <id> --confirm
 ```bash
 blue files inventory > files.csv                            # Company-wide CSV
 blue files inventory --workspace <id> --output files.csv
+blue files inventory --workspace <id> --search invoice
 blue files download                                          # Interactive mode
-blue files download --use-env --output "backup.zip" --parallel 10
+PROJECT_ID=<id> blue files download --use-env --output "backup.zip" --parallel 10
 ```
+
+`--use-env` is fully non-interactive. It requires `PROJECT_ID` in the environment and
+fails immediately if it is missing, rather than prompting. `FOLDER_ID` is optional;
+unset means the root folder.
 
 ### Documents
 
