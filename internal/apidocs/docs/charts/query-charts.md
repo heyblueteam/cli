@@ -208,6 +208,78 @@ query ListChartsFiltered {
 
 `todoFilter` is a `TodoFilterInput` — the same record-filter shape used across the API. See [List records](/api/records) for its full field set.
 
+## Read the records behind a chart
+
+Use the `chartData` query to list the records a chart's numbers are made of. It answers the question "which records is this bar?" — and answers it so the two reconcile exactly.
+
+Rows are **contributions, not records**. A record carrying two tags is behind both tag bars and appears under each, so the row count adds up to the chart rather than to a de-duplicated list of records. Both totals come back: `contributionCount` and `uniqueRecordCount`.
+
+```graphql
+query ChartData {
+  chartData(input: { chartId: "chart_123", take: 50 }) {
+    contributionCount
+    uniqueRecordCount
+    hasMore
+    calculatedAt
+    buckets {
+      key
+      label
+      value
+      listable
+      gap
+    }
+    rows {
+      bucketKey
+      bucketLabel
+      seriesLabel
+      record {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+### Parameters
+
+All parameters live on `ChartDataInput`.
+
+| Parameter   | Type              | Required | Description                                                                                                           |
+| ----------- | ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `chartId`   | `ID!`             | Yes      | The chart to read.                                                                                                    |
+| `filter`    | `TodoFilterInput` | No       | The dashboard filter the chart was rendered with. Sending a different one answers a different question from the card. |
+| `bucketKey` | `String`          | No       | Narrow to one bucket, using a `key` from `buckets`. Omit for every contribution the chart counts.                     |
+| `metricKey` | `String`          | No       | Which metric to list, on a chart plotting more than one. Defaults to the first.                                       |
+| `take`      | `Int`             | No       | Rows per page. Defaults to 50, capped at 100.                                                                         |
+| `skip`      | `Int`             | No       | Rows to skip. Defaults to 0.                                                                                          |
+
+### Buckets, keys, and labels
+
+`buckets` lists every bucket the chart drew, with the `value` it drew. A bucket's `key` is its identity and its `label` is what the chart printed — they are not the same thing, and only the key round-trips: two people share a first name and group separately while rendering identically, and a date bucket prints as `Week 09 of 2026`.
+
+Some buckets cannot be turned back into a set of records, and say so rather than guessing. Those come back with `listable: false` and a `gap`:
+
+| `gap`                         | Meaning                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `FOLDED_TAIL`                 | The `Other` band of a breakdown — the slices ranked past the top eight, summed. No single predicate describes it.  |
+| `BREAKDOWN_NOT_REVERSIBLE`    | A country breakdown, whose slices are labelled with names over grouped alpha-2 codes.                              |
+| `SEGMENT_PREDATES_BUCKET_KEY` | The segment was computed before bucket keys were stored. The chart's next recalculation fixes it.                  |
+| `SOURCE_HAS_NO_WORKSPACE`     | A manual chart's source with no workspace to read records from.                                                    |
+| `TOO_MANY_SOURCES`            | More segments than one query can read at once. Reported for the whole chart; ask for a single `bucketKey` instead. |
+
+### Columns and formula breakdown
+
+`columns` is the set of columns a drill-down table can offer, merged across the chart's workspaces by field **name and type** — the same merge reports use. A field of the same name and a different type stays two columns, because it renders two different ways. `suggested: true` marks the ones the chart itself implies. A merged column whose workspaces disagree on currency carries a `warning` rather than picking one.
+
+`formulaBreakdown` is populated for manual charts: one entry per segment value, with the source's own `result` alongside the `segmentResult` its formula produced. It is empty for auto-generated charts, whose numbers come from one grouped query rather than from combined sources.
+
+<Callout variant="info" title="The numbers are computed; the rows are live">
+
+`calculatedAt` is when the chart last recomputed. The rows are read at request time, so a record edited since then can disagree with the number above it.
+
+</Callout>
+
 ## Subscribe to chart changes
 
 Use the `subscribeToChart` subscription to receive real-time events when charts on a dashboard are created, updated, or deleted — including the recomputed values that follow a recalculation. Subscriptions run over the WebSocket transport at `wss://api.blue.app/graphql`.
@@ -346,37 +418,51 @@ The subscription's `todoFilter` is matched against the `todoFilter` a chart was 
 
 ### ChartMetadata
 
-`metadata` is a union — `ChartMetadataBarChart` for `BAR` charts and `ChartMetadataPieChart` for `PIE` charts — so select fields through an inline fragment:
+`metadata` is one object shape for every chart — no inline fragment needed. `query` is
+present on an auto-generated chart and `null` on a manual one; `presentation` carries
+settings that never affect which records the chart covers.
 
 ```graphql
 query GetChartMetadata {
   chart(id: "chart_123") {
     id
     type
+    displayType
     metadata {
-      ... on ChartMetadataBarChart {
-        barChart {
-          xAxis {
-            title
-            type
-            interval
-          }
-          yAxis {
-            title
-            function
-          }
+      query {
+        dimensions {
+          title
+          type
+          interval
+          customFieldName
+          customFieldType
+        }
+        metrics {
+          key
+          title
+          function
+          customFieldName
+          customFieldType
+        }
+        breakout {
+          title
+          type
+        }
+        filters {
+          showCompleted
         }
       }
-      ... on ChartMetadataPieChart {
-        pieChart {
-          groupBy {
-            title
-            type
-          }
-          value {
-            title
-            function
-          }
+      presentation {
+        stackMode
+        direction
+        target {
+          mode
+          value
+          segmentUid
+        }
+        bands {
+          atRisk
+          onTrack
         }
       }
     }
@@ -384,7 +470,7 @@ query GetChartMetadata {
 }
 ```
 
-For `BAR`, `barChart.xAxis` carries the grouping (`type` is a `BarChartXAxisType`, with an optional `interval` for date axes) and `barChart.yAxis` carries the aggregate (`function` is a `ChartSegmentValueFunctions`). For `PIE`, `pieChart.groupBy` and `pieChart.value` mirror those roles. The axis input shapes are documented in [Create and manage charts](/api/charts/manage-charts).
+`query.dimensions[0]` carries the grouping (`type` is a `BarChartXAxisType`, with an optional `interval` for date dimensions) and `query.metrics` carries the aggregates (`function` is a `ChartSegmentValueFunctions`; omit it for a plain record count). Bar and pie are the same query — they differ only in `displayType`. `query` is `null` on a manual chart. The full shapes are documented in [Create and manage charts](/api/charts/manage-charts).
 
 ### PageInfo
 
@@ -404,12 +490,15 @@ For `BAR`, `barChart.xAxis` carries the grouping (`type` is a `BarChartXAxisType
 | Code                  | When                                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------------------- |
 | `UNAUTHENTICATED`     | The request has no valid credentials.                                                                 |
-| `CHART_NOT_FOUND`     | `chart(id:)` references a chart that doesn't exist, or whose dashboard you can't access.              |
+| `CHART_NOT_FOUND`     | `chart(id:)` references a chart you cannot access, or `chartData` is disabled for the caller.         |
+| `RATE_LIMITED`        | A `chartData` query for this user is still running. One runs at a time.                               |
 | `DASHBOARD_NOT_FOUND` | `charts` (or `subscribeToChart`) references a dashboard that doesn't exist, or that you can't access. |
 
 ## Permissions
 
 You must be authenticated. Charts inherit their access from the parent dashboard: you can read a dashboard's charts if you created the dashboard or have been added to it as a `DashboardUser` (any role — `VIEWER` is sufficient for reads). The `subscribeToChart` stream applies the same check and silently drops events for dashboards you can't access. Writing charts requires the dashboard owner or the `EDITOR` role — see [Create and manage charts](/api/charts/manage-charts).
+
+`chartData` always allows the dashboard creator and editors. A viewer can use it only when the dashboard's `allowViewerChartData` setting is on. A chart's numbers are computed as the dashboard's creator so that every viewer sees the same figure, and `chartData` reads its rows the same way — otherwise a viewer with narrower workspace access would be shown twelve records under a bar labelled seventeen.
 
 ## Related
 

@@ -387,6 +387,7 @@ blue dashboards list --simple
 blue dashboards create --title "Sales Dashboard"
 blue dashboards create --title "Sprint Metrics" --workspace <id>
 blue dashboards get --dashboard <id>
+blue dashboards update --dashboard <id> --allow-viewer-chart-data true
 blue dashboards share --dashboard <id> --users "user1:EDITOR,user2:VIEWER"
 blue dashboards delete --dashboard <id> --confirm
 ```
@@ -396,11 +397,20 @@ blue dashboards delete --dashboard <id> --confirm
 ```bash
 blue charts list --dashboard <id>
 blue charts create --dashboard <id> --type STAT --title "Total Records" --workspace <id> --function COUNT
-blue charts create --dashboard <id> --type BAR --title "By Assignee" --workspace <id> --group-by ASSIGNEE --function COUNT
-blue charts create --dashboard <id> --type PIE --title "By Status" --workspace <id> --group-by TODO_STATUS --function COUNT
+blue charts create --dashboard <id> --title "By Assignee" --display-type bar --workspace <id> --group-by ASSIGNEE
+blue charts create --dashboard <id> --title "By Status" --display-type pie --workspace <id> --group-by TODO_STATUS
+blue charts preview --input chart.json --format json
+cat chart.json | blue charts create --input - --format json
+blue charts get --chart <id> --format json
+blue charts edit --chart <id> --display-type line --width 4 --height 3
 blue charts recalculate --charts "chart1,chart2"
 blue charts delete --chart <id> --confirm
 ```
+
+Use flags for common one-metric charts. For multiple metrics, targets, trends, bands, or
+other advanced settings, pass an exact GraphQL `CreateChartInput` or `EditChartInput` JSON
+object with `--input`. Payload flags and `--input` are mutually exclusive. The JSON form is
+the preferred interface for agents because it preserves the API's nested chart structure.
 
 ### Webhooks
 

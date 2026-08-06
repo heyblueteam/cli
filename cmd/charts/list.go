@@ -2,143 +2,58 @@ package charts
 
 import (
 	"fmt"
-
-	"github.com/heyblueteam/cli/common"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-type ChartSegment struct {
-	ID            string   `json:"id"`
-	Title         string   `json:"title"`
-	FormulaResult *float64 `json:"formulaResult"`
-}
-
-type ChartListItem struct {
-	ID              string         `json:"id"`
-	Title           string         `json:"title"`
-	Type            string         `json:"type"`
-	Position        float64        `json:"position"`
-	IsCalculating   bool           `json:"isCalculating"`
-	NeedCalculation bool           `json:"needCalculation"`
-	ChartSegments   []ChartSegment `json:"chartSegments"`
-	CreatedAt       string         `json:"createdAt"`
-	UpdatedAt       string         `json:"updatedAt"`
-}
-
-type ChartsListResponse struct {
-	Charts struct {
-		Items    []ChartListItem `json:"items"`
-		PageInfo struct {
-			HasNextPage bool `json:"hasNextPage"`
-			TotalItems  int  `json:"totalItems"`
-		} `json:"pageInfo"`
-	} `json:"charts"`
-}
+var listDashboard, listFormat string
+var listSimple bool
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List charts in a dashboard",
-	Long:  "List all charts within a dashboard with their types and segment counts.",
+	Use: "list", Short: "List charts in a dashboard",
 	Example: `  blue charts list --dashboard <id>
-  blue charts list --dashboard <id> --simple`,
+  blue charts list --dashboard <id> --format json`,
 	RunE: runList,
 }
 
-var (
-	listDashboard string
-	listSimple    bool
-)
-
 func init() {
 	listCmd.Flags().StringVar(&listDashboard, "dashboard", "", "Dashboard ID (required)")
-	listCmd.Flags().BoolVarP(&listSimple, "simple", "s", false, "Simple output format")
+	listCmd.Flags().BoolVarP(&listSimple, "simple", "s", false, "Simple output")
+	listCmd.Flags().StringVar(&listFormat, "format", "", "Output format (json)")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
 	if listDashboard == "" {
-		return fmt.Errorf("dashboard ID is required. Use --dashboard flag")
+		return fmt.Errorf("dashboard ID is required. Use --dashboard")
 	}
-
-	config, err := common.LoadConfig()
+	client, err := chartClient()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	client := common.NewClient(config)
-
-	query := `
-		query Charts($filter: ChartFilterInput!) {
-			charts(filter: $filter, sort: [position_ASC], take: 100) {
-				items {
-					id
-					title
-					type
-					position
-					isCalculating
-					needCalculation
-					chartSegments {
-						id
-						title
-						formulaResult
-					}
-					createdAt
-					updatedAt
-				}
-				pageInfo {
-					hasNextPage
-					totalItems
-				}
-			}
-		}
-	`
-
-	variables := map[string]interface{}{
-		"filter": map[string]interface{}{
-			"dashboardId": listDashboard,
-		},
+	query := fmt.Sprintf(`query Charts($filter: ChartFilterInput!) { charts(filter:$filter,sort:[position_ASC],take:100) { items { %s } pageInfo { hasNextPage totalItems } } }`, chartFields)
+	var response struct {
+		Charts struct {
+			Items    []Chart `json:"items"`
+			PageInfo struct {
+				HasNextPage bool `json:"hasNextPage"`
+				TotalItems  int  `json:"totalItems"`
+			} `json:"pageInfo"`
+		} `json:"charts"`
 	}
-
-	var response ChartsListResponse
-	if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
+	if err := client.ExecuteQueryWithResult(query, map[string]interface{}{"filter": map[string]interface{}{"dashboardId": listDashboard}}, &response); err != nil {
 		return fmt.Errorf("failed to list charts: %w", err)
 	}
-
-	items := response.Charts.Items
-	total := response.Charts.PageInfo.TotalItems
-
-	fmt.Printf("\n=== Charts in Dashboard ===\n")
-	fmt.Printf("Total: %d\n\n", total)
-
-	if len(items) == 0 {
-		fmt.Println("No charts found.")
-		return nil
+	if strings.EqualFold(listFormat, "json") {
+		return printJSON(response.Charts)
 	}
-
-	for i, c := range items {
-		status := ""
-		if c.IsCalculating {
-			status = " (calculating...)"
-		} else if c.NeedCalculation {
-			status = " (needs recalculation)"
+	fmt.Printf("Charts: %d\n", response.Charts.PageInfo.TotalItems)
+	for _, chart := range response.Charts.Items {
+		printChartSummary(chart)
+		if !listSimple {
+			fmt.Printf("Segments: %d\n", len(chart.ChartSegments))
 		}
-
-		if listSimple {
-			fmt.Printf("%d. %s [%s]%s\n   ID: %s\n\n", i+1, c.Title, c.Type, status, c.ID)
-		} else {
-			fmt.Printf("%d. %s [%s]%s\n", i+1, c.Title, c.Type, status)
-			fmt.Printf("   ID: %s\n", c.ID)
-			fmt.Printf("   Segments: %d\n", len(c.ChartSegments))
-			for _, seg := range c.ChartSegments {
-				if seg.FormulaResult != nil {
-					fmt.Printf("     - %s: %g\n", seg.Title, *seg.FormulaResult)
-				} else {
-					fmt.Printf("     - %s: (pending)\n", seg.Title)
-				}
-			}
-			fmt.Println()
-		}
+		fmt.Println()
 	}
-
 	return nil
 }

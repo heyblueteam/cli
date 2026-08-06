@@ -24,9 +24,9 @@ The returned `Chart` is fabricated: it carries a throwaway `id`/`uid`, `position
 A preview works two ways, mirroring the two kinds of chart:
 
 - **Manual chart** — pass `chartSegments`. Each segment's formula is evaluated against its segment values (each value is an aggregate over one workspace's records).
-- **Auto-generated chart** — omit `chartSegments` and pass `metadata.barChart` (an x-axis/y-axis spec) or `metadata.pieChart` (a group-by/value spec). Blue generates the segments for you.
+- **Auto-generated chart** — omit `chartSegments` and pass `metadata.query` (what to group by, what to measure). Blue generates the segments for you.
 
-If you supply neither `chartSegments` nor a `metadata.barChart`/`metadata.pieChart` block, the query fails.
+If you supply neither `chartSegments` nor a `metadata.query` block, the query fails.
 
 ### Request
 
@@ -40,9 +40,9 @@ query PreviewBarChart {
       title: "Records by workspace"
       type: BAR
       metadata: {
-        barChart: {
-          xAxis: { type: PROJECT, title: "Workspace" }
-          yAxis: { function: COUNT, title: "Records" }
+        query: {
+          dimensions: [{ type: PROJECT, title: "Workspace" }]
+          metrics: [{ title: "Records" }]
         }
       }
     }
@@ -72,7 +72,7 @@ query PreviewBarChart {
 | `title`         | `String!`              | Yes      | Chart title. Echoed back on the preview.                                                              |
 | `type`          | `ChartType!`           | Yes      | `STAT`, `PIE`, or `BAR`.                                                                              |
 | `chartSegments` | `[ChartSegmentInput!]` | No       | Manual segments. When present, the chart is manual and `metadata` is ignored.                         |
-| `metadata`      | `ChartMetadataInput`   | No       | Auto-generation spec. Provide `barChart` or `pieChart` when `chartSegments` is omitted.               |
+| `metadata`      | `ChartMetadataInput`   | No       | Auto-generation spec. Provide a `query` when `chartSegments` is omitted.                              |
 | `display`       | `FormulaDisplayInput`  | No       | Number/currency/percentage formatting for the displayed value.                                        |
 | `position`      | `Float`                | No       | Ignored by the preview — the returned `position` is always `65535`.                                   |
 
@@ -86,41 +86,24 @@ query PreviewBarChart {
 
 #### ChartMetadataInput
 
-| Parameter  | Type                    | Required | Description                                |
-| ---------- | ----------------------- | -------- | ------------------------------------------ |
-| `barChart` | `BarChartMetadataInput` | No       | Bar-chart spec: an `xAxis` and a `yAxis`.  |
-| `pieChart` | `PieChartMetadataInput` | No       | Pie-chart spec: a `groupBy` and a `value`. |
+| Parameter      | Type                     | Required | Description                                 |
+| -------------- | ------------------------ | -------- | ------------------------------------------- |
+| `query`        | `ChartQueryInput`        | No       | What to group by and what to measure.       |
+| `presentation` | `ChartPresentationInput` | No       | How the result is dressed. Never the query. |
 
-#### BarChartMetadataInput
+#### ChartQueryInput
 
-| Parameter | Type                  | Required | Description                   |
-| --------- | --------------------- | -------- | ----------------------------- |
-| `xAxis`   | `BarChartXAxisInput!` | Yes      | What the bars are grouped by. |
-| `yAxis`   | `BarChartYAxisInput!` | Yes      | What each bar measures.       |
+| Parameter    | Type                      | Required | Description                                  |
+| ------------ | ------------------------- | -------- | -------------------------------------------- |
+| `dimensions` | `[ChartDimensionInput!]!` | Yes      | What records are grouped into.               |
+| `metrics`    | `[ChartMetricInput!]!`    | Yes      | What each bucket measures.                   |
+| `breakout`   | `ChartBreakoutInput`      | No       | A second grouping that splits each bucket.   |
+| `filters`    | `TodoFilterInput`         | No       | Restricts all records measured by the chart. |
 
-#### BarChartXAxisInput
-
-| Parameter                       | Type                    | Required | Description                                        |
-| ------------------------------- | ----------------------- | -------- | -------------------------------------------------- |
-| `type`                          | `BarChartXAxisType!`    | Yes      | Dimension to group by (see values below).          |
-| `title`                         | `String`                | No       | Axis label.                                        |
-| `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date-based axes (`DAY`…`YEAR`).    |
-| `customFieldName`               | `String`                | No       | Field name when `type` is `CUSTOM_FIELD`.          |
-| `customFieldType`               | `CustomFieldType`       | No       | Field type when `type` is `CUSTOM_FIELD`.          |
-| `customFieldReferenceProjectId` | `String`                | No       | Referenced workspace for a reference custom field. |
-
-#### BarChartYAxisInput
-
-| Parameter                       | Type                         | Required | Description                                        |
-| ------------------------------- | ---------------------------- | -------- | -------------------------------------------------- |
-| `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied per bucket (`COUNT`, `SUM`, …).  |
-| `filter`                        | `TodoFilterInput`            | No       | Restrict the records each bar measures.            |
-| `title`                         | `String`                     | No       | Axis label.                                        |
-| `customFieldName`               | `String`                     | No       | Field name when measuring a custom field.          |
-| `customFieldType`               | `CustomFieldType`            | No       | Field type when measuring a custom field.          |
-| `customFieldReferenceProjectId` | `String`                     | No       | Referenced workspace for a reference custom field. |
-
-`PieChartMetadataInput` is the same shape with `groupBy` (a `PieChartGroupByInput`, no `interval`) and `value` (a `PieChartValueInput`, identical to `BarChartYAxisInput`).
+Dimensions carry `type`, optional `title` and `interval`, plus custom-field metadata when
+`type` is `CUSTOM_FIELD`. Metrics carry a stable `key`, optional title and aggregate function,
+custom-field metadata, a per-metric filter, colour, and left/right axis assignment. See
+[Create and manage charts](/api/charts/manage-charts) for the complete field tables.
 
 #### BarChartXAxisType
 
@@ -130,6 +113,7 @@ query PreviewBarChart {
 | `ASSIGNEE`          | Assigned user.                              |
 | `TAG`               | Tag.                                        |
 | `CUSTOM_FIELD`      | A custom field's value.                     |
+| `TODO`              | The record itself, one bucket each.         |
 | `TODO_LIST`         | List.                                       |
 | `TODO_STATUS`       | Record completion status.                   |
 | `TODO_DUE_DATE`     | Due date (bucketed by `interval`).          |
@@ -197,7 +181,7 @@ query PreviewBarChart {
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
 | `DASHBOARD_NOT_FOUND` | No dashboard matches `dashboardId` for the caller, or the caller is neither its creator nor an `EDITOR`. |
 
-Two failure modes raise a generic error rather than a coded Blue error: a manual `chartSegments` value that references a workspace the caller doesn't belong to (the preview throws `Access denied to projects: …`), and supplying neither `chartSegments` nor a `metadata.barChart`/`metadata.pieChart` block (there is nothing to compute).
+Two failure modes raise a generic error rather than a coded Blue error: a manual `chartSegments` value that references a workspace the caller doesn't belong to (the preview throws `Access denied to projects: …`), and supplying neither `chartSegments` nor a `metadata.query` block (there is nothing to compute).
 
 ---
 
@@ -267,10 +251,10 @@ mutation ExportChartCSV {
 
 ### Parameters
 
-| Parameter | Type              | Required | Description                                                                     |
-| --------- | ----------------- | -------- | ------------------------------------------------------------------------------- |
-| `chartId` | `ID!`             | Yes      | Chart whose records to export. Must belong to a dashboard in your organization. |
-| `filter`  | `TodoFilterInput` | No       | Restrict the exported rows. Omit to export all records behind the chart.        |
+| Parameter | Type              | Required | Description                                                              |
+| --------- | ----------------- | -------- | ------------------------------------------------------------------------ |
+| `chartId` | `ID!`             | Yes      | Chart whose records to export. Must belong to a dashboard you can view.  |
+| `filter`  | `TodoFilterInput` | No       | Restrict the exported rows. Omit to export all records behind the chart. |
 
 `TodoFilterInput` is the standard record filter used across the API; see [List records](/api/records/list-records) for its full field set.
 
@@ -300,7 +284,7 @@ mutation ExportFilteredChartCSV {
 
 | Code                      | When                                                                                                                  |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `CHART_NOT_FOUND`         | No chart matches `chartId`, or the chart's dashboard is in an organization the caller is not a member of.             |
+| `CHART_NOT_FOUND`         | No chart matches `chartId`, or the caller has no view access to the chart's dashboard.                                |
 | `CHART_ALREADY_EXPORTING` | An export for the same chart by the same user is already in flight. The lock clears 6 hours after the export started. |
 
 ```json
@@ -328,7 +312,9 @@ All three operations derive their permissions from the chart's parent dashboard.
 | ------------------- | -------------------------------------------------------------------------------------------------- |
 | `previewChart`      | Creator of the target dashboard, or an `EDITOR` on it. A `VIEWER` cannot preview.                  |
 | `recalculateCharts` | View access (creator or any dashboard user — `EDITOR` or `VIEWER`) to **every** chart's dashboard. |
-| `exportChartCSV`    | Membership in the organization that owns the chart's dashboard.                                    |
+| `exportChartCSV`    | Dashboard creator or `EDITOR`; a `VIEWER` also needs `allowViewerChartData` enabled.               |
+
+An export's rows are read as the dashboard's **creator**, which is the same scope the chart's numbers were computed as — so the CSV matches the card. The dashboard creator can turn viewer access to those rows on or off with `allowViewerChartData`. Editors always retain access.
 
 See [Dashboards](/api/dashboards) for how dashboard creators and `dashboardUsers` (with `EDITOR`/`VIEWER` roles) are managed.
 

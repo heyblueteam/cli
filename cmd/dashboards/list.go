@@ -1,7 +1,9 @@
 package dashboards
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/heyblueteam/cli/common"
 
@@ -18,11 +20,12 @@ type DashboardUser struct {
 }
 
 type DashboardItem struct {
-	ID        string `json:"id"`
-	Title     string `json:"title"`
-	CreatedAt string `json:"createdAt"`
-	UpdatedAt string `json:"updatedAt"`
-	CreatedBy struct {
+	ID                   string `json:"id"`
+	Title                string `json:"title"`
+	AllowViewerChartData bool   `json:"allowViewerChartData"`
+	CreatedAt            string `json:"createdAt"`
+	UpdatedAt            string `json:"updatedAt"`
+	CreatedBy            struct {
 		ID       string `json:"id"`
 		FullName string `json:"fullName"`
 	} `json:"createdBy"`
@@ -54,6 +57,7 @@ var (
 	listSimple    bool
 	listPage      int
 	listSize      int
+	listFormat    string
 )
 
 func init() {
@@ -61,6 +65,7 @@ func init() {
 	listCmd.Flags().BoolVarP(&listSimple, "simple", "s", false, "Simple output format")
 	listCmd.Flags().IntVar(&listPage, "page", 1, "Page number")
 	listCmd.Flags().IntVar(&listSize, "size", 20, "Page size")
+	listCmd.Flags().StringVar(&listFormat, "format", "", "Output format (json)")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -79,6 +84,7 @@ func runList(cmd *cobra.Command, args []string) error {
 				items {
 					id
 					title
+					allowViewerChartData
 					createdAt
 					updatedAt
 					createdBy {
@@ -127,6 +133,14 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	items := response.Dashboards.Items
 	total := response.Dashboards.PageInfo.TotalItems
+	if strings.EqualFold(listFormat, "json") {
+		data, err := json.MarshalIndent(response.Dashboards, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(data))
+		return nil
+	}
 
 	fmt.Printf("\n=== Dashboards ===\n")
 	fmt.Printf("Page %d (showing %d of %d total)\n\n", listPage, len(items), total)
@@ -144,6 +158,7 @@ func runList(cmd *cobra.Command, args []string) error {
 			fmt.Printf("%d. %s\n", num, d.Title)
 			fmt.Printf("   ID: %s\n", d.ID)
 			fmt.Printf("   Created by: %s\n", d.CreatedBy.FullName)
+			fmt.Printf("   Viewer chart data: %t\n", d.AllowViewerChartData)
 			if len(d.DashboardUsers) > 0 {
 				fmt.Printf("   Shared with: ")
 				for j, u := range d.DashboardUsers {

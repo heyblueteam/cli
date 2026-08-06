@@ -1,13 +1,24 @@
 package dashboards
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/heyblueteam/cli/common"
 
 	"github.com/spf13/cobra"
 )
+
+func printDashboardJSON(value interface{}) error {
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
+	return nil
+}
 
 type ChartSegmentValue struct {
 	ID            string  `json:"id"`
@@ -27,7 +38,7 @@ type ChartSegment struct {
 	ChartSegmentValues []ChartSegmentValue `json:"chartSegmentValues"`
 	Formula            *struct {
 		Display *struct {
-			Type      string `json:"type"`
+			Type      string   `json:"type"`
 			Precision *float64 `json:"precision"`
 			Currency  *struct {
 				Code string `json:"code"`
@@ -39,16 +50,21 @@ type ChartSegment struct {
 }
 
 type ChartItem struct {
-	ID                       string         `json:"id"`
-	Title                    string         `json:"title"`
-	Position                 float64        `json:"position"`
-	Type                     string         `json:"type"`
-	IsCalculating            bool           `json:"isCalculating"`
-	IsCalculatingWithFilter  bool           `json:"isCalculatingWithFilter"`
-	NeedCalculation          bool           `json:"needCalculation"`
-	ChartSegments            []ChartSegment `json:"chartSegments"`
-	Display                  *struct {
-		Type      string `json:"type"`
+	ID                      string                 `json:"id"`
+	Title                   string                 `json:"title"`
+	Position                float64                `json:"position"`
+	Type                    string                 `json:"type"`
+	DisplayType             string                 `json:"displayType"`
+	Width                   *int                   `json:"width"`
+	Height                  *int                   `json:"height"`
+	IsOverBudget            bool                   `json:"isOverBudget"`
+	Metadata                map[string]interface{} `json:"metadata"`
+	IsCalculating           bool                   `json:"isCalculating"`
+	IsCalculatingWithFilter bool                   `json:"isCalculatingWithFilter"`
+	NeedCalculation         bool                   `json:"needCalculation"`
+	ChartSegments           []ChartSegment         `json:"chartSegments"`
+	Display                 *struct {
+		Type      string   `json:"type"`
 		Precision *float64 `json:"precision"`
 		Currency  *struct {
 			Code string `json:"code"`
@@ -86,11 +102,13 @@ var getCmd = &cobra.Command{
 var (
 	getDashboard string
 	getSimple    bool
+	getFormat    string
 )
 
 func init() {
 	getCmd.Flags().StringVar(&getDashboard, "dashboard", "", "Dashboard ID (required)")
 	getCmd.Flags().BoolVarP(&getSimple, "simple", "s", false, "Simple output format")
+	getCmd.Flags().StringVar(&getFormat, "format", "", "Output format (json)")
 }
 
 func runGet(cmd *cobra.Command, args []string) error {
@@ -113,6 +131,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 				title
 				createdAt
 				updatedAt
+				allowViewerChartData
 				createdBy {
 					id
 					fullName
@@ -152,6 +171,10 @@ func runGet(cmd *cobra.Command, args []string) error {
 					title
 					position
 					type
+					displayType
+					width
+					height
+					isOverBudget
 					isCalculating
 					isCalculatingWithFilter
 					needCalculation
@@ -163,6 +186,14 @@ func runGet(cmd *cobra.Command, args []string) error {
 							name
 						}
 						function
+					}
+					metadata {
+						query {
+							dimensions { title type interval customFieldName customFieldType customFieldReferenceProjectId }
+							metrics { key title function customFieldName customFieldType customFieldReferenceProjectId color axis }
+							breakout { title type customFieldName customFieldType customFieldReferenceProjectId }
+						}
+						presentation { stackMode direction target { mode value segmentUid } bands { atRisk onTrack } context { trend { dateField period } sparkline targetLabel showScope } }
 					}
 					chartSegments {
 						id
@@ -207,12 +238,16 @@ func runGet(cmd *cobra.Command, args []string) error {
 	}
 
 	charts := chartsResponse.Charts.Items
+	if strings.EqualFold(getFormat, "json") {
+		return printDashboardJSON(map[string]interface{}{"dashboard": dash, "charts": charts})
+	}
 
 	// Display dashboard
 	fmt.Printf("\n=== %s ===\n", dash.Title)
 	if !getSimple {
 		fmt.Printf("ID: %s\n", dash.ID)
 		fmt.Printf("Created by: %s\n", dash.CreatedBy.FullName)
+		fmt.Printf("Viewer chart data: %t\n", dash.AllowViewerChartData)
 		if len(dash.DashboardUsers) > 0 {
 			fmt.Printf("Shared with: ")
 			for i, u := range dash.DashboardUsers {
