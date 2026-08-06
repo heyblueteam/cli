@@ -77,61 +77,55 @@ Commands:
 `blue audit workspace <id>`, `blue audit company`.
 Why: summarize users, roles, public forms/views, webhooks, automations, integrations, domains, SMTP, and risky configuration.
 
-8. `blue context`
-Manage default company/workspace context.
-Commands:
-`blue context list`, `blue context use <company>/<workspace>`, `blue context current`, `blue config set defaultWorkspace <id>`.
-Why: reduce repeated `--workspace` flags and improve multi-company workflows.
-
-9. `blue events`
+8. `blue events`
 Follow or inspect live/recent workspace events.
 Commands:
 `blue events --workspace <id> --follow`, `blue events record <id>`, `blue webhooks listen`.
 Why: live debugging for integrations, webhooks, comments, records, and files.
 
-10. `blue trigger`
+9. `blue trigger`
 Trigger test events or automation checks.
 Commands:
 `blue trigger webhook record.created --workspace <id>`, `blue trigger automation <id> --record <id>`.
 Why: test webhooks and automations without clicking around in the UI; may require backend support.
 
-11. `blue wait`
+10. `blue wait`
 Wait for async Blue jobs.
 Commands:
 `blue wait export <id>`, `blue wait import <id>`, `blue wait report <id>`.
 Why: script-friendly handling for exports, imports, reports, and other async operations.
 
-12. `blue usage`
+11. `blue usage`
 Show company or workspace usage.
 Commands:
 `blue usage company`, `blue usage workspace <id>`, `blue usage files`, `blue usage records`.
 Why: quick admin visibility into users, records, files, storage, and activity volume.
 
-13. `blue alias`
+12. `blue alias`
 Manage user-defined command aliases.
 Commands:
 `blue alias set mybugs 'records list --workspace abc --tags bug --done false'`, `blue alias list`, `blue alias delete mybugs`.
 Why: make repeated workflows faster and more personal, similar to GitHub CLI aliases.
 
-14. `blue runbook`
+13. `blue runbook`
 Agent-oriented automation recipes.
 Commands:
 `blue runbook onboarding --workspace <id>`, `blue runbook sales-crm --workspace <id>`, `blue runbook support-queue --workspace <id>`.
 Why: create standard lists/tags/fields/forms/automations from named presets.
 
-15. `blue clone`
+14. `blue clone`
 Clone process configuration.
 Commands:
 `blue clone workspace <source> --name "New workspace"`, with flags to include/exclude records, forms, automations, dashboards, and docs.
 Why: faster workspace setup using a known-good process.
 
-16. `blue import`
+15. `blue import`
 CLI-friendly import flow.
 Commands:
 `blue import records --workspace <id> --csv file.csv`.
 Why: pairs with `blue exports template`; needs file upload support first.
 
-17. `blue files upload`
+16. `blue files upload`
 Upload and manage files from the CLI.
 Commands:
 `blue files upload`, `blue files upload-large`, `blue files share`, `blue files url`, `blue files move`.

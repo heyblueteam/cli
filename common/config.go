@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -18,6 +19,16 @@ func ReadConfigFile() (map[string]string, error) {
 		return nil, fmt.Errorf("could not read config file: %w", err)
 	}
 	return envMap, nil
+}
+
+// LoadDefaultWorkspace returns the configured default workspace ID or slug.
+// Environment variables win over local/global env files, matching LoadConfig.
+func LoadDefaultWorkspace() string {
+	_ = godotenv.Load()
+	if globalConfig := ConfigPath(); globalConfig != "" {
+		_ = godotenv.Load(globalConfig)
+	}
+	return strings.TrimSpace(os.Getenv("DEFAULT_WORKSPACE_ID"))
 }
 
 // WriteConfigFile writes a map back to config.env
@@ -65,6 +76,35 @@ func SetActiveCompany(slug string) error {
 		return err
 	}
 	envMap["COMPANY_ID"] = slug
+	return WriteConfigFile(envMap)
+}
+
+// GetDefaultWorkspace returns DEFAULT_WORKSPACE_ID from config.env.
+func GetDefaultWorkspace() (string, error) {
+	envMap, err := ReadConfigFile()
+	if err != nil {
+		return "", err
+	}
+	return envMap["DEFAULT_WORKSPACE_ID"], nil
+}
+
+// SetDefaultWorkspace updates DEFAULT_WORKSPACE_ID in config.env.
+func SetDefaultWorkspace(workspace string) error {
+	envMap, err := ReadConfigFile()
+	if err != nil {
+		return err
+	}
+	envMap["DEFAULT_WORKSPACE_ID"] = workspace
+	return WriteConfigFile(envMap)
+}
+
+// ClearDefaultWorkspace removes DEFAULT_WORKSPACE_ID from config.env.
+func ClearDefaultWorkspace() error {
+	envMap, err := ReadConfigFile()
+	if err != nil {
+		return err
+	}
+	delete(envMap, "DEFAULT_WORKSPACE_ID")
 	return WriteConfigFile(envMap)
 }
 

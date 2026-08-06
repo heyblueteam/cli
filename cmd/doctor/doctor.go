@@ -49,6 +49,9 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	printPresence("Client ID", config.ClientID, &failures)
 	printPresence("Auth token", config.AuthToken, &failures)
 	printPresence("Company", config.CompanyID, &failures)
+	if config.DefaultWorkspace != "" {
+		printOK("Default workspace", config.DefaultWorkspace)
+	}
 
 	client := common.NewClient(config)
 
@@ -66,9 +69,13 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		printOK("Company access", fmt.Sprintf("resolved %s", companyID))
 	}
 
-	if doctorWorkspace != "" {
-		client.SetProject(doctorWorkspace)
-		projectID, err := client.ResolveProjectID(doctorWorkspace)
+	workspaceToCheck := doctorWorkspace
+	if workspaceToCheck == "" {
+		workspaceToCheck = config.DefaultWorkspace
+	}
+	if workspaceToCheck != "" {
+		client.SetProject(workspaceToCheck)
+		projectID, err := client.ResolveProjectID(workspaceToCheck)
 		if err != nil {
 			failures++
 			printFail("Workspace access", err.Error())

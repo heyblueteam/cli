@@ -21,10 +21,11 @@ var Cmd = &cobra.Command{
 var whoamiFormat string
 
 type whoamiResult struct {
-	User       whoamiUser    `json:"user"`
-	Company    whoamiCompany `json:"company"`
-	APIURL     string        `json:"apiUrl"`
-	ConfigPath string        `json:"configPath"`
+	User             whoamiUser    `json:"user"`
+	Company          whoamiCompany `json:"company"`
+	APIURL           string        `json:"apiUrl"`
+	DefaultWorkspace string        `json:"defaultWorkspace,omitempty"`
+	ConfigPath       string        `json:"configPath"`
 }
 
 type whoamiUser struct {
@@ -79,10 +80,11 @@ func runWhoami(cmd *cobra.Command, args []string) error {
 	}
 
 	result := whoamiResult{
-		User:       response.CurrentUser,
-		Company:    response.Company,
-		APIURL:     config.APIUrl,
-		ConfigPath: common.ConfigPath(),
+		User:             response.CurrentUser,
+		Company:          response.Company,
+		APIURL:           config.APIUrl,
+		DefaultWorkspace: config.DefaultWorkspace,
+		ConfigPath:       common.ConfigPath(),
 	}
 
 	switch whoamiFormat {
@@ -124,6 +126,9 @@ func printText(result whoamiResult) {
 	}
 
 	fmt.Println("\nConfig")
-	fmt.Printf("  API URL:     %s\n", result.APIURL)
-	fmt.Printf("  Config path: %s\n", result.ConfigPath)
+	fmt.Printf("  API URL:           %s\n", result.APIURL)
+	if result.DefaultWorkspace != "" {
+		fmt.Printf("  Default workspace: %s\n", result.DefaultWorkspace)
+	}
+	fmt.Printf("  Config path:       %s\n", result.ConfigPath)
 }

@@ -18,10 +18,11 @@ const DefaultAPIUrl = "https://api.blue.app/graphql"
 
 // Config holds API configuration
 type Config struct {
-	APIUrl    string
-	AuthToken string
-	ClientID  string
-	CompanyID string
+	APIUrl           string
+	AuthToken        string
+	ClientID         string
+	CompanyID        string
+	DefaultWorkspace string
 }
 
 // GraphQLRequest represents a GraphQL request
@@ -82,10 +83,11 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		APIUrl:    os.Getenv("API_URL"),
-		AuthToken: os.Getenv("AUTH_TOKEN"),
-		ClientID:  os.Getenv("CLIENT_ID"),
-		CompanyID: os.Getenv("COMPANY_ID"),
+		APIUrl:           os.Getenv("API_URL"),
+		AuthToken:        os.Getenv("AUTH_TOKEN"),
+		ClientID:         os.Getenv("CLIENT_ID"),
+		CompanyID:        os.Getenv("COMPANY_ID"),
+		DefaultWorkspace: os.Getenv("DEFAULT_WORKSPACE_ID"),
 	}
 
 	// Default API URL

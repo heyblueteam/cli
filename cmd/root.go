@@ -16,6 +16,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/checklists"
 	"github.com/heyblueteam/cli/cmd/comments"
 	"github.com/heyblueteam/cli/cmd/company"
+	"github.com/heyblueteam/cli/cmd/context"
 	"github.com/heyblueteam/cli/cmd/dashboards"
 	"github.com/heyblueteam/cli/cmd/dependencies"
 	"github.com/heyblueteam/cli/cmd/docs"
@@ -38,6 +39,7 @@ import (
 	"github.com/heyblueteam/cli/cmd/webhooks"
 	"github.com/heyblueteam/cli/cmd/whoami"
 	"github.com/heyblueteam/cli/cmd/workspaces"
+	"github.com/heyblueteam/cli/common"
 
 	"github.com/spf13/cobra"
 )
@@ -58,6 +60,7 @@ Manage workspaces, records, lists, tags, custom fields, automations, and more.`,
 		if companyFlag, _ := cmd.Flags().GetString("company"); companyFlag != "" {
 			os.Setenv("COMPANY_ID", companyFlag)
 		}
+		applyDefaultWorkspace(cmd)
 	},
 }
 
@@ -84,6 +87,7 @@ func init() {
 	rootCmd.AddCommand(tags.Cmd)
 	rootCmd.AddCommand(comments.Cmd)
 	rootCmd.AddCommand(users.Cmd)
+	rootCmd.AddCommand(context.Cmd)
 	rootCmd.AddCommand(dependencies.Cmd)
 	rootCmd.AddCommand(documents.Cmd)
 	rootCmd.AddCommand(doctor.Cmd)
@@ -152,6 +156,18 @@ func sourceHint(fn func(*cobra.Command, []string) error) string {
 		return file[idx+1:]
 	}
 	return ""
+}
+
+func applyDefaultWorkspace(cmd *cobra.Command) {
+	flag := cmd.Flag("workspace")
+	if flag == nil || flag.Changed {
+		return
+	}
+	workspace := common.LoadDefaultWorkspace()
+	if workspace == "" {
+		return
+	}
+	_ = cmd.Flags().Set("workspace", workspace)
 }
 
 // Execute runs the root command
