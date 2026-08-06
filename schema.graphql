@@ -659,40 +659,74 @@ type Chart {
   isCalculating: Boolean
   isCalculatingWithFilter: Boolean
   needCalculation: Boolean
+  isOverBudget: Boolean
   metadata: ChartMetadata
+  displayType: String!
+  width: Int
+  height: Int
 }
 
-type ChartMetadataBarChart {
-  barChart: ChartMetadataBarChartOptions!
+type ChartMetadata {
+  query: ChartQuery
+  presentation: ChartPresentation
 }
 
-type ChartMetadataBarChartOptions {
-  xAxis: ChartMetadataBarChartXAxis!
-  yAxis: ChartMetadataBarChartYAxis!
+type ChartQuery {
+  dimensions: [ChartDimension!]!
+  metrics: [ChartMetric!]!
+  breakout: ChartBreakout
+  filters: TodoFilter
 }
 
-type ChartMetadataBarChartXAxis {
+type ChartDimension {
   title: String
   type: BarChartXAxisType!
-  interval: BarChartXAxisInterval!
+  interval: BarChartXAxisInterval
   customFieldName: String
   customFieldType: CustomFieldType
   customFieldReferenceProjectId: String
 }
 
-type ChartMetadataBarChartYAxis {
+type ChartBreakout {
+  title: String
+  type: BarChartSeriesType!
+  customFieldName: String
+  customFieldType: CustomFieldType
+  customFieldReferenceProjectId: String
+}
+
+type ChartMetric {
+  key: String!
   title: String
   filter: TodoFilter
   function: ChartSegmentValueFunctions
   customFieldName: String
   customFieldType: CustomFieldType
   customFieldReferenceProjectId: String
+  color: String
+  axis: ChartMetricAxis
 }
+
+type ChartPresentation {
+  stackMode: ChartStackMode
+  target: ChartTarget
+  direction: StatCardTargetDirection
+  bands: ChartBands
+  context: ChartContext
+}
+
+type ChartTarget { mode: StatCardTargetMode!, value: Float, segmentUid: String }
+type ChartBands { atRisk: Float!, onTrack: Float! }
+type ChartContext { trend: ChartTrendConfig, sparkline: Boolean, targetLabel: String, showScope: Boolean }
+type ChartTrendConfig { dateField: StatCardDateField!, period: StatCardTrendPeriod! }
 
 type ChartSegment {
   id: ID!
   uid: String!
   title: String
+  seriesTitle: String
+  seriesIsFold: Boolean!
+  metricKey: String
   color: String
   chartSegmentValues: [ChartSegmentValue!]!
   formula: Formula!
@@ -1046,6 +1080,7 @@ type Dashboard {
   title: String!
   createdBy: User!
   dashboardUsers: [DashboardUser!]
+  allowViewerChartData: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -3638,6 +3673,7 @@ input EditDashboardInput {
   id: String!
   title: String
   dashboardUsers: [EditDashboardUserInput!]
+  allowViewerChartData: Boolean
 }
 
 input EditDashboardUserInput {
@@ -3657,19 +3693,23 @@ input CreateChartInput {
   position: Float
   display: FormulaDisplayInput
   type: ChartType!
+  displayType: String
   metadata: ChartMetadataInput
 }
 
 input ChartMetadataInput {
-  barChart: BarChartMetadataInput
+  query: ChartQueryInput
+  presentation: ChartPresentationInput
 }
 
-input BarChartMetadataInput {
-  xAxis: BarChartXAxisInput!
-  yAxis: BarChartYAxisInput!
+input ChartQueryInput {
+  dimensions: [ChartDimensionInput!]!
+  metrics: [ChartMetricInput!]!
+  breakout: ChartBreakoutInput
+  filters: TodoFilterInput
 }
 
-input BarChartXAxisInput {
+input ChartDimensionInput {
   title: String
   type: BarChartXAxisType!
   interval: BarChartXAxisInterval
@@ -3678,17 +3718,36 @@ input BarChartXAxisInput {
   customFieldReferenceProjectId: String
 }
 
-input BarChartYAxisInput {
+input ChartBreakoutInput {
+  title: String
+  type: BarChartSeriesType!
+  customFieldName: String
+  customFieldType: CustomFieldType
+  customFieldReferenceProjectId: String
+}
+
+input ChartMetricInput {
+  key: String
   title: String
   filter: TodoFilterInput
   function: ChartSegmentValueFunctions
   customFieldName: String
   customFieldType: CustomFieldType
   customFieldReferenceProjectId: String
+  color: String
+  axis: ChartMetricAxis
 }
+
+input ChartPresentationInput { stackMode: ChartStackMode, target: ChartTargetInput, direction: StatCardTargetDirection, bands: ChartBandsInput, context: ChartContextInput }
+input ChartTargetInput { mode: StatCardTargetMode!, value: Float, segmentUid: String }
+input ChartBandsInput { atRisk: Float!, onTrack: Float! }
+input ChartContextInput { trend: StatCardTrendConfigInput, sparkline: Boolean, targetLabel: String, showScope: Boolean }
+input StatCardTrendConfigInput { dateField: StatCardDateField!, period: StatCardTrendPeriod! }
 
 input ChartSegmentInput {
   title: String
+  seriesTitle: String
+  seriesIsFold: Boolean
   color: String
   uid: String
   chartSegmentValues: [ChartSegmentValueInput!]!
@@ -3750,6 +3809,9 @@ input EditChartInput {
   title: String
   position: Float
   display: FormulaDisplayInput
+  displayType: String
+  width: Int
+  height: Int
   metadata: ChartMetadataInput
 }
 
@@ -4772,12 +4834,22 @@ enum BarChartXAxisType {
   ASSIGNEE
   TAG
   CUSTOM_FIELD
+  TODO
   TODO_LIST
   TODO_STATUS
   TODO_DUE_DATE
   TODO_CREATED_AT
   TODO_UPDATED_AT
+  TODO_COMPLETED_AT
 }
+
+enum BarChartSeriesType { PROJECT ASSIGNEE TAG TODO_LIST TODO_STATUS CUSTOM_FIELD }
+enum ChartMetricAxis { LEFT RIGHT }
+enum ChartStackMode { STACKED PERCENT }
+enum StatCardTargetDirection { HIGHER_IS_BETTER LOWER_IS_BETTER }
+enum StatCardTargetMode { STATIC SEGMENT }
+enum StatCardDateField { CREATED_AT COMPLETED_AT DUE_DATE }
+enum StatCardTrendPeriod { WEEK MONTH QUARTER YEAR }
 
 enum BarChartXAxisInterval {
   DAY
@@ -4953,8 +5025,6 @@ union TodoActivityResult = Comment | TodoAction
 union AutomationActionMetadata = AutomationActionMetadataCreateChecklist | AutomationActionMetadataCopyTodo | AutomationActionMetadataSendEmail
 
 union AutomationTriggerMetadata = AutomationTriggerMetadataTodoOverdue
-
-union ChartMetadata = ChartMetadataBarChart
 
 input UploadFileInput {
   """The file to upload"""

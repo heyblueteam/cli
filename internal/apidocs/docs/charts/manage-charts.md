@@ -7,7 +7,7 @@ order: 1
 
 A chart is a single card on a [dashboard](/api/dashboards). This page covers the full lifecycle: create a chart with `createChart`, change its title, position, display, or metadata with `editChart`, duplicate it into the same or another dashboard with `copyChart`, and remove it with `deleteChart`. Charts are `Chart` objects in the API.
 
-Every chart is either a **manual** chart (driven by `chartSegments` — formulas over project-scoped values) or an **auto-generated** chart (driven by `metadata.barChart` or `metadata.pieChart`). `createChart` accepts either shape; the [segment and value mutations](/api/charts/chart-segments-and-values) apply only to manual charts. See the [section overview](/api/charts) for the full type map.
+Every chart is either a **manual** chart (driven by `chartSegments` — formulas over project-scoped values) or an **auto-generated** chart (driven by `metadata.query`). `createChart` accepts either shape; the [segment and value mutations](/api/charts/chart-segments-and-values) apply only to manual charts. See the [section overview](/api/charts) for the full type map.
 
 <Callout variant="warning" title="Results are calculated asynchronously">
 
@@ -48,15 +48,15 @@ mutation CreateChart {
 | `position`      | `Float`                | No       | Sort position within the dashboard. Omit to append after the last chart (see [Position defaults](#position-defaults)).                 |
 | `display`       | `FormulaDisplayInput`  | No       | How the chart's value is formatted (number/currency/percentage) and the optional display rollup function.                              |
 | `chartSegments` | `[ChartSegmentInput!]` | No       | Inline segments for a **manual** chart. Mutually exclusive with `metadata`. Each segment carries a formula and its values — see below. |
-| `metadata`      | `ChartMetadataInput`   | No       | A `barChart` or `pieChart` spec for an **auto-generated** chart. Mutually exclusive with `chartSegments`.                              |
+| `metadata`      | `ChartMetadataInput`   | No       | A `query` spec for an **auto-generated** chart. Mutually exclusive with `chartSegments`.                                               |
 
 #### ChartType
 
 | Value  | Description                                                          |
 | ------ | -------------------------------------------------------------------- |
 | `STAT` | A single headline number (one segment value, or a formula rollup).   |
-| `PIE`  | A pie chart — either manual segments or a `pieChart` group-by/value. |
-| `BAR`  | A bar chart — either manual segments or a `barChart` x-axis/y-axis.  |
+| `PIE`  | A pie chart — either manual segments or a grouped `query`.           |
+| `BAR`  | A bar chart — either manual segments or a grouped `query`.           |
 
 #### FormulaDisplayInput
 
@@ -69,25 +69,70 @@ mutation CreateChart {
 
 #### ChartMetadataInput
 
-Supply exactly one of `barChart` or `pieChart` for an auto-generated chart.
+One shape for every chart. Supply `query` for an auto-generated chart; omit it for a
+manual one, whose numbers come from its `chartSegments` instead.
 
-| Parameter  | Type                    | Required | Description                                  |
-| ---------- | ----------------------- | -------- | -------------------------------------------- |
-| `barChart` | `BarChartMetadataInput` | No       | An x-axis/y-axis spec. Use for `BAR` charts. |
-| `pieChart` | `PieChartMetadataInput` | No       | A group-by/value spec. Use for `PIE` charts. |
+| Parameter      | Type                       | Required | Description                                                                        |
+| -------------- | -------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| `query`        | `ChartQueryInput`          | No       | What to group by and what to measure. Omit for a manual chart.                     |
+| `presentation` | `ChartPresentationInput`   | No       | How the result is dressed — stacking, target, thresholds, context band.            |
 
-`BarChartMetadataInput` is `{ xAxis: BarChartXAxisInput!, yAxis: BarChartYAxisInput! }`; `PieChartMetadataInput` is `{ groupBy: PieChartGroupByInput!, value: PieChartValueInput! }`. The axis inputs share a common shape:
+`ChartQueryInput`:
 
-| Field                           | Type                         | Where           | Description                                                                                                                                                                      |
-| ------------------------------- | ---------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`                         | `String`                     | all axes        | Optional axis label.                                                                                                                                                             |
-| `type`                          | `BarChartXAxisType!`         | xAxis / groupBy | What to bucket records by: `PROJECT`, `ASSIGNEE`, `TAG`, `CUSTOM_FIELD`, `TODO_LIST`, `TODO_STATUS`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`, `TODO_COMPLETED_AT`. |
-| `interval`                      | `BarChartXAxisInterval`      | xAxis only      | Bucket size for date axes: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.                                                                                                            |
-| `function`                      | `ChartSegmentValueFunctions` | yAxis / value   | Aggregate applied to the measured records.                                                                                                                                       |
-| `filter`                        | `TodoFilterInput`            | yAxis / value   | Narrows which records are measured. Same filter used by [list records](/api/records/list-records).                                                                               |
-| `customFieldName`               | `String`                     | all axes        | Custom-field name when `type` is `CUSTOM_FIELD`.                                                                                                                                 |
-| `customFieldType`               | `CustomFieldType`            | all axes        | Type of that custom field.                                                                                                                                                       |
-| `customFieldReferenceProjectId` | `String`                     | all axes        | For reference custom fields, the referenced project.                                                                                                                             |
+| Parameter    | Type                     | Required | Description                                                                                        |
+| ------------ | ------------------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| `dimensions` | `[ChartDimensionInput!]!` | Yes      | What records are grouped into. One entry today.                                                    |
+| `metrics`    | `[ChartMetricInput!]!`    | Yes      | What is measured per group. More than one plots several series over the same grouping.             |
+| `breakout`   | `ChartBreakoutInput`      | No       | A second grouping that splits every bucket into slices. See [stacked charts](#stacked-bar-charts). |
+| `filters`    | `TodoFilterInput`         | No       | Narrows the whole chart. Same filter used by [list records](/api/records/list-records).            |
+
+`ChartDimensionInput`:
+
+| Field                           | Type                    | Required | Description                                                                                                                                                                      |
+| ------------------------------- | ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                          | `BarChartXAxisType!`    | Yes      | What to bucket records by: `PROJECT`, `ASSIGNEE`, `TAG`, `CUSTOM_FIELD`, `TODO`, `TODO_LIST`, `TODO_STATUS`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`, `TODO_COMPLETED_AT`. |
+| `title`                         | `String`                | No       | Optional axis label.                                                                                                                                                             |
+| `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date dimensions: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.                                                                                                      |
+| `customFieldName`               | `String`                | No       | Custom-field name when `type` is `CUSTOM_FIELD`.                                                                                                                                 |
+| `customFieldType`               | `CustomFieldType`       | No       | Type of that custom field.                                                                                                                                                       |
+| `customFieldReferenceProjectId` | `String`                | No       | For reference custom fields, the referenced project.                                                                                                                             |
+
+`ChartMetricInput`:
+
+| Field                           | Type                         | Required | Description                                                                                                    |
+| ------------------------------- | ---------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `key`                           | `String`                     | No       | Unique within the chart. Omit and Blue assigns one from the metric's position.                                  |
+| `title`                         | `String`                     | No       | Optional series label.                                                                                         |
+| `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied to the measured records. Omit for a plain record count.                                       |
+| `filter`                        | `TodoFilterInput`            | No       | Narrows this metric only, so two metrics can measure different slices of the same grouping.                    |
+| `color`                         | `String`                     | No       | Explicit series colour. Omit to take the palette colour for the metric's position.                             |
+| `axis`                          | `ChartMetricAxis`            | No       | `LEFT` (default) or `RIGHT`, so two metrics in different units can share a chart.                              |
+| `customFieldName`               | `String`                     | No       | Custom-field name to aggregate.                                                                                |
+| `customFieldType`               | `CustomFieldType`            | No       | Type of that custom field.                                                                                     |
+| `customFieldReferenceProjectId` | `String`                     | No       | For reference custom fields, the referenced project.                                                           |
+
+`ChartPresentationInput` carries `stackMode`, `target`, `direction`, `bands` and `context`. None of it affects which records the chart covers.
+
+#### Stacked bar charts
+
+A `BAR` chart can add a second grouping dimension so each bucket is split into stacked slices — records per assignee within each workspace, for example. Set `breakout` on `ChartQueryInput` to turn this on, and `presentation.stackMode` to choose how the slices combine.
+
+| Parameter                 | Type                 | Required | Description                                                                            |
+| ------------------------- | -------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `query.breakout`          | `ChartBreakoutInput` | No       | The dimension each bucket is split by. Omit for a single-series chart.                 |
+| `presentation.stackMode`  | `ChartStackMode`     | No       | How the slices combine. Ignored when there is no `breakout`. Omit for a stacked chart. |
+
+`ChartBreakoutInput` mirrors the dimension input, minus `interval` — bucketing a date axis by another date is not a composition:
+
+| Field                           | Type                  | Required | Description                                                                                                |
+| ------------------------------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `type`                          | `BarChartSeriesType!` | Yes      | What to split each bucket by: `PROJECT`, `ASSIGNEE`, `TAG`, `TODO_LIST`, `TODO_STATUS`, or `CUSTOM_FIELD`. |
+| `title`                         | `String`              | No       | Optional label for the breakdown.                                                                          |
+| `customFieldName`               | `String`              | No       | Custom-field name when `type` is `CUSTOM_FIELD`.                                                           |
+| `customFieldType`               | `CustomFieldType`     | No       | Type of that custom field.                                                                                 |
+| `customFieldReferenceProjectId` | `String`              | No       | For reference custom fields, the referenced project.                                                       |
+
+`ChartStackMode` is either `STACKED` (slices are stacked and the bar's height is the bucket total) or `PERCENT` (each bucket is normalised to 100%, so only the mix is shown). A breakdown always stacks; side-by-side grouped bars are not offered.
 
 For `chartSegments` (manual charts), the segment and value input fields are documented on [Build chart segments and values](/api/charts/chart-segments-and-values); the example below shows the inline form.
 
@@ -119,7 +164,7 @@ For `chartSegments` (manual charts), the segment and value input fields are docu
 | `position`                | `Float!`           | Sort position within the dashboard.                                                    |
 | `type`                    | `ChartType!`       | `STAT`, `PIE`, or `BAR`.                                                               |
 | `chartSegments`           | `[ChartSegment!]!` | Manual segments. Empty for an auto-generated chart.                                    |
-| `metadata`                | `ChartMetadata`    | The `barChart`/`pieChart` spec for an auto-generated chart. `null` for a manual chart. |
+| `metadata`                | `ChartMetadata`    | The `query`/`presentation` config. `query` is `null` on a manual chart.                |
 | `display`                 | `FormulaDisplay`   | Display formatting (`type`, `currency`, `precision`, `function`).                      |
 | `isCalculating`           | `Boolean`          | A recompute is currently in progress.                                                  |
 | `needCalculation`         | `Boolean`          | Results are stale or pending — a calculation is queued.                                |
@@ -140,9 +185,9 @@ mutation CreateBarChart {
       type: BAR
       display: { type: NUMBER, precision: 0 }
       metadata: {
-        barChart: {
-          xAxis: { title: "Workspace", type: PROJECT }
-          yAxis: { title: "Records", function: COUNT }
+        query: {
+          dimensions: [{ title: "Workspace", type: PROJECT }]
+          metrics: [{ title: "Records" }]
         }
       }
     }
@@ -150,17 +195,17 @@ mutation CreateBarChart {
     id
     title
     type
+    displayType
     metadata {
-      ... on ChartMetadataBarChart {
-        barChart {
-          xAxis {
-            title
-            type
-          }
-          yAxis {
-            title
-            function
-          }
+      query {
+        dimensions {
+          title
+          type
+        }
+        metrics {
+          key
+          title
+          function
         }
       }
     }
@@ -248,11 +293,11 @@ mutation EditChart {
 | `title`    | `String`              | No       | New title.                                                                                        |
 | `position` | `Float`               | No       | New sort position within the dashboard.                                                           |
 | `display`  | `FormulaDisplayInput` | No       | New display formatting. Replaces the existing `display`.                                          |
-| `metadata` | `ChartMetadataInput`  | No       | New `barChart`/`pieChart` spec. Changing metadata re-triggers an asynchronous result calculation. |
+| `metadata` | `ChartMetadataInput`  | No       | New `query`/`presentation` config. Changing the query re-triggers an asynchronous result calculation. |
 
 <Callout variant="info" title="Editing metadata recalculates; editing title/position/display does not">
 
-`editChart` only enqueues a recalculation when the input includes `metadata.barChart` or `metadata.pieChart`. Renaming, repositioning, or restyling a chart updates it and publishes the change to subscribers, but does not recompute its data. To force a recompute without changing the spec, use [`recalculateCharts`](/api/charts/preview-recalculate-export).
+`editChart` only enqueues a recalculation when the input includes a `metadata.query`. Renaming, repositioning, or restyling a chart updates it and publishes the change to subscribers, but does not recompute its data. To force a recompute without changing the spec, use [`recalculateCharts`](/api/charts/preview-recalculate-export).
 
 </Callout>
 
@@ -393,7 +438,7 @@ Two enums share the same seven members but live in different places — keep the
 | Enum                         | Where it appears                                                    | Members                                                       |
 | ---------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `ChartFunction`              | `FormulaDisplayInput.function` (the chart-level display rollup)     | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
-| `ChartSegmentValueFunctions` | Each segment value and each `barChart`/`pieChart` axis (`function`) | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
+| `ChartSegmentValueFunctions` | Each segment value and each chart metric (`function`)              | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
 
 ## Position defaults
 

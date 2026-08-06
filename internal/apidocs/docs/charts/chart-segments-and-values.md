@@ -7,7 +7,7 @@ order: 2
 
 Manual charts are built from **segments** and **values**. A `ChartSegment` holds a `Formula` — display text/HTML that references value identifiers — plus a title and color. Each `ChartSegmentValue` is a named, workspace-scoped aggregation: a `ChartSegmentValueFunctions` rollup (`COUNT`, `SUM`, `AVERAGE`, …) over one workspace's records, optionally narrowed to a single custom field and filtered with a `TodoFilterInput`. The formula combines those values into the number the chart renders.
 
-These mutations apply only to **manual** charts — charts you created with inline `chartSegments`. A chart built from `metadata.barChart` or `metadata.pieChart` is **auto-generated**: its values come from an axis spec, not from segments, so the segment and value mutations do not apply to it. See [Create and manage charts](/api/charts/manage-charts) for the manual-vs-auto distinction.
+These mutations apply only to **manual** charts — charts you created with inline `chartSegments`. A chart built from `metadata.query` is **auto-generated**: its values come from a grouping, not from segments, so the segment and value mutations do not apply to it. See [Create and manage charts](/api/charts/manage-charts) for the manual-vs-auto distinction.
 
 Every mutation on this page republishes the parent chart to dashboard subscribers and enqueues a recalculation. Results arrive asynchronously over [`subscribeToChart`](/api/charts/query-charts) — not in the mutation response. Workspaces are `Project` objects and records are `Todo` objects in the API.
 

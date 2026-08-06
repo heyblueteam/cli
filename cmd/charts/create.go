@@ -1,324 +1,359 @@
 package charts
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/heyblueteam/cli/common"
-
 	"github.com/spf13/cobra"
 )
 
-var createCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a chart in a dashboard",
-	Long: `Create a chart within a dashboard. Supports three chart types:
-
-  STAT  - Single number/statistic (e.g., total revenue, record count)
-  BAR   - Bar chart grouped by a dimension (e.g., records by assignee)
-  PIE   - Pie chart grouped by a dimension (e.g., records by status)
-
-For BAR and PIE charts, use --group-by to set the grouping dimension.
-The API automatically generates segments based on the data.`,
-	Example: `  # Stat card: count of records
-  blue charts create --dashboard <id> --type STAT --title "Total Records" \
-    --workspace <id> --function COUNT
-
-  # Stat card: sum of a currency field
-  blue charts create --dashboard <id> --type STAT --title "Total Revenue" \
-    --workspace <id> --field <field_id> --function SUM --display currency --currency USD
-
-  # Bar chart: records grouped by assignee
-  blue charts create --dashboard <id> --type BAR --title "By Assignee" \
-    --workspace <id> --group-by ASSIGNEE --function COUNT
-
-  # Pie chart: records grouped by status
-  blue charts create --dashboard <id> --type PIE --title "By Status" \
-    --workspace <id> --group-by TODO_STATUS --function COUNT
-
-  # Bar chart: sum of field grouped by list
-  blue charts create --dashboard <id> --type BAR --title "Points by List" \
-    --workspace <id> --group-by TODO_LIST --field <field_id> --function SUM`,
-	RunE: runCreate,
+type chartInputOptions struct {
+	dashboard, chartType, title, workspace, workspaces string
+	field, function, groupBy, groupField               string
+	breakout, breakoutField, stackMode                 string
+	interval, display, displayType, currency, filter   string
+	precision                                          float64
+	input, format                                      string
 }
 
-var (
-	createDashboard string
-	createType      string
-	createTitle     string
-	createWorkspace string
-	createField     string
-	createFunction  string
-	createGroupBy   string
-	createInterval  string
-	createDisplay   string
-	createCurrency  string
-	createPrecision float64
-)
+var createCmd = newChartInputCommand(false)
+var previewCmd = newChartInputCommand(true)
 
-func init() {
-	createCmd.Flags().StringVar(&createDashboard, "dashboard", "", "Dashboard ID (required)")
-	createCmd.Flags().StringVar(&createType, "type", "", "Chart type: STAT, BAR, or PIE (required)")
-	createCmd.Flags().StringVarP(&createTitle, "title", "t", "", "Chart title (required)")
-	createCmd.Flags().StringVarP(&createWorkspace, "workspace", "w", "", "Workspace ID for data source (required)")
-	createCmd.Flags().StringVar(&createField, "field", "", "Custom field ID to measure (omit for record count)")
-	createCmd.Flags().StringVar(&createFunction, "function", "COUNT", "Aggregation: COUNT, COUNTA, SUM, AVERAGE, AVERAGEA, MIN, MAX")
-	createCmd.Flags().StringVar(&createGroupBy, "group-by", "", "Group by dimension (BAR/PIE): ASSIGNEE, TAG, TODO_LIST, TODO_STATUS, PROJECT, CUSTOM_FIELD, TODO_DUE_DATE, TODO_CREATED_AT, TODO_UPDATED_AT")
-	createCmd.Flags().StringVar(&createInterval, "interval", "MONTH", "Time interval for date grouping: DAY, WEEK, MONTH, QUARTER, YEAR")
-	createCmd.Flags().StringVar(&createDisplay, "display", "number", "Display format: number, currency, percentage")
-	createCmd.Flags().StringVar(&createCurrency, "currency", "USD", "Currency code (when --display currency)")
-	createCmd.Flags().Float64Var(&createPrecision, "precision", 0, "Decimal precision")
+func newChartInputCommand(preview bool) *cobra.Command {
+	verb := "create"
+	short := "Create a chart in a dashboard"
+	if preview {
+		verb, short = "preview", "Preview a chart without saving it"
+	}
+	o := &chartInputOptions{}
+	cmd := &cobra.Command{
+		Use:   verb,
+		Short: short,
+		Example: `  blue charts ` + verb + ` --dashboard <id> --title "By status" --display-type bar --workspace <id> --group-by TODO_STATUS
+  blue charts ` + verb + ` --input chart.json --format json
+  cat chart.json | blue charts ` + verb + ` --input - --format json`,
+		RunE: func(cmd *cobra.Command, args []string) error { return runChartInput(cmd, o, preview) },
+	}
+	f := cmd.Flags()
+	f.StringVar(&o.dashboard, "dashboard", "", "Dashboard ID")
+	f.StringVar(&o.chartType, "type", "", "Legacy GraphQL type: STAT, BAR, or PIE")
+	f.StringVarP(&o.title, "title", "t", "", "Chart title")
+	f.StringVarP(&o.workspace, "workspace", "w", "", "Workspace ID or slug")
+	f.StringVar(&o.workspaces, "workspaces", "", "Comma-separated workspace IDs or slugs")
+	f.StringVar(&o.field, "field", "", "Custom field ID to measure")
+	f.StringVar(&o.function, "function", "COUNT", "COUNT, COUNTA, SUM, AVERAGE, AVERAGEA, MIN, or MAX")
+	f.StringVar(&o.groupBy, "group-by", "", "Dimension: PROJECT, ASSIGNEE, TAG, CUSTOM_FIELD, TODO, TODO_LIST, TODO_STATUS, or a TODO_* date")
+	f.StringVar(&o.groupField, "group-field", "", "Custom field ID when --group-by is CUSTOM_FIELD")
+	f.StringVar(&o.breakout, "breakout", "", "Breakdown dimension: PROJECT, ASSIGNEE, TAG, CUSTOM_FIELD, TODO_LIST, or TODO_STATUS")
+	f.StringVar(&o.breakoutField, "breakout-field", "", "Custom field ID when --breakout is CUSTOM_FIELD")
+	f.StringVar(&o.stackMode, "stack-mode", "", "STACKED or PERCENT")
+	f.StringVar(&o.interval, "interval", "MONTH", "Date interval: DAY, WEEK, MONTH, QUARTER, or YEAR")
+	f.StringVar(&o.display, "display", "number", "Number format: number, currency, or percentage")
+	f.StringVar(&o.displayType, "display-type", "", "bar, line, area, row, leaderboard, table, pie, funnel, combo, stat, progress, or gauge")
+	f.StringVar(&o.currency, "currency", "USD", "Currency code")
+	f.Float64Var(&o.precision, "precision", 0, "Decimal precision")
+	f.StringVar(&o.filter, "filter-json", "", "Chart-level TodoFilterInput JSON")
+	f.StringVar(&o.input, "input", "", "Exact CreateChartInput JSON file, or - for stdin")
+	f.StringVar(&o.format, "format", "", "Output format (json)")
+	return cmd
 }
 
-func runCreate(cmd *cobra.Command, args []string) error {
-	if createDashboard == "" {
-		return fmt.Errorf("dashboard ID is required. Use --dashboard flag")
-	}
-	if createType == "" {
-		return fmt.Errorf("chart type is required. Use --type flag (STAT, BAR, or PIE)")
-	}
-	if createTitle == "" {
-		return fmt.Errorf("chart title is required. Use --title flag")
-	}
-	if createWorkspace == "" {
-		return fmt.Errorf("workspace ID is required. Use --workspace flag")
-	}
-
-	createType = strings.ToUpper(createType)
-	if createType != "STAT" && createType != "BAR" && createType != "PIE" {
-		return fmt.Errorf("invalid chart type '%s'. Must be STAT, BAR, or PIE", createType)
-	}
-
-	createFunction = strings.ToUpper(createFunction)
-
-	if (createType == "BAR" || createType == "PIE") && createGroupBy == "" {
-		return fmt.Errorf("--group-by is required for %s charts", createType)
-	}
-
-	config, err := common.LoadConfig()
+func runChartInput(cmd *cobra.Command, o *chartInputOptions, preview bool) error {
+	input, err := chartInput(cmd, o)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return err
 	}
-
-	client := common.NewClient(config)
-	client.SetProject(createWorkspace)
-
-	// Build display settings
-	displayType := strings.ToUpper(createDisplay)
-	if displayType == "NUMBER" || displayType == "" {
-		displayType = "NUMBER"
-	} else if displayType == "CURRENCY" {
-		displayType = "CURRENCY"
-	} else if displayType == "PERCENTAGE" {
-		displayType = "PERCENTAGE"
+	client, err := chartClient()
+	if err != nil {
+		return err
 	}
-
-	var input string
-	switch createType {
-	case "STAT":
-		input = buildStatInput()
-	case "BAR":
-		input = buildBarInput(displayType)
-	case "PIE":
-		input = buildPieInput(displayType)
+	operation, field := "mutation CreateChart($input: CreateChartInput!)", "createChart"
+	if preview {
+		operation, field = "query PreviewChart($input: CreateChartInput!)", "previewChart"
 	}
-
-	mutation := fmt.Sprintf(`
-		mutation CreateChart {
-			createChart(input: %s) {
-				id
-				title
-				type
-				isCalculating
-				chartSegments {
-					id
-					title
-					formulaResult
-				}
-			}
-		}
-	`, input)
-
-	var response struct {
-		CreateChart struct {
-			ID            string `json:"id"`
-			Title         string `json:"title"`
-			Type          string `json:"type"`
-			IsCalculating bool   `json:"isCalculating"`
-			ChartSegments []struct {
-				ID            string   `json:"id"`
-				Title         string   `json:"title"`
-				FormulaResult *float64 `json:"formulaResult"`
-			} `json:"chartSegments"`
-		} `json:"createChart"`
+	query := fmt.Sprintf(`%s { %s(input: $input) { %s } }`, operation, field, chartFields)
+	var response map[string]Chart
+	if err := client.ExecuteQueryWithResult(query, map[string]interface{}{"input": input}, &response); err != nil {
+		return fmt.Errorf("failed to %s chart: %w", map[bool]string{true: "preview", false: "create"}[preview], err)
 	}
-
-	if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
-		return fmt.Errorf("failed to create chart: %w", err)
+	chart := response[field]
+	if strings.EqualFold(o.format, "json") {
+		return printJSON(chart)
 	}
-
-	c := response.CreateChart
-	fmt.Printf("Chart created!\n")
-	fmt.Printf("ID: %s\n", c.ID)
-	fmt.Printf("Title: %s\n", c.Title)
-	fmt.Printf("Type: %s\n", c.Type)
-	if c.IsCalculating {
-		fmt.Printf("Status: Calculating...\n")
+	if preview {
+		fmt.Println("Chart preview ready")
+	} else {
+		fmt.Println("Chart created")
 	}
-	if len(c.ChartSegments) > 0 {
-		fmt.Printf("Segments: %d\n", len(c.ChartSegments))
-	}
-
+	printChartSummary(chart)
 	return nil
 }
 
-func buildStatInput() string {
-	// Build display
-	display := buildDisplayString()
-
-	// Build formula — for a single-source stat, the formula just references the value UID
-	uid := "csv-1"
-	formula := fmt.Sprintf(`{
-		logic: {
-			text: "{\"chartSegmentValueUID\": \"%s\"}"
-			html: "<p>{\"chartSegmentValueUID\": \"%s\"}</p>"
-		}
-		display: %s
-	}`, uid, uid, display)
-
-	return fmt.Sprintf(`{
-		dashboardId: "%s"
-		title: "%s"
-		type: STAT
-		display: %s
-		chartSegments: [{
-			title: "%s"
-			color: "#3B82F6"
-			uid: "cs-1"
-			formula: %s
-			chartSegmentValues: [{
-				uid: "%s"
-				title: "%s"
-				projectId: "%s"
-				%s
-				function: %s
-			}]
-		}]
-	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, common.EscapeGraphQLString(createTitle), formula, uid, common.EscapeGraphQLString(createTitle),
-		createWorkspace, fieldParam(), createFunction)
-}
-
-func buildBarInput(displayType string) string {
-	display := buildDisplayString()
-
-	// For bar charts, use metadata to let the API auto-generate segments
-	xAxisType := strings.ToUpper(createGroupBy)
-
-	// Build interval for date-based grouping
-	intervalStr := ""
-	if isDateGroupBy(xAxisType) {
-		intervalStr = fmt.Sprintf(`interval: %s`, strings.ToUpper(createInterval))
-	}
-
-	yAxisField := ""
-	if createField != "" {
-		yAxisField = fmt.Sprintf(`customFieldName: "%s"`, createField)
-	}
-
-	return fmt.Sprintf(`{
-		dashboardId: "%s"
-		title: "%s"
-		type: BAR
-		display: %s
-		metadata: {
-			barChart: {
-				xAxis: {
-					title: "Category"
-					type: %s
-					%s
-				}
-				yAxis: {
-					title: "Value"
-					function: %s
-					%s
-					filter: {
-						projectIds: ["%s"]
-					}
-				}
+func chartInput(cmd *cobra.Command, o *chartInputOptions) (map[string]interface{}, error) {
+	if o.input != "" {
+		for _, name := range []string{"dashboard", "type", "title", "workspace", "workspaces", "field", "function", "group-by", "group-field", "breakout", "breakout-field", "stack-mode", "interval", "display", "display-type", "currency", "precision", "filter-json"} {
+			if cmd.Flags().Changed(name) {
+				return nil, fmt.Errorf("--input cannot be combined with --%s", name)
 			}
 		}
-	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, xAxisType, intervalStr,
-		createFunction, yAxisField, createWorkspace)
+		return loadJSONInput(o.input)
+	}
+	return buildCommonChartInput(o)
 }
 
-func buildPieInput(displayType string) string {
-	display := buildDisplayString()
-
-	// Pie charts use the same metadata structure as bar charts internally
-	groupByType := strings.ToUpper(createGroupBy)
-
-	valueField := ""
-	if createField != "" {
-		valueField = fmt.Sprintf(`customFieldName: "%s"`, createField)
+func loadJSONInput(path string) (map[string]interface{}, error) {
+	var data []byte
+	var err error
+	if path == "-" {
+		data, err = io.ReadAll(os.Stdin)
+	} else {
+		data, err = os.ReadFile(path)
 	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to read chart input %q: %w", path, err)
+	}
+	var input map[string]interface{}
+	if err := json.Unmarshal(data, &input); err != nil {
+		return nil, fmt.Errorf("invalid chart input JSON: %w", err)
+	}
+	if input == nil {
+		return nil, fmt.Errorf("chart input must be a JSON object")
+	}
+	return input, nil
+}
 
-	return fmt.Sprintf(`{
-		dashboardId: "%s"
-		title: "%s"
-		type: PIE
-		display: %s
-		metadata: {
-			barChart: {
-				xAxis: {
-					title: "Segment"
-					type: %s
-				}
-				yAxis: {
-					title: "Value"
-					function: %s
-					%s
-					filter: {
-						projectIds: ["%s"]
-					}
-				}
-			}
+func buildCommonChartInput(o *chartInputOptions) (map[string]interface{}, error) {
+	if o.dashboard == "" || o.title == "" {
+		return nil, fmt.Errorf("--dashboard and --title are required without --input")
+	}
+	displayType, chartType, err := resolveDisplayAndChartType(o.displayType, o.chartType)
+	if err != nil {
+		return nil, err
+	}
+	if displayType == "combo" {
+		return nil, fmt.Errorf("combo charts require --input with at least two metrics")
+	}
+	if displayType == "progress" || displayType == "gauge" {
+		return nil, fmt.Errorf("%s charts require --input with a target", displayType)
+	}
+	input := map[string]interface{}{
+		"dashboardId": o.dashboard, "title": o.title, "type": chartType, "displayType": displayType,
+		"display": displayInput(o.display, o.currency, o.precision),
+	}
+	if isGroupedDisplay(displayType) {
+		if o.groupBy == "" {
+			return nil, fmt.Errorf("--group-by is required for %s charts", displayType)
 		}
-	}`, createDashboard, common.EscapeGraphQLString(createTitle), display, groupByType,
-		createFunction, valueField, createWorkspace)
-}
-
-func buildDisplayString() string {
-	displayType := strings.ToUpper(createDisplay)
-	switch displayType {
-	case "CURRENCY":
-		return fmt.Sprintf(`{
-			type: CURRENCY
-			currency: { code: "%s", name: "%s" }
-			precision: %g
-			function: %s
-		}`, createCurrency, createCurrency, createPrecision, createFunction)
-	case "PERCENTAGE":
-		return fmt.Sprintf(`{
-			type: PERCENTAGE
-			precision: %g
-			function: %s
-		}`, createPrecision, createFunction)
-	default:
-		return fmt.Sprintf(`{
-			type: NUMBER
-			precision: %g
-			function: %s
-		}`, createPrecision, createFunction)
+		workspaceRefs := splitCSV(o.workspace + "," + o.workspaces)
+		if len(workspaceRefs) == 0 {
+			return nil, fmt.Errorf("--workspace or --workspaces is required")
+		}
+		client, err := chartClient()
+		if err != nil {
+			return nil, err
+		}
+		projectIDs, err := resolveProjectIDs(client, workspaceRefs)
+		if err != nil {
+			return nil, err
+		}
+		dimension, err := dimensionInput(client, strings.ToUpper(o.groupBy), o.groupField, o.interval)
+		if err != nil {
+			return nil, err
+		}
+		metric := map[string]interface{}{"key": "value", "title": o.title}
+		fn := strings.ToUpper(o.function)
+		if o.field == "" {
+			if fn != "COUNT" {
+				return nil, fmt.Errorf("--field is required for %s", fn)
+			}
+		} else {
+			field, err := resolveCustomField(client, o.field)
+			if err != nil {
+				return nil, err
+			}
+			applyFieldMetadata(metric, field)
+			metric["function"] = fn
+		}
+		filters := map[string]interface{}{"projectIds": projectIDs}
+		if o.filter != "" {
+			if err := json.Unmarshal([]byte(o.filter), &filters); err != nil {
+				return nil, fmt.Errorf("invalid --filter-json: %w", err)
+			}
+			filters["projectIds"] = projectIDs
+		}
+		query := map[string]interface{}{"dimensions": []interface{}{dimension}, "metrics": []interface{}{metric}, "filters": filters}
+		metadata := map[string]interface{}{"query": query}
+		if o.breakout != "" {
+			breakoutType := strings.ToUpper(o.breakout)
+			allowedBreakouts := map[string]bool{"PROJECT": true, "ASSIGNEE": true, "TAG": true, "CUSTOM_FIELD": true, "TODO_LIST": true, "TODO_STATUS": true}
+			if !allowedBreakouts[breakoutType] {
+				return nil, fmt.Errorf("invalid breakout dimension %q", o.breakout)
+			}
+			breakout, err := dimensionInput(client, breakoutType, o.breakoutField, "")
+			if err != nil {
+				return nil, err
+			}
+			delete(breakout, "interval")
+			query["breakout"] = breakout
+			mode := strings.ToUpper(o.stackMode)
+			if mode == "" {
+				mode = "STACKED"
+			}
+			if mode != "STACKED" && mode != "PERCENT" {
+				return nil, fmt.Errorf("invalid --stack-mode %q", o.stackMode)
+			}
+			metadata["presentation"] = map[string]interface{}{"stackMode": mode}
+		} else if o.stackMode != "" {
+			return nil, fmt.Errorf("--stack-mode requires --breakout")
+		}
+		input["metadata"] = metadata
+		return input, nil
 	}
-}
-
-func fieldParam() string {
-	if createField != "" {
-		return fmt.Sprintf(`customFieldId: "%s"`, createField)
+	workspaceRefs := splitCSV(o.workspace + "," + o.workspaces)
+	if len(workspaceRefs) != 1 {
+		return nil, fmt.Errorf("manual %s charts require one --workspace", displayType)
 	}
-	return ""
+	client, err := chartClient()
+	if err != nil {
+		return nil, err
+	}
+	projectIDs, err := resolveProjectIDs(client, workspaceRefs)
+	if err != nil {
+		return nil, err
+	}
+	uid := "value-1"
+	value := map[string]interface{}{"uid": uid, "title": o.title, "projectId": projectIDs[0]}
+	fn := strings.ToUpper(o.function)
+	if o.field != "" {
+		value["customFieldId"] = o.field
+		value["function"] = fn
+	} else if fn != "COUNT" {
+		return nil, fmt.Errorf("--field is required for %s", fn)
+	} else {
+		value["function"] = "COUNT"
+	}
+	if o.filter != "" {
+		var filter map[string]interface{}
+		if err := json.Unmarshal([]byte(o.filter), &filter); err != nil {
+			return nil, fmt.Errorf("invalid --filter-json: %w", err)
+		}
+		value["filter"] = filter
+	}
+	formulaDisplay := displayInput(o.display, o.currency, o.precision)
+	input["chartSegments"] = []interface{}{map[string]interface{}{
+		"title": o.title, "color": "#3B82F6", "uid": "segment-1",
+		"formula":            map[string]interface{}{"logic": map[string]interface{}{"text": fmt.Sprintf(`{"chartSegmentValueUID":"%s"}`, uid), "html": fmt.Sprintf(`<p>{"chartSegmentValueUID":"%s"}</p>`, uid)}, "display": formulaDisplay},
+		"chartSegmentValues": []interface{}{value},
+	}}
+	return input, nil
 }
 
-func isDateGroupBy(groupBy string) bool {
-	return groupBy == "TODO_DUE_DATE" || groupBy == "TODO_CREATED_AT" || groupBy == "TODO_UPDATED_AT"
+func displayInput(kind, currency string, precision float64) map[string]interface{} {
+	t := strings.ToUpper(kind)
+	if t == "" {
+		t = "NUMBER"
+	}
+	result := map[string]interface{}{"type": t, "precision": precision}
+	if t == "CURRENCY" {
+		result["currency"] = map[string]interface{}{"code": currency, "name": currency}
+	}
+	return result
+}
+
+func resolveDisplayAndChartType(displayType, chartType string) (string, string, error) {
+	d := strings.ToLower(displayType)
+	legacy := strings.ToUpper(chartType)
+	if legacy != "" && legacy != "STAT" && legacy != "PIE" && legacy != "BAR" {
+		return "", "", fmt.Errorf("invalid --type %q", chartType)
+	}
+	if d == "" {
+		d = map[string]string{"STAT": "stat", "PIE": "pie", "BAR": "bar"}[legacy]
+	}
+	if d == "" {
+		return "", "", fmt.Errorf("--display-type or --type is required")
+	}
+	known := map[string]bool{"bar": true, "line": true, "area": true, "row": true, "leaderboard": true, "table": true, "pie": true, "funnel": true, "combo": true, "stat": true, "progress": true, "gauge": true}
+	if !known[d] {
+		return "", "", fmt.Errorf("invalid --display-type %q", displayType)
+	}
+	grouped := isGroupedDisplay(d)
+	derived := "STAT"
+	if grouped {
+		derived = "BAR"
+	}
+	if d == "pie" {
+		derived = "PIE"
+	}
+	if legacy != "" && legacy != derived {
+		return "", "", fmt.Errorf("--type %s conflicts with --display-type %s", legacy, d)
+	}
+	return d, derived, nil
+}
+
+func isGroupedDisplay(value string) bool {
+	switch value {
+	case "bar", "line", "area", "row", "leaderboard", "table", "pie", "funnel", "combo":
+		return true
+	case "stat", "progress", "gauge":
+		return false
+	}
+	return false
+}
+
+type chartFieldMetadata struct{ Name, Type, ReferenceProjectID string }
+
+func dimensionInput(client *common.Client, kind, fieldID, interval string) (map[string]interface{}, error) {
+	allowed := map[string]bool{"PROJECT": true, "ASSIGNEE": true, "TAG": true, "CUSTOM_FIELD": true, "TODO": true, "TODO_LIST": true, "TODO_STATUS": true, "TODO_DUE_DATE": true, "TODO_CREATED_AT": true, "TODO_UPDATED_AT": true, "TODO_COMPLETED_AT": true}
+	if !allowed[kind] {
+		return nil, fmt.Errorf("invalid chart dimension %q", kind)
+	}
+	result := map[string]interface{}{"type": kind}
+	if strings.HasPrefix(kind, "TODO_") && kind != "TODO_LIST" && kind != "TODO_STATUS" {
+		result["interval"] = strings.ToUpper(interval)
+	}
+	if kind == "CUSTOM_FIELD" {
+		if fieldID == "" {
+			return nil, fmt.Errorf("a custom field ID is required for CUSTOM_FIELD")
+		}
+		field, err := resolveCustomField(client, fieldID)
+		if err != nil {
+			return nil, err
+		}
+		applyFieldMetadata(result, field)
+	}
+	return result, nil
+}
+
+func resolveCustomField(client *common.Client, id string) (chartFieldMetadata, error) {
+	query := `query ChartCustomField($id: String!) { customField(id: $id) { name type referenceProject { id } } }`
+	var response struct {
+		CustomField struct {
+			Name, Type       string
+			ReferenceProject *struct {
+				ID string `json:"id"`
+			} `json:"referenceProject"`
+		} `json:"customField"`
+	}
+	if err := client.ExecuteQueryWithResult(query, map[string]interface{}{"id": id}, &response); err != nil {
+		return chartFieldMetadata{}, fmt.Errorf("failed to resolve custom field %q: %w", id, err)
+	}
+	field := chartFieldMetadata{Name: response.CustomField.Name, Type: response.CustomField.Type}
+	if response.CustomField.ReferenceProject != nil {
+		field.ReferenceProjectID = response.CustomField.ReferenceProject.ID
+	}
+	if field.Name == "" {
+		return field, fmt.Errorf("custom field %q was not found", id)
+	}
+	return field, nil
+}
+
+func applyFieldMetadata(target map[string]interface{}, field chartFieldMetadata) {
+	target["customFieldName"], target["customFieldType"] = field.Name, field.Type
+	if field.ReferenceProjectID != "" {
+		target["customFieldReferenceProjectId"] = field.ReferenceProjectID
+	}
 }
