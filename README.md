@@ -40,11 +40,22 @@ API_URL=https://api.blue.app/graphql
 AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
+DEFAULT_WORKSPACE_ID=your_default_workspace_id_or_slug
 ```
 
 **Getting Your Credentials:**
 1. **Client ID & Auth Token**: Account Settings → API → Generate Token
 2. **Company ID**: Your org slug from the URL (e.g., `acme` from `blue.app/org/acme`)
+
+**Optional environment variables:**
+
+| Variable               | Purpose                                                                 |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `DEFAULT_WORKSPACE_ID` | Default `--workspace` value. Set it with `blue context set-workspace`.  |
+| `BLUE_FORMS_BASE_URL`  | Base URL for `blue forms url` on white-label / self-hosted deployments. |
+| `XDG_CONFIG_HOME`      | Moves the global config away from `~/.config/blue/config.env`.          |
+
+Environment variables win over `.env`, and `.env` wins over the global config file.
 
 ## Commands
 
@@ -52,41 +63,54 @@ COMPANY_ID=your_company_slug
 blue [command]
 
 Available Commands:
-  api         (graphql, gql) Run raw Blue API requests
-  activity            Show recent activity
-  bootstrap           Bootstrap workspaces from JSON
-  company             Manage known companies
-  workspaces   (ws)    Manage workspaces
-  records      (rec)   Manage records
-  reports              Manage reports
-  saved-views  (views) Manage saved views
-  lists                Manage lists
-  tags                 Manage tags
-  fields       (cf)    Manage custom fields
-  automations  (auto)  Manage automations
-  checklists           Manage checklists
-  comments             Manage comments
-  users                Manage users
-  dependencies (deps)  Manage record dependencies
-  docs                 Browse and search Blue API docs
-  documents            Manage documents and wiki pages
-  doctor               Check CLI configuration and API access
-  domains              Manage custom domains and email settings
-  exports              Queue CSV exports
-  files                Manage files
-  forms        (form)  Manage forms
-  ids          (id)    Resolve Blue names to IDs
-  open                 Open Blue pages in a browser
-  search               Search records by name
-  dashboards   (dash)  Manage dashboards
-  charts               Manage dashboard charts
-  webhooks     (wh)    Manage webhooks
-  whoami               Show authenticated identity and context
-  completion           Generate shell completions
-  version              Print version information
+  activity                    Show recent activity
+  api          (graphql, gql) Run raw Blue API requests
+  automations  (auto)         Manage automations
+  bootstrap                   Bootstrap workspaces from JSON
+  charts                      Manage charts within dashboards
+  checklists                  Manage checklists
+  comments                    Manage comments
+  company                     Manage known companies
+  completion                  Generate shell completions
+  context                     Manage default company and workspace context
+  dashboards   (dash)         Manage dashboards
+  dependencies (deps)         Manage record dependencies
+  docs                        Browse and search Blue API docs
+  doctor                      Check CLI configuration and API access
+  documents                   Manage documents and wiki pages
+  domains                     Manage custom domains and email settings
+  exports                     Queue CSV exports
+  fields       (cf)           Manage custom fields
+  files                       Manage files
+  forms        (form)         Manage forms
+  ids          (id)           Resolve Blue names to IDs
+  init                        Set up Blue CLI credentials
+  lists                       Manage lists
+  open                        Open Blue pages in a browser
+  records      (rec)          Manage records
+  reports                     Manage reports
+  saved-views  (views)        Manage saved views
+  search                      Search records by name
+  tags                        Manage tags
+  users                       Manage users
+  version                     Print version information
+  webhooks     (wh)           Manage webhooks
+  whoami                      Show authenticated identity and context
+  workspaces   (ws)           Manage workspaces
 ```
 
 Use `blue <command> --help` for details on any command.
+
+### Global Flags
+
+`--company <slug>` overrides the active company for one command. It works on
+every command and beats both `COMPANY_ID` and the company set by
+`blue company use` / `blue context use`:
+
+```bash
+blue --company acme workspaces list --simple
+blue --company other-org records count --workspace <id>
+```
 
 ### API
 
@@ -132,6 +156,19 @@ blue activity --format json
 blue doctor
 blue doctor --workspace <id-or-slug>
 ```
+
+### Context
+
+```bash
+blue context current
+blue context list
+blue context use acme
+blue context use acme/development
+blue context set-workspace <id-or-slug>
+blue context clear
+```
+
+When a default workspace is set, workspace-scoped commands use it if `--workspace` is omitted. Passing `--workspace` always wins.
 
 ### Whoami
 
@@ -326,6 +363,8 @@ blue checklists items delete --item <id> --confirm
 ### Comments
 
 ```bash
+blue comments list --record <id>
+blue comments list --record <id> --limit 50 --skip 20 --simple
 blue comments create --record <id> --workspace <id> --text "Progress update"
 blue comments update --comment <id> --workspace <id> --text "Updated comment"
 ```
@@ -512,12 +551,15 @@ cli/
 │   ├── blue/            # main package — `go install` target
 │   │   └── main.go      # Entry point
 │   ├── root.go          # Root command, global config
+│   ├── init.go          # blue init
+│   ├── activity/        # blue activity *
 │   ├── api/             # blue api *
 │   ├── bootstrap/       # blue bootstrap *
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
 │   ├── reports/         # blue reports *
 │   ├── savedviews/      # blue saved-views *
+│   ├── search/          # blue search
 │   ├── lists/           # blue lists *
 │   ├── tags/            # blue tags *
 │   ├── fields/          # blue fields *
@@ -528,21 +570,30 @@ cli/
 │   ├── checklists/      # blue checklists *
 │   │   └── items/       # blue checklists items *
 │   ├── company/         # blue company *
+│   ├── context/         # blue context *
 │   ├── comments/        # blue comments *
 │   ├── dashboards/      # blue dashboards *
 │   ├── users/           # blue users *
 │   ├── webhooks/        # blue webhooks *
 │   ├── dependencies/    # blue dependencies *
+│   ├── docs/            # blue docs *
 │   ├── documents/       # blue documents *
 │   ├── doctor/          # blue doctor
 │   ├── domains/         # blue domains *
 │   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
-│   └── forms/           # blue forms *
+│   ├── forms/           # blue forms *
+│   │   └── fields/      # blue forms fields *
+│   ├── ids/             # blue ids *
+│   ├── open/            # blue open *
+│   └── whoami/          # blue whoami
 ├── common/              # Shared code
 │   ├── auth.go          # GraphQL client & authentication
+│   ├── config.go        # Global config file, company list, default workspace
 │   ├── types.go         # Shared type definitions
 │   └── utils.go         # Utility functions
+├── internal/apidocs/    # Embedded API docs snapshot for `blue docs`
+├── tools/sync-docs/     # Refreshes internal/apidocs from ../app/src/content/api
 └── .env                 # API credentials (git ignored)
 ```
 

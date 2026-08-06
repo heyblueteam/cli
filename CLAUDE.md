@@ -24,7 +24,135 @@ All commands follow this pattern:
 
 Workspace ID or slug can be used interchangeably wherever `--workspace` is required.
 
+### Global flags
+
+`--company <slug>` is registered on the root command, so it works on every
+subcommand. It sets `COMPANY_ID` for that one invocation and beats the config
+file and the company set by `blue company use`.
+
+If `--workspace` is not passed and `DEFAULT_WORKSPACE_ID` is set (via
+`blue context set-workspace`, `.env`, or the environment), the root
+`PersistentPreRun` fills the flag in. An explicit `--workspace` always wins.
+
 ## Command Reference
+
+### Setup and context
+
+```bash
+blue init                       # Interactive credential setup -> ~/.config/blue/config.env
+blue whoami                     # Current user, company, API URL, default workspace, config path
+blue whoami --format json
+blue doctor                     # Non-destructive config/credential/API checks
+blue doctor --workspace <ID>    # Also verify workspace access
+blue version
+```
+
+### Companies (`blue company`)
+
+```bash
+blue company list
+blue company add <slug>
+blue company use <slug>         # Sets COMPANY_ID in config.env
+blue company remove <slug>
+blue --company <slug> ws list   # One-off override
+```
+
+### Context (`blue context`)
+
+Manages the default company and the default workspace together.
+
+```bash
+blue context current
+blue context list                        # Known companies + active defaults
+blue context use acme                    # Company only
+blue context use acme/development        # Company + workspace
+blue context set-workspace <ID-or-slug>  # Writes DEFAULT_WORKSPACE_ID
+blue context clear                       # Clears the default workspace
+```
+
+### ID lookup (`blue ids` / `blue id`)
+
+Resolves human names to the IDs the other commands need. All subcommands take
+`--search`, `--limit`, and `--format text|json|csv`.
+
+```bash
+blue ids workspace --search CRM
+blue ids field --workspace <ID> --search Priority
+blue ids list --workspace <ID>
+blue ids tag --workspace <ID> --format csv
+blue ids user --search alex --format json
+blue ids record --workspace <ID> --search "Launch plan"
+```
+
+### Search (`blue search`)
+
+```bash
+blue search "launch" --workspace <ID>
+blue search "invoice" --workspace <ID> --format json
+blue search "bug" --workspace <ID> --done false --archived false --limit 50
+```
+
+### Activity (`blue activity`)
+
+```bash
+blue activity                                             # Company-wide
+blue activity --workspace <ID> --since 7d
+blue activity --workspace <ID> --category CREATE_TODO,CREATE_COMMENT
+blue activity --user <USER_ID> --start <ISO> --end <ISO> --limit 50
+blue activity --after <activity-id>                       # Cursor pagination
+blue activity record <RECORD_ID> --workspace <ID>
+blue activity record <RECORD_ID> --workspace <ID> --type comments
+```
+
+`activity record` caps `--limit` at 24 — the API paginates record activity in
+small pages.
+
+### Open (`blue open`)
+
+Builds Blue app URLs and opens them. `--print` prints instead of opening;
+`--base-url` targets white-label deployments.
+
+```bash
+blue open https://blue.app/org/acme
+blue open workspace <ID-or-slug>
+blue open record <ID> --workspace <ID-or-slug>
+blue open form <ID> --workspace <ID-or-slug>
+blue open document <ID> --workspace <ID-or-slug>
+blue open dashboard <ID>
+blue open report <ID>
+blue open files --workspace <ID-or-slug>
+blue open folder <ID> --workspace <ID-or-slug>
+blue open record <ID> --workspace <ID-or-slug> --print
+```
+
+### Raw API (`blue api` / `blue graphql` / `blue gql`)
+
+```bash
+blue api query --raw 'query { __typename }'
+blue api query --file query.graphql --variables '{"id":"workspace_123"}' --workspace <ID>
+blue api schema                 # Print the bundled schema.graphql
+blue api schema --introspect    # Introspect the live endpoint
+blue api docs --print
+```
+
+### API docs (`blue docs`)
+
+Browses the API docs snapshot embedded in `internal/apidocs`.
+
+```bash
+blue docs
+blue docs list records
+blue docs search "automation trigger" --limit 20
+blue docs show records/list-records
+blue docs records/list-records --print-url
+blue docs records/list-records --open
+```
+
+Refresh the snapshot before publishing a release:
+
+```bash
+go run ./tools/sync-docs --source ../app/src/content/api
+```
 
 ### Workspaces (`blue workspaces` / `blue ws`)
 ```bash
@@ -162,6 +290,8 @@ blue checklists items delete --item <ID> --confirm
 
 ### Comments (`blue comments`)
 ```bash
+blue comments list --record <ID>
+blue comments list --record <ID> --workspace <ID> --limit 50 --skip 20 --simple
 blue comments create --record <ID> --workspace <ID> --text "Comment text"
 blue comments create --record <ID> --workspace <ID> --text "Comment" --html "<p><strong>Comment</strong></p>"
 blue comments update --comment <ID> --workspace <ID> --text "Updated text"
@@ -194,7 +324,10 @@ blue deps delete --record <ID> --other-record <ID> --confirm --workspace <ID>
 
 ### Files (`blue files`)
 ```bash
-blue files download                                                    # Interactive mode
+blue files inventory > files.csv                             # Company-wide CSV inventory
+blue files inventory --workspace <ID> --output files.csv
+blue files inventory --workspace <ID> --search invoice
+blue files download                                          # Interactive mode
 PROJECT_ID=<id> blue files download --use-env --output "backup.zip" --parallel 10
 ```
 
@@ -281,6 +414,151 @@ inline `--field` entries are appended.
 
 **Sort options:** `updatedAt_DESC` (default), `title_ASC`.
 
+### Reports (`blue reports`)
+
+Reports read across one or more workspaces. `--filter-json` and
+`--data-sources-json` pass raw API JSON through, so anything the app can build
+is reachable from the CLI.
+
+```bash
+blue reports list --simple
+blue reports get --report <ID>
+blue reports create --title "Open work" --workspaces "ws1,ws2" --filter-json '{"done":false}'
+blue reports create --title "Custom" --data-sources-json '[{"sourceType":"TODOS"}]'
+blue reports update --report <ID> --title "New title"
+blue reports share --report <ID> --users "user1:EDITOR,user2:VIEWER"
+blue reports share --report <ID> --users ""            # Clears sharing
+blue reports data --report <ID> --limit 50 --skip 100 --sort <TodosSort>
+blue reports aggregate --report <ID> --field field_123:number
+blue reports aggregate --report <ID> --fields-json '[{"field":"field_123","fieldType":"number"}]'
+blue reports refresh --report <ID>                     # Refresh aggregation cache
+blue reports duplicate --report <ID> --title "Working copy"
+blue reports export --report <ID>
+blue reports delete --report <ID> --confirm
+```
+
+### Saved Views (`blue saved-views` / `blue views`)
+
+```bash
+blue saved-views list --workspace <ID> --simple
+blue saved-views get --view <ID>
+blue saved-views update --view <ID> --name "Sprint Board" --icon <icon>
+blue saved-views update --view <ID> --shared true --config-json '{"searchQuery":"launch"}'
+blue saved-views apply --view <ID>                     # Prints viewConfig JSON
+blue saved-views delete --view <ID> --confirm
+```
+
+`apply` does not mutate anything — it prints the view's `viewConfig` so a
+script can reuse the same filter.
+
+### Dashboards (`blue dashboards` / `blue dash`)
+
+```bash
+blue dashboards list --simple
+blue dashboards create --title "Sales Dashboard"
+blue dashboards create --title "Sprint Metrics" --workspace <ID>
+blue dashboards get --dashboard <ID>                   # Includes chart data
+blue dashboards share --dashboard <ID> --users "user1:EDITOR,user2:VIEWER"
+blue dashboards delete --dashboard <ID> --confirm
+```
+
+### Charts (`blue charts`)
+
+```bash
+blue charts list --dashboard <ID>
+blue charts create --dashboard <ID> --type STAT --title "Total Records" \
+  --workspace <ID> --function COUNT
+blue charts create --dashboard <ID> --type STAT --title "Total Revenue" \
+  --workspace <ID> --field <FIELD_ID> --function SUM --display currency --currency USD
+blue charts create --dashboard <ID> --type BAR --title "By Assignee" \
+  --workspace <ID> --group-by ASSIGNEE --function COUNT
+blue charts create --dashboard <ID> --type PIE --title "By Status" \
+  --workspace <ID> --group-by TODO_STATUS --function COUNT
+blue charts recalculate --charts "chart1,chart2"
+blue charts delete --chart <ID> --confirm
+```
+
+**Chart types:** `STAT`, `BAR`, `PIE`.
+
+**Aggregation functions:** `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX`.
+
+**Group-by dimensions (BAR/PIE):** `ASSIGNEE`, `TAG`, `TODO_LIST`, `TODO_STATUS`, `PROJECT`, `CUSTOM_FIELD`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`.
+
+**Date intervals:** `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.
+
+### Documents (`blue documents`)
+
+Documents carry HTML content. Wiki pages are documents with `--wiki`.
+
+```bash
+blue documents list --workspace <ID> --simple
+blue documents list --workspace <ID> --wiki true --page 2 --size 50
+blue documents get --document <ID> --content
+blue documents create --workspace <ID> --title "Runbook" --content '<h1>Runbook</h1>'
+blue documents create --workspace <ID> --title "Handbook" --wiki --content-file handbook.html
+blue documents update --document <ID> --title "New title"
+blue documents delete --document <ID> --confirm
+```
+
+### Exports (`blue exports`)
+
+Queues a CSV export server-side; Blue emails or surfaces the finished file.
+
+```bash
+blue exports records --workspace <ID>
+blue exports records --workspace <ID> --done false --q launch --assignees "u1,u2" --tags "tag1" --lists "l1"
+blue exports records --workspace <ID> --filter-json '{"hasDueDate":true}'
+blue exports report --report <ID>
+blue exports chart --chart <ID> --filter-json '{"showCompleted":false}'
+blue exports template --workspace <ID>                 # CSV import template
+```
+
+### Webhooks (`blue webhooks` / `blue wh`)
+
+```bash
+blue webhooks list --simple
+blue webhooks get --webhook <ID>
+blue webhooks create --url https://example.com/webhooks/blue
+blue webhooks create --name "Production sync" --url https://example.com/webhooks/blue \
+  --events TODO_CREATED,COMMENT_CREATED --workspaces "ws1,ws2"
+blue webhooks update --webhook <ID> --enabled false
+blue webhooks disable --webhook <ID>
+blue webhooks delete --webhook <ID> --confirm
+blue webhooks events                                   # List supported event names
+blue webhooks verify-signature --secret <SECRET> --signature <HEX> --body-file payload.json
+blue webhooks listen --port 8080 --path /hook --secret <SECRET>
+```
+
+Empty `--events` means all events; empty `--workspaces` means all workspaces.
+`listen` runs a local HTTP server that prints deliveries and, with `--secret`,
+verifies the `X-Signature` HMAC.
+
+### Bootstrap (`blue bootstrap`)
+
+Creates lists, tags, and custom fields for a workspace from one JSON file.
+
+```bash
+blue bootstrap template > workspace.json
+blue bootstrap apply --file workspace.json --confirm   # Without --confirm it is a dry run
+blue bootstrap export --workspace <ID> > workspace.json
+```
+
+### Domains and email (`blue domains`)
+
+```bash
+blue domains domains list
+blue domains domains create --name app.example.com --type APPLICATION
+blue domains domains verify --name app.example.com
+blue domains domains update --domain <ID> --name app2.example.com
+blue domains domains delete --domain <ID> --confirm
+blue domains smtp list
+blue domains smtp verify --host smtp.example.com --port 587 \
+  --username user --password pass --sender-name "Acme" --sender-email no-reply@acme.com
+blue domains templates list
+blue domains templates get --type INVITATION
+blue domains templates test --template <ID> --email you@example.com
+```
+
 ## Architecture
 
 ### Project Structure
@@ -289,9 +567,14 @@ cli/
 ├── cmd/                 # All cobra command definitions
 │   ├── blue/            # main package — `go install` target, binary name
 │   │   └── main.go      # Entry point — calls cmd.Execute()
-│   ├── root.go          # Root command, version, global setup
+│   ├── root.go          # Root command, --company flag, default-workspace fill-in
+│   ├── init.go          # blue init
+│   ├── activity/        # blue activity *
+│   ├── api/             # blue api *
+│   ├── bootstrap/       # blue bootstrap *
 │   ├── workspaces/      # blue workspaces *
 │   ├── records/         # blue records *
+│   ├── search/          # blue search
 │   ├── lists/           # blue lists *
 │   ├── tags/            # blue tags *
 │   ├── fields/          # blue fields *
@@ -302,14 +585,32 @@ cli/
 │   │   └── items/       # blue checklists items *
 │   ├── comments/        # blue comments *
 │   ├── users/           # blue users *
+│   ├── company/         # blue company *
+│   ├── context/         # blue context *
+│   ├── dashboards/      # blue dashboards *
+│   ├── charts/          # blue charts *
+│   ├── reports/         # blue reports *
+│   ├── savedviews/      # blue saved-views *
 │   ├── dependencies/    # blue dependencies *
+│   ├── docs/            # blue docs *
+│   ├── documents/       # blue documents *
+│   ├── doctor/          # blue doctor
+│   ├── domains/         # blue domains *
+│   ├── exports/         # blue exports *
 │   ├── files/           # blue files *
-│   └── forms/           # blue forms *
-│       └── fields/      # blue forms fields *
-├── common/              # Shared code (auth, types, utils)
+│   ├── forms/           # blue forms *
+│   │   └── fields/      # blue forms fields *
+│   ├── ids/             # blue ids *
+│   ├── open/            # blue open *
+│   ├── webhooks/        # blue webhooks *
+│   └── whoami/          # blue whoami
+├── common/              # Shared code (auth, config, types, utils)
 │   ├── auth.go          # GraphQL client & authentication
+│   ├── config.go        # Global config file, company list, default workspace
 │   ├── types.go         # Shared type definitions
 │   └── utils.go         # Utility functions
+├── internal/apidocs/    # Embedded API docs snapshot served by `blue docs`
+└── tools/sync-docs/     # Regenerates internal/apidocs from ../app/src/content/api
 ```
 
 ### Authentication (`common/auth.go`)
@@ -318,12 +619,32 @@ cli/
 - Workspace context via `X-Bloo-Project-Id` header (API still uses project terminology)
 - 30-second timeout for requests
 
+### Configuration precedence
+
+`common/config.go` owns the global config file at
+`~/.config/blue/config.env` (or `$XDG_CONFIG_HOME/blue/config.env`). Resolution
+order, highest first:
+
+```
+process environment  >  ./.env  >  ~/.config/blue/config.env
+```
+
+`blue init`, `blue company use`, and `blue context set-workspace` all write to
+the global config file.
+
 ### Required Environment Variables
 ```
 API_URL=https://api.blue.app/graphql
 AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
+```
+
+### Optional Environment Variables
+```
+DEFAULT_WORKSPACE_ID=workspace_id_or_slug   # Fills --workspace when it is omitted
+BLUE_FORMS_BASE_URL=https://forms.acme.com  # Base URL for `blue forms url`
+XDG_CONFIG_HOME=/custom/path                # Moves the global config file
 ```
 
 ### GraphQL API Details
@@ -341,7 +662,17 @@ When adding new commands:
 5. Use `--workspace`/`-w` for workspace context (maps to `client.SetProject()`)
 6. Use `--simple`/`-s` for simplified output
 7. Use `--confirm`/`-y` for destructive operations
-8. Import `github.com/heyblueteam/cli/common` for shared types and auth
+8. Use `--format` for machine-readable output. Support is uneven today:
+   `activity`, `search`, and `ids *` use `text|json|csv`; `fields list` and
+   `users roles` use `table|json|csv`; `whoami` uses `text|json`; `documents`,
+   `forms`, `reports`, `saved-views`, and `webhooks` accept `json` only. New
+   read commands should use `text|json|csv`.
+9. Import `github.com/heyblueteam/cli/common` for shared types and auth
+10. Update `README.md` and this file with the new command
+
+The root `--company` flag and the `DEFAULT_WORKSPACE_ID` fill-in are handled in
+`cmd/root.go`, so a new command gets both for free — provided its workspace flag
+is named `workspace`.
 
 ## Key Technologies
 - Go with [cobra](https://github.com/spf13/cobra) for CLI framework
