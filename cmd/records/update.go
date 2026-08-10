@@ -258,7 +258,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 			titleList := strings.Split(updateTagTitles, ",")
 			var titleStrings []string
 			for _, t := range titleList {
-				titleStrings = append(titleStrings, fmt.Sprintf(`"%s"`, strings.TrimSpace(t)))
+				titleStrings = append(titleStrings, fmt.Sprintf(`"%s"`, common.EscapeGraphQLString(strings.TrimSpace(t))))
 			}
 			tagFields = append(tagFields, fmt.Sprintf(`tagTitles: [%s]`, strings.Join(titleStrings, ", ")))
 		}
