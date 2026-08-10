@@ -359,7 +359,7 @@ func buildOptionalFields(input LocalCreateCustomFieldInput) string {
 		fields = append(fields, fmt.Sprintf(`currency: "%s"`, input.Currency))
 	}
 	if input.Prefix != "" {
-		fields = append(fields, fmt.Sprintf(`prefix: "%s"`, input.Prefix))
+		fields = append(fields, fmt.Sprintf(`prefix: "%s"`, common.EscapeGraphQLString(input.Prefix)))
 	}
 	if input.IsDueDate != nil && *input.IsDueDate {
 		fields = append(fields, fmt.Sprintf(`isDueDate: %t`, *input.IsDueDate))

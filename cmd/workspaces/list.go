@@ -192,7 +192,7 @@ func buildProjectQuery(companyID string, simple bool, skip int, take int, search
 
 	filter := fmt.Sprintf(`companyIds: ["%s"]`, companyID)
 	if search != "" {
-		filter += fmt.Sprintf(`, search: "%s"`, search)
+		filter += fmt.Sprintf(`, search: "%s"`, common.EscapeGraphQLString(search))
 	}
 	if !showArchived {
 		filter += `, archived: false`

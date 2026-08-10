@@ -94,7 +94,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	var fields []string
 
 	if updateTitle != "" {
-		fields = append(fields, fmt.Sprintf("title: \"%s\"", updateTitle))
+		fields = append(fields, fmt.Sprintf("title: \"%s\"", common.EscapeGraphQLString(updateTitle)))
 	}
 
 	if updatePosition != "" {
