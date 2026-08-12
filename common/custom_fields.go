@@ -3,44 +3,79 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
 
+const customFieldTypePageSize = 500
+
 // FetchFieldTypes fetches custom field ID → type mapping for the current workspace.
 // The workspace must be set on the client via SetProject before calling this.
 func FetchFieldTypes(client *Client, fieldIDs []string) (map[string]string, error) {
-	query := fmt.Sprintf(`
-		query {
-			customFields(
-				skip: 0
-				take: %d
-			) {
+	query := `
+		query FetchFieldTypes($skip: Int!, $take: Int!) {
+			customFields(skip: $skip, take: $take) {
 				items {
 					id
 					type
 				}
+				pageInfo {
+					hasNextPage
+				}
 			}
 		}
-	`, len(fieldIDs)+20) // fetch extra to cover all fields in workspace
+	`
 
-	var response struct {
-		CustomFields struct {
-			Items []struct {
-				ID   string `json:"id"`
-				Type string `json:"type"`
-			} `json:"items"`
-		} `json:"customFields"`
+	requested := make(map[string]struct{}, len(fieldIDs))
+	for _, fieldID := range fieldIDs {
+		requested[fieldID] = struct{}{}
 	}
 
-	if err := client.ExecuteQueryWithResult(query, nil, &response); err != nil {
-		return nil, fmt.Errorf("failed to fetch custom field types: %w", err)
+	result := make(map[string]string, len(requested))
+	for skip := 0; len(result) < len(requested); skip += customFieldTypePageSize {
+		var response struct {
+			CustomFields struct {
+				Items []struct {
+					ID   string `json:"id"`
+					Type string `json:"type"`
+				} `json:"items"`
+				PageInfo struct {
+					HasNextPage bool `json:"hasNextPage"`
+				} `json:"pageInfo"`
+			} `json:"customFields"`
+		}
+
+		variables := map[string]interface{}{
+			"skip": skip,
+			"take": customFieldTypePageSize,
+		}
+		if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
+			return nil, fmt.Errorf("failed to fetch custom field types: %w", err)
+		}
+
+		for _, item := range response.CustomFields.Items {
+			if _, ok := requested[item.ID]; ok {
+				result[item.ID] = item.Type
+			}
+		}
+
+		if !response.CustomFields.PageInfo.HasNextPage {
+			break
+		}
 	}
 
-	result := make(map[string]string)
-	for _, item := range response.CustomFields.Items {
-		result[item.ID] = item.Type
+	if len(result) != len(requested) {
+		missing := make([]string, 0, len(requested)-len(result))
+		for fieldID := range requested {
+			if _, ok := result[fieldID]; !ok {
+				missing = append(missing, fieldID)
+			}
+		}
+		sort.Strings(missing)
+		return nil, fmt.Errorf("custom field(s) not found in workspace: %s", strings.Join(missing, ", "))
 	}
+
 	return result, nil
 }
 
