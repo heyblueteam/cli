@@ -7,20 +7,20 @@ order: 10
 
 An email custom field stores a single email address on a record. It's the `EMAIL` value of the `CustomFieldType` enum and is the right type for contact addresses, lead emails, or any per-record email you want to filter and display.
 
-Custom fields are `CustomField` objects in the API, and records are `Todo` objects. The email value is stored on the field's `text` column and is readable through either `text` or the convenience `value` field.
+Custom fields are `CustomField` objects in the API, and records are `Record` objects. The email value is stored on the field's `text` column and is readable through either `text` or the convenience `value` field.
 
 ## Overview
 
 |            |                                                                          |
 | ---------- | ------------------------------------------------------------------------ |
 | Field type | `EMAIL`                                                                  |
-| Set with   | `setTodoCustomField` → `text` argument                                   |
+| Set with   | `setRecordCustomField` → `text` argument                                   |
 | Stored on  | `CustomField.text`                                                       |
 | Read with  | `CustomField.text` or `CustomField.value` (both return the email string) |
 
 ## Create
 
-Use the `createCustomField` mutation with `type: EMAIL`. The field is scoped to the workspace you pass in the `X-Bloo-Project-ID` header — there is no `projectId` argument or input field.
+Use the `createCustomField` mutation with `type: EMAIL`. The field is scoped to the workspace you pass in the `blue-workspace-id` header — there is no `projectId` argument or input field.
 
 ```graphql
 mutation CreateEmailField {
@@ -58,11 +58,11 @@ mutation CreateEmailField {
 
 ## Set a value
 
-Use `setTodoCustomField` with the `text` argument to set the email on a record. The mutation returns `Boolean!` — `true` on success — so it takes no sub-selection.
+Use `setRecordCustomField` with the `text` argument to set the email on a record. The mutation returns `Boolean!` — `true` on success — so it takes no sub-selection.
 
 ```graphql
 mutation SetEmailValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", text: "client@company.com" }
   )
 }
@@ -71,12 +71,12 @@ mutation SetEmailValue {
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                                           |
 | --------------- | --------- | -------- | --------------------------------------------------------------------- |
@@ -86,11 +86,11 @@ mutation SetEmailValue {
 
 ### Set the value when creating a record
 
-`createTodo` accepts custom-field values inline through `customFields`. Each entry is a `CreateTodoInputCustomField` whose `value` is the email string. The elements returned in `customFields` are `CustomField` objects — read the email back from `text`.
+`createRecord` accepts custom-field values inline through `customFields`. Each entry is a `CreateRecordInputCustomField` whose `value` is the email string. The elements returned in `customFields` are `CustomField` objects — read the email back from `text`.
 
 ```graphql
 mutation CreateRecordWithEmail {
-  createTodo(
+  createRecord(
     input: {
       title: "Follow up with client"
       todoListId: "list_123"
@@ -112,7 +112,7 @@ mutation CreateRecordWithEmail {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Follow up with client",
       "customFields": [
@@ -180,7 +180,7 @@ query GetRecordWithEmail {
 
 ## Notes
 
-- The API stores the email exactly as sent — no format validation, normalization, or trimming. Validate and lowercase addresses in your own code before calling `setTodoCustomField` if you need clean data.
+- The API stores the email exactly as sent — no format validation, normalization, or trimming. Validate and lowercase addresses in your own code before calling `setRecordCustomField` if you need clean data.
 - `value` is only resolved when the `CustomField` is read through a record (it depends on the record context). Reading a bare field definition returns `null` for `value`; use `text` for the stored address.
 
 ## Errors

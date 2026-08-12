@@ -7,21 +7,21 @@ order: 2
 
 Use the `customFields` query to read the custom fields defined in a workspace, optionally filtered by field type and sorted. Custom fields are `CustomField` objects scoped to a single workspace (a `Project` in the API). The result is a `CustomFieldPagination` page of `items` plus `pageInfo`.
 
-The workspace is resolved from the `filter.projectId` argument, or — when that is omitted — from the `X-Bloo-Project-ID` request header. Only fields visible to the calling user's project role are returned: if the user has a custom role with restricted field access, fields hidden from that role are excluded from `items`.
+The workspace is resolved from the `filter.projectId` argument, or — when that is omitted — from the `blue-workspace-id` request header. Only fields visible to the calling user's project role are returned: if the user has a custom role with restricted field access, fields hidden from that role are excluded from `items`.
 
 ```
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 Company and project headers accept an ID or a slug. Header names are case-insensitive. See [Authentication](/api/start-guide/authentication) for the full header reference.
 
 ## Request
 
-The smallest call that works. With the `X-Bloo-Project-ID` header set, `filter` is optional; passing `filter.projectId` overrides the header.
+The smallest call that works. With the `blue-workspace-id` header set, `filter` is optional; passing `filter.projectId` overrides the header.
 
 ```graphql
 query ListCustomFields {
@@ -56,7 +56,7 @@ The `customFields` query takes these arguments:
 
 | Field       | Type                 | Required | Description                                                                                          |
 | ----------- | -------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `projectId` | `String`             | No       | Workspace ID or slug to read fields from. Falls back to the `X-Bloo-Project-ID` header when omitted. |
+| `projectId` | `String`             | No       | Workspace ID or slug to read fields from. Falls back to the `blue-workspace-id` header when omitted. |
 | `types`     | `[CustomFieldType!]` | No       | Return only fields of these types.                                                                   |
 
 ### CustomFieldSort
@@ -165,7 +165,7 @@ The fields below cover the common cases. `CustomField` exposes many more type-sp
 | `customFieldOptions` | `[CustomFieldOption!]` | Selectable options (`SELECT_*`, `BUTTON`).              |
 | `viewable`           | `Boolean`              | Whether the calling user can see this field's values.   |
 | `editable`           | `Boolean`              | Whether the calling user can edit this field's values.  |
-| `projectUserRole`    | `ProjectUserRole`      | The role context used to resolve `viewable`/`editable`. |
+| `workspaceUserRole`    | `ProjectUserRole`      | The role context used to resolve `viewable`/`editable`. |
 | `createdAt`          | `DateTime!`            | When the field was created.                             |
 | `updatedAt`          | `DateTime!`            | When the field was last changed.                        |
 | `metadata`           | `JSON`                 | **Deprecated** — no longer in use.                      |
@@ -291,7 +291,7 @@ query SearchCustomFields {
 
 ## Permissions
 
-Any project member can list a workspace's custom fields. Field-level visibility is enforced by the caller's project role: a field is included only when it is visible to that role. The returned `viewable` and `editable` flags report whether the caller can see and edit each field's values, and `projectUserRole` exposes the role used to resolve them.
+Any project member can list a workspace's custom fields. Field-level visibility is enforced by the caller's project role: a field is included only when it is visible to that role. The returned `viewable` and `editable` flags report whether the caller can see and edit each field's values, and `workspaceUserRole` exposes the role used to resolve them.
 
 ## Related
 

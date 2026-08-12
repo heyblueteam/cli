@@ -7,20 +7,20 @@ order: 11
 
 A URL custom field stores a single web address on a record. It's the `URL` value of the `CustomFieldType` enum and is the right type for project websites, documentation links, repository URLs, or any per-record link you want to display and filter.
 
-Custom fields are `CustomField` objects in the API, and records are `Todo` objects. The URL is stored on the field's `text` column and is readable through either `text` or the convenience `value` field. A URL field can optionally render in the app as a clickable button instead of a plain link.
+Custom fields are `CustomField` objects in the API, and records are `Record` objects. The URL is stored on the field's `text` column and is readable through either `text` or the convenience `value` field. A URL field can optionally render in the app as a clickable button instead of a plain link.
 
 ## Overview
 
 |            |                                                                        |
 | ---------- | ---------------------------------------------------------------------- |
 | Field type | `URL`                                                                  |
-| Set with   | `setTodoCustomField` → `text` argument                                 |
+| Set with   | `setRecordCustomField` → `text` argument                                 |
 | Stored on  | `CustomField.text`                                                     |
 | Read with  | `CustomField.text` or `CustomField.value` (both return the URL string) |
 
 ## Create
 
-Use the `createCustomField` mutation with `type: URL`. The field is scoped to the workspace you pass in the `X-Bloo-Project-ID` header — there is no `projectId` argument or input field.
+Use the `createCustomField` mutation with `type: URL`. The field is scoped to the workspace you pass in the `blue-workspace-id` header — there is no `projectId` argument or input field.
 
 ```graphql
 mutation CreateUrlField {
@@ -86,11 +86,11 @@ mutation CreateUrlButtonField {
 
 ## Set a value
 
-Use `setTodoCustomField` with the `text` argument to set the URL on a record. The mutation returns `Boolean!` — `true` on success — so it takes no sub-selection.
+Use `setRecordCustomField` with the `text` argument to set the URL on a record. The mutation returns `Boolean!` — `true` on success — so it takes no sub-selection.
 
 ```graphql
 mutation SetUrlValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", text: "https://example.com/docs" }
   )
 }
@@ -99,12 +99,12 @@ mutation SetUrlValue {
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                                 |
 | --------------- | --------- | -------- | ----------------------------------------------------------- |
@@ -114,11 +114,11 @@ mutation SetUrlValue {
 
 ### Set the value when creating a record
 
-`createTodo` accepts custom-field values inline through `customFields`. Each entry is a `CreateTodoInputCustomField` whose `value` is the URL string. The elements returned in `customFields` are `CustomField` objects — read the URL back from `text`.
+`createRecord` accepts custom-field values inline through `customFields`. Each entry is a `CreateRecordInputCustomField` whose `value` is the URL string. The elements returned in `customFields` are `CustomField` objects — read the URL back from `text`.
 
 ```graphql
 mutation CreateRecordWithUrl {
-  createTodo(
+  createRecord(
     input: {
       title: "Review documentation"
       todoListId: "list_123"
@@ -140,7 +140,7 @@ mutation CreateRecordWithUrl {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Review documentation",
       "customFields": [
@@ -210,7 +210,7 @@ The button-display configuration is also readable on the field: `urlDisplayAsBut
 
 ## Notes
 
-- The API stores the URL exactly as sent — no format validation, protocol normalization, or trimming. Validate and normalize URLs (e.g. add an `https://` prefix) in your own code before calling `setTodoCustomField` if you need clean data.
+- The API stores the URL exactly as sent — no format validation, protocol normalization, or trimming. Validate and normalize URLs (e.g. add an `https://` prefix) in your own code before calling `setRecordCustomField` if you need clean data.
 - A `URL` field stores and returns the same string as a `TEXT_SINGLE` field — the type difference is semantic and drives the app's UI (clickable link, optional button). Choose `URL` when the value is a web address so it renders correctly in the app.
 - `value` is only resolved when the `CustomField` is read through a record (it depends on the record context). Reading a bare field definition returns `null` for `value`; use `text` for the stored URL.
 

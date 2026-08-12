@@ -5,7 +5,7 @@ icon: Copy
 order: 5
 ---
 
-Use the `copyTodo` mutation to duplicate an existing record into a target list, choosing exactly which elements (description, due date, checklists, assignees, tags, custom fields, comments) carry over to the copy. Records are `Todo` objects in the API; lists are `TodoList` objects.
+Use the `copyRecord` mutation to duplicate an existing record into a target list, choosing exactly which elements (description, due date, checklists, assignees, tags, custom fields, comments) carry over to the copy. Records are `Record` objects in the API; lists are `RecordList` objects.
 
 The copy is created in the destination list — which can belong to the same workspace or a different one — and is placed at the bottom of that list. Subtasks (todo actions) are always copied. The mutation returns `Boolean!`; on failure it throws an error rather than returning `false`.
 
@@ -13,7 +13,7 @@ The copy is created in the destination list — which can belong to the same wor
 
 ```graphql
 mutation CopyRecord {
-  copyTodo(
+  copyRecord(
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
@@ -27,52 +27,53 @@ mutation CopyRecord {
 Send these headers with the request. Company and project accept either an ID or a slug, and header names are case-insensitive.
 
 ```http
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 ## Parameters
 
-### CopyTodoInput
+### CopyRecordInput
 
-| Parameter    | Type                 | Required | Description                                                                                                          |
-| ------------ | -------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `todoId`     | `String!`            | Yes      | ID of the record to copy.                                                                                            |
-| `todoListId` | `String!`            | Yes      | ID of the list to create the copy in. May be in the same workspace or a different one.                               |
-| `options`    | `[CopyTodoOption!]!` | Yes      | Which elements to copy from the source record. Pass an empty list `[]` to copy only the record's title and subtasks. |
-| `title`      | `String`             | No       | Title for the copy. Defaults to the source record's title when omitted.                                              |
+| Parameter        | Type                   | Required | Description                                                                                                                                             |
+| ---------------- | ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `todoId`         | `String!`              | Yes      | ID of the record to copy.                                                                                                                               |
+| `todoListId`     | `String!`              | Yes      | ID of the list to create the copy in. May be in the same workspace or a different one.                                                                  |
+| `options`        | `[CopyRecordOption!]!` | Yes      | Which elements to copy from the source record. Pass an empty list `[]` to copy only the record's title and subtasks.                                    |
+| `title`          | `String`               | No       | Title for the copy. Defaults to the source record's title when omitted.                                                                                 |
+| `customFieldIds` | `[String!]`            | No       | When `options` includes `CUSTOM_FIELDS`, restrict the copy to this subset of source custom-field IDs. Omit (or pass `null`) to copy every custom field. |
 
-### CopyTodoOption
+### CopyRecordOption
 
 Each value in `options` opts a category of data into the copy. Anything not listed is not copied.
 
-| Value           | Description                                                                                                              |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `DESCRIPTION`   | The record's description (`text` / `html`).                                                                              |
-| `DUE_DATE`      | The due date and its timezone.                                                                                           |
-| `ASSIGNEES`     | Assigned users. On a cross-workspace copy, assignees are filtered to users who are members of the destination workspace. |
-| `TAGS`          | Associated tags.                                                                                                         |
-| `COMMENTS`      | Comments and their replies.                                                                                              |
-| `CHECKLISTS`    | Checklists and their items.                                                                                              |
-| `CUSTOM_FIELDS` | Custom field values, including file attachments (duplicated to new storage references).                                  |
+| Value           | Description                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DESCRIPTION`   | The record's description (`text` / `html`).                                                                                                      |
+| `DUE_DATE`      | The due date and its timezone.                                                                                                                   |
+| `ASSIGNEES`     | Assigned users. On a cross-workspace copy, assignees are filtered to users who are members of the destination workspace.                         |
+| `TAGS`          | Associated tags.                                                                                                                                 |
+| `COMMENTS`      | Comments and their replies.                                                                                                                      |
+| `CHECKLISTS`    | Checklists and their items.                                                                                                                      |
+| `CUSTOM_FIELDS` | Custom field values, including file attachments (duplicated to new storage references). Pair with `customFieldIds` to copy only specific fields. |
 
 ## Response
 
 ```json
 {
   "data": {
-    "copyTodo": true
+    "copyRecord": true
   }
 }
 ```
 
 ### Returns
 
-| Field      | Type       | Description                                                                          |
-| ---------- | ---------- | ------------------------------------------------------------------------------------ |
-| `copyTodo` | `Boolean!` | `true` when the copy succeeds. Failures throw an error instead of returning `false`. |
+| Field        | Type       | Description                                                                            |
+| ------------ | ---------- | -------------------------------------------------------------------------------------- |
+| `copyRecord` | `Boolean!` | `true` when the copy succeeds. Failures throw an error instead of returning `false`. |
 
 ## Errors
 

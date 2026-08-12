@@ -5,17 +5,17 @@ icon: FileEdit
 order: 3
 ---
 
-Use the `setTodoCustomField` mutation to write a value to a custom field on a single record. The mutation is an upsert: it creates the value if the field is empty on that record, or overwrites the existing value. Records are `Todo` objects in the API; custom fields are `CustomField` objects, scoped to a workspace.
+Use the `setRecordCustomField` mutation to write a value to a custom field on a single record. The mutation is an upsert: it creates the value if the field is empty on that record, or overwrites the existing value. Records are `Record` objects in the API; custom fields are `CustomField` objects, scoped to a workspace.
 
 Each field type reads a different parameter from the input (text, number, option IDs, assignee IDs, and so on). Send only the parameter that matches the field's `type` — see the [Value reference](#value-reference) below. To set values on many records at once, use `bulkSetCustomField` instead.
 
 ## Request
 
-`setTodoCustomField` takes a single `SetTodoCustomFieldInput` and returns `Boolean!`.
+`setRecordCustomField` takes a single `SetRecordCustomFieldInput` and returns `Boolean!`.
 
 ```graphql
 mutation SetTextField {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -25,18 +25,18 @@ mutation SetTextField {
 }
 ```
 
-Send these headers with every request. `X-Bloo-Project-ID` accepts a workspace ID or slug.
+Send these headers with every request. `blue-workspace-id` accepts a workspace ID or slug.
 
 ```
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 ## Parameters
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 `todoId` and `customFieldId` are always required. Beyond those, supply only the value parameter that matches the field's type.
 
@@ -67,16 +67,16 @@ The mutation returns `true` on success.
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-To read the value back, query the record's `customFields`. `Todo.customFields` returns `[CustomField!]!` directly — the value lives on each element, with no wrapper object.
+To read the value back, query the record's `customFields`. `Record.customFields` returns `[CustomField!]!` directly — the value lives on each element, with no wrapper object.
 
 ```graphql
 query ReadFieldValue {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -104,7 +104,7 @@ query ReadFieldValue {
 
 ```graphql
 mutation SetNumber {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 15000.5 })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 15000.5 })
 }
 ```
 
@@ -114,10 +114,10 @@ Pass `customFieldOptionId` for a `SELECT_SINGLE` field and `customFieldOptionIds
 
 ```graphql
 mutation SetSelect {
-  single: setTodoCustomField(
+  single: setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", customFieldOptionId: "option_123" }
   )
-  multi: setTodoCustomField(
+  multi: setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_456"
@@ -133,7 +133,7 @@ A single date uses `startDate` only; a range adds `endDate`.
 
 ```graphql
 mutation SetDateRange {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -151,7 +151,7 @@ mutation SetDateRange {
 
 ```graphql
 mutation SetAssignee {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -165,7 +165,7 @@ mutation SetAssignee {
 
 ```graphql
 mutation SetLocation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -182,7 +182,7 @@ A `CURRENCY` field stores an amount (`number`) and a currency code (`currency`).
 
 ```graphql
 mutation SetCurrency {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", number: 5000, currency: "USD" }
   )
 }
@@ -194,7 +194,7 @@ mutation SetCurrency {
 
 ```graphql
 mutation SetReference {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -206,11 +206,11 @@ mutation SetReference {
 
 ## Clearing a value
 
-`setTodoCustomField` reconciles option, reference, and assignee links by comparing the IDs you send against what is already stored — anything you omit is removed. To clear a multi-value field, re-send it with an empty array:
+`setRecordCustomField` reconciles option, reference, and assignee links by comparing the IDs you send against what is already stored — anything you omit is removed. To clear a multi-value field, re-send it with an empty array:
 
 ```graphql
 mutation ClearAssignees {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", assigneeUserIds: [] })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", assigneeUserIds: [] })
 }
 ```
 
@@ -218,23 +218,23 @@ For scalar fields (`text`, `number`, `checked`), send the empty/false value to r
 
 ## Files
 
-File fields use their own mutations rather than `setTodoCustomField`. Upload the file first (see [Upload files](/api/files)) to obtain a `fileUid`, then attach it. Both mutations return `Boolean`.
+File fields use their own mutations rather than `setRecordCustomField`. Upload the file first (see [Upload files](/api/files)) to obtain a `fileUid`, then attach it. Both mutations return `Boolean`.
 
 ```graphql
 mutation AttachFile {
-  createTodoCustomFieldFile(
+  createRecordCustomFieldFile(
     input: { todoId: "todo_123", customFieldId: "field_123", fileUid: "file_123" }
   )
 }
 
 mutation DetachFile {
-  deleteTodoCustomFieldFile(
+  deleteRecordCustomFieldFile(
     input: { todoId: "todo_123", customFieldId: "field_123", fileUid: "file_123" }
   )
 }
 ```
 
-### CreateTodoCustomFieldFileInput / DeleteTodoCustomFieldFileInput
+### CreateRecordCustomFieldFileInput / DeleteRecordCustomFieldFileInput
 
 Both inputs share the same three required fields.
 
@@ -246,11 +246,11 @@ Both inputs share the same three required fields.
 
 ## Setting values during record creation
 
-`createTodo` accepts a `customFields` array so you can seed values when the record is created. Each entry is a `CreateTodoInputCustomField` with a `customFieldId` and a stringified `value`.
+`createRecord` accepts a `customFields` array so you can seed values when the record is created. Each entry is a `CreateRecordInputCustomField` with a `customFieldId` and a stringified `value`.
 
 ```graphql
 mutation CreateRecordWithFields {
-  createTodo(
+  createRecord(
     input: {
       todoListId: "list_123"
       title: "New Feature Development"
@@ -271,15 +271,15 @@ mutation CreateRecordWithFields {
 }
 ```
 
-For anything beyond simple scalar seeding (options, references, assignees, dates), create the record first, then call `setTodoCustomField` per field with the type-specific parameters above.
+For anything beyond simple scalar seeding (options, references, assignees, dates), create the record first, then call `setRecordCustomField` per field with the type-specific parameters above.
 
 ## Errors
 
 | Code                     | When                                                                                                                                                                                                          |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `CUSTOM_FIELD_NOT_FOUND` | The `customFieldId` does not exist or is not in a workspace you can access.                                                                                                                                   |
-| `TODO_NOT_FOUND`         | The `todoId` does not exist or is not visible to you.                                                                                                                                                         |
-| `FORBIDDEN`              | You lack edit access to the record, or your custom role marks this field as non-editable.                                                                                                                     |
+| `TODO_NOT_FOUND`         | The `todoId` does not exist or is not visible to you.                                                                                                                                                          |
+| `FORBIDDEN`              | You lack edit access to the record, or your custom role marks this field as non-editable.                                                                                                                      |
 | `BAD_USER_INPUT`         | The field is computed (`FORMULA`, `LOOKUP`, `ROLLUP`, `REFERENCED_BY`), the field belongs to a different workspace than the record, an option/reference/assignee ID is invalid, or an assignee is ineligible. |
 
 ```json
@@ -321,7 +321,7 @@ Send the parameter listed for the field's `type`. Computed types reject writes w
 | `COUNTRY`             | `countryCodes`                        | Array of ISO 3166 codes.                                       |
 | `REFERENCE`           | `customFieldReferenceTodoIds`         | Array of record IDs in the target workspace.                   |
 | `ASSIGNEE`            | `assigneeUserIds`                     | Array of user IDs; eligibility enforced.                       |
-| `FILE`                | —                                     | Use `createTodoCustomFieldFile` / `deleteTodoCustomFieldFile`. |
+| `FILE`                | —                                     | Use `createRecordCustomFieldFile` / `deleteRecordCustomFieldFile`. |
 | `BUTTON`              | —                                     | Triggers automations when clicked; not set via this mutation.  |
 | `UNIQUE_ID`           | —                                     | System-generated; read-only.                                   |
 | `FORMULA`             | —                                     | Computed from other fields; read-only.                         |

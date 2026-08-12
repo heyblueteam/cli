@@ -1,23 +1,23 @@
 ---
-title: Comments, Discussions & Chat
-description: Real-time GraphQL subscriptions for comments, typing indicators, discussions, status updates, AI chat, and collaborative documents.
+title: Comments, Chats & Chat
+description: Real-time GraphQL subscriptions for comments, typing indicators, chats, status updates, AI chat, and collaborative documents.
 icon: MessageSquare
 order: 4
 ---
 
-These subscriptions stream the conversational surfaces of a workspace: comments on records, discussions, and status updates; the typing indicators that appear while someone is writing; the AI chat assistant; and collaborative documents. Open one over the same authenticated WebSocket you use for every other subscription — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the `graphql-ws` handshake. The endpoint is `wss://api.blue.app/graphql`.
+These subscriptions stream the conversational surfaces of a workspace: comments on records, chats, and status updates; the typing indicators that appear while someone is writing; the AI chat assistant; and collaborative documents. Open one over the same authenticated WebSocket you use for every other subscription — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the `graphql-ws` handshake. The endpoint is `wss://api.blue.app/graphql`.
 
-Workspaces are `Project` objects in the API, and records are `Todo` objects. Comments, discussions, and status updates all live inside a workspace, so every subscription here is scoped by a `projectId` (or, for `subscribeToComment`, the ID of the thing being commented on).
+Workspaces are `Workspace` objects in the API, and records are `Record` objects. Comments, chats, and status updates all live inside a workspace, so every subscription here is scoped by a `projectId` (or, for `subscribeToComment`, the ID of the thing being commented on).
 
 <Callout variant="info" title="Shared payload shape">
 
-The entity subscriptions on this page (`subscribeToComment`, `subscribeToDiscussion`, `subscribeToStatusUpdate`, `subscribeToDocument`) deliver the standard change-feed payload — `{ mutation, node, previousValues, updatedFields }` where `mutation` is `CREATED`, `UPDATED`, or `DELETED`. That shape is documented once on the [Real-time overview](/api/realtime). `subscribeToChat` and `subscribeToCommentTyping` deviate; both are called out below.
+The entity subscriptions on this page (`subscribeToComment`, `subscribeToChat`, `subscribeToStatusUpdate`, `subscribeToDocument`) deliver the standard change-feed payload — `{ mutation, node, previousValues, updatedFields }` where `mutation` is `CREATED`, `UPDATED`, or `DELETED`. That shape is documented once on the [Real-time overview](/api/realtime). `subscribeToCommentTyping` deviates; it is called out below.
 
 </Callout>
 
 ## subscribeToComment
 
-Streams comment changes (create, edit, delete) for one thread. A thread is identified by a `category` and the ID of the parent it hangs off — a discussion, a status update, or a record.
+Streams comment changes (create, edit, delete) for one thread. A thread is identified by a `category` and the ID of the parent it hangs off — a chat, a status update, or a record.
 
 ### Request
 
@@ -47,16 +47,16 @@ subscription OnRecordComments {
 | Argument                    | Type               | Required | Description                                                                                                                                               |
 | --------------------------- | ------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `category`                  | `CommentCategory!` | Yes      | Which kind of parent the comments belong to. See the enum below.                                                                                          |
-| `categoryId`                | `String!`          | Yes      | The ID of the parent — a `Discussion` ID, a `StatusUpdate` ID, or a `Todo` ID, matching `category`.                                                       |
+| `categoryId`                | `String!`          | Yes      | The ID of the parent — a `Chat` ID, a `StatusUpdate` ID, or a `Record` ID, matching `category`.                                                     |
 | `showOnlyMentionedComments` | `Boolean`          | No       | When `true`, deliver only comments where you are the mentioner or the mentionee. The `category`/`categoryId` filter is then ignored. Defaults to `false`. |
 
 #### CommentCategory
 
 | Value           | Parent type    | `categoryId` is the ID of |
 | --------------- | -------------- | ------------------------- |
-| `DISCUSSION`    | `Discussion`   | A discussion thread       |
+| `DISCUSSION`    | `Chat`   | A chat thread       |
 | `STATUS_UPDATE` | `StatusUpdate` | A status update           |
-| `TODO`          | `Todo`         | A record                  |
+| `TODO`          | `Record`       | A record                  |
 
 ### Response
 
@@ -89,7 +89,7 @@ subscription OnRecordComments {
 | `previousValues` | `CommentPreviousValues` | The comment's prior state on an `UPDATED`/`DELETED` event.        |
 | `updatedFields`  | `[String!]`             | Names of the `Comment` fields that changed on an `UPDATED` event. |
 
-A `Comment` exposes `id`, `html`, `text`, `category`, `user`, `parent`/`parentId`, `replies`, `replyCount`, `reactions`, `isRead`, `isSeen`, `createdAt`, and `updatedAt`, plus the `discussion`/`statusUpdate`/`todo` it belongs to.
+A `Comment` exposes `id`, `html`, `text`, `category`, `user`, `parent`/`parentId`, `replies`, `replyCount`, `reactions`, `isRead`, `isSeen`, `createdAt`, and `updatedAt`, plus the `chat`/`statusUpdate`/`todo` it belongs to.
 
 ### Mentions-only mode
 
@@ -127,15 +127,15 @@ Subscribing always succeeds. You only receive events for comments you can see �
 
 ## subscribeToCommentTyping
 
-Streams typing indicators for one thread: each event is the `User` who is currently typing into that discussion, status update, or record. This is how the app renders "Ada is typing…" beneath a comment box.
+Streams typing indicators for one thread: each event is the `User` who is currently typing into that chat, status update, or record. This is how the app renders "Ada is typing…" beneath a comment box.
 
 The producer side is the `commentTyping` mutation, which a client calls (debounced) while its user types. That publish fans out to everyone subscribed to the same thread.
 
 ### Request
 
 ```graphql
-subscription OnDiscussionTyping {
-  subscribeToCommentTyping(id: "discussion_123", name: DISCUSSION) {
+subscription OnChatTyping {
+  subscribeToCommentTyping(id: "chat_123", name: DISCUSSION) {
     id
     fullName
   }
@@ -144,16 +144,16 @@ subscription OnDiscussionTyping {
 
 ### Parameters
 
-| Argument | Type                            | Required | Description                                                                    |
-| -------- | ------------------------------- | -------- | ------------------------------------------------------------------------------ |
-| `id`     | `String!`                       | Yes      | The thread ID — a `Discussion`, `StatusUpdate`, or `Todo` ID, matching `name`. |
-| `name`   | `CommentTypingSubscriptionName` | No       | Which thread surface to watch. Pair it with the matching `id`.                 |
+| Argument | Type                            | Required | Description                                                                      |
+| -------- | ------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| `id`     | `String!`                       | Yes      | The thread ID — a `Chat`, `StatusUpdate`, or `Record` ID, matching `name`. |
+| `name`   | `CommentTypingSubscriptionName` | No       | Which thread surface to watch. Pair it with the matching `id`.                   |
 
 #### CommentTypingSubscriptionName
 
 | Value           | `id` is the ID of   |
 | --------------- | ------------------- |
-| `DISCUSSION`    | A discussion thread |
+| `DISCUSSION`    | A chat thread |
 | `STATUS_UPDATE` | A status update     |
 | `TODO`          | A record            |
 
@@ -178,15 +178,15 @@ Events are keyed strictly by thread (`name` + `id`), so you receive typing pings
 
 ---
 
-## subscribeToDiscussion
+## subscribeToChat
 
-Streams discussion lifecycle changes (created, edited, deleted) within a workspace. Use it to keep a discussion list live as threads are opened and renamed.
+Streams chat lifecycle changes (created, edited, deleted) within a workspace. Use it to keep a chat list live as threads are opened and renamed.
 
 ### Request
 
 ```graphql
-subscription OnDiscussions {
-  subscribeToDiscussion(projectId: "project_123") {
+subscription OnChats {
+  subscribeToChat(projectId: "workspace_123") {
     mutation
     node {
       id
@@ -208,14 +208,14 @@ subscription OnDiscussions {
 
 | Argument    | Type      | Required | Description                                        |
 | ----------- | --------- | -------- | -------------------------------------------------- |
-| `projectId` | `String!` | Yes      | The workspace whose discussions you want to watch. |
+| `projectId` | `String!` | Yes      | The workspace whose chats you want to watch. |
 
 ### Response
 
 ```json
 {
   "data": {
-    "subscribeToDiscussion": {
+    "subscribeToChat": {
       "mutation": "UPDATED",
       "node": {
         "id": "clm4n8qwx000308l0i9j0k1l2",
@@ -231,13 +231,13 @@ subscription OnDiscussions {
 }
 ```
 
-#### Returns — DiscussionSubscriptionPayload
+#### Returns — ChatSubscriptionPayload
 
 | Field            | Type                       | Description                            |
 | ---------------- | -------------------------- | -------------------------------------- |
 | `mutation`       | `MutationType!`            | `CREATED`, `UPDATED`, or `DELETED`.    |
-| `node`           | `Discussion`               | The discussion after the change.       |
-| `previousValues` | `DiscussionPreviousValues` | Prior state on `UPDATED`/`DELETED`.    |
+| `node`           | `Chat`               | The chat after the change.       |
+| `previousValues` | `ChatPreviousValues` | Prior state on `UPDATED`/`DELETED`.    |
 | `updatedFields`  | `[String!]`                | Field names that changed on `UPDATED`. |
 
 ### Errors
@@ -260,7 +260,7 @@ Streams status update changes within a workspace — the posts that appear in a 
 
 ```graphql
 subscription OnStatusUpdates {
-  subscribeToStatusUpdate(projectId: "project_123") {
+  subscribeToStatusUpdate(projectId: "workspace_123") {
     mutation
     node {
       id
@@ -326,87 +326,6 @@ Delivered only for workspaces you belong to: the resolver matches the published 
 
 ---
 
-## subscribeToChat
-
-Streams the AI chat assistant's conversation changes (`Chat` objects) for a workspace — new chats, renames, and deletions. Use it to keep a chat sidebar in sync as conversations are created and updated.
-
-### Request
-
-```graphql
-subscription OnChats {
-  subscribeToChat(filter: { projectId: "project_123" }) {
-    mutation
-    node {
-      id
-      title
-      type
-      messages {
-        id
-        text
-        createdBy {
-          id
-          fullName
-        }
-      }
-      updatedAt
-    }
-  }
-}
-```
-
-### Parameters
-
-#### SubscribeToChatFilterInput
-
-| Parameter   | Type      | Required | Description                                  |
-| ----------- | --------- | -------- | -------------------------------------------- |
-| `projectId` | `String!` | Yes      | The workspace whose chats you want to watch. |
-
-### Response
-
-```json
-{
-  "data": {
-    "subscribeToChat": {
-      "mutation": "CREATED",
-      "node": {
-        "id": "clm4n8qwx000508l0q7r8s9t0",
-        "title": "Summarize this workspace",
-        "type": "PROJECT_ASSISTANT",
-        "messages": [],
-        "updatedAt": "2026-05-29T14:08:02.000Z"
-      }
-    }
-  }
-}
-```
-
-#### Returns — ChatSubscriptionPayload
-
-| Field            | Type            | Description                         |
-| ---------------- | --------------- | ----------------------------------- |
-| `mutation`       | `MutationType!` | `CREATED`, `UPDATED`, or `DELETED`. |
-| `node`           | `Chat`          | The chat after the change.          |
-| `previousValues` | `Chat`          | The chat's prior state.             |
-
-<Callout variant="warning" title="No updatedFields on chat">
-
-`ChatSubscriptionPayload` does not include the `updatedFields` array that the other entity payloads carry, and its `previousValues` is a full `Chat` (not a separate `*PreviousValues` type). Do not select `updatedFields` here — it is not a field on this payload.
-
-</Callout>
-
-### Errors
-
-| Code              | When                                                  |
-| ----------------- | ----------------------------------------------------- |
-| `UNAUTHENTICATED` | The WebSocket handshake carried no valid credentials. |
-
-### Permissions
-
-Events are matched on `filter.projectId`, so you receive chat changes for the requested workspace.
-
----
-
 ## subscribeToDocument
 
 Streams collaborative document changes (`Document` objects) within a workspace — created, edited, deleted. Optionally narrow to wiki documents only.
@@ -415,7 +334,7 @@ Streams collaborative document changes (`Document` objects) within a workspace �
 
 ```graphql
 subscription OnDocuments {
-  subscribeToDocument(input: { projectId: "project_123" }) {
+  subscribeToDocument(input: { projectId: "workspace_123" }) {
     mutation
     node {
       id
@@ -493,7 +412,7 @@ Delivered only for workspaces you belong to. When `wiki` is supplied, only docum
 - [Real-time (Subscriptions)](/api/realtime) — the shared change-feed payload shape and the full subscription map.
 - [Connect & Authenticate](/api/realtime/connect-and-authenticate) — open an authenticated `graphql-ws` connection.
 - [Add a comment](/api/records/add-comment) — the mutation that produces the comment events you subscribe to.
-- [Comments & Discussions](/api/comments) — query and manage comment threads.
+- [Comments & Chats](/api/comments) — query and manage comment threads.
 - [Status Updates](/api/status-updates) — query and post status updates.
 - [Documents](/api/documents) — create and manage documents.
 - [Activity, Mentions & Notifications](/api/realtime/activity-notifications) — the @-mention firehose (`subscribeToMyMention`).

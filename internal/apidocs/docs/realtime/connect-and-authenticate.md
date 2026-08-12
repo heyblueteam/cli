@@ -23,9 +23,9 @@ const client = createClient({
   url: 'wss://api.blue.app/graphql',
   webSocketImpl: WebSocket,
   connectionParams: {
-    'x-bloo-token-id': 'YOUR_TOKEN_ID',
-    'x-bloo-token-secret': 'YOUR_TOKEN_SECRET',
-    'x-bloo-company-id': 'YOUR_COMPANY_ID',
+    'blue-token-id': 'YOUR_TOKEN_ID',
+    'blue-token-secret': 'YOUR_TOKEN_SECRET',
+    'blue-org-id': 'YOUR_ORG_ID',
   },
 })
 
@@ -61,7 +61,7 @@ const unsubscribe = client.subscribe(
 // unsubscribe();
 ```
 
-`connectionParams` is a flat object of string values that the client serializes into the `connection_init` payload. The server reads it as the request "headers", so the keys are the same `X-Bloo-*` names you use over HTTP. Header names are case-insensitive.
+`connectionParams` is a flat object of string values that the client serializes into the `connection_init` payload. The server reads it as the request "headers", so the keys are the same `blue-*` names you use over HTTP. Header names are case-insensitive.
 
 ## Parameters
 
@@ -71,18 +71,18 @@ Pass exactly one of the three credential forms below, plus optional scoping para
 
 | Param                 | Type     | Required    | Description                                                                                                                                                                            |
 | --------------------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `x-bloo-token-id`     | `String` | Conditional | Personal Access Token ID — an unprefixed cuid. Pair with `x-bloo-token-secret`. The recommended credential for external/API clients.                                                   |
-| `x-bloo-token-secret` | `String` | Conditional | The Personal Access Token Secret (prefixed `pat_`). Compared with bcrypt and checked for expiry. Shown only once at token creation.                                                    |
+| `blue-token-id`     | `String` | Conditional | Personal Access Token ID — an unprefixed cuid. Pair with `blue-token-secret`. The recommended credential for external/API clients.                                                   |
+| `blue-token-secret` | `String` | Conditional | The Personal Access Token Secret (prefixed `pat_`). Compared with bcrypt and checked for expiry. Shown only once at token creation.                                                    |
 | `Authorization`       | `String` | Conditional | A session access token as `Bearer <JWT>`. The `Bearer ` prefix is stripped before verification. Used by first-party web sessions; prefer a Personal Access Token for API integrations. |
 | `x-bloo-id-token`     | `String` | Conditional | A Firebase ID token. First-party web app only — external consumers should use a Personal Access Token instead.                                                                         |
-| `x-bloo-company-id`   | `String` | No          | Scope the connection to an organization. Accepts the organization ID or slug. Required by company-scoped subscriptions such as `subscribeToActivity` and `subscribeToMyTodoCount`.     |
-| `x-bloo-project-id`   | `String` | No          | Scope the connection to a workspace. Accepts the workspace ID or slug. Set alongside `x-bloo-company-id` when a subscription is workspace-scoped.                                      |
+| `blue-org-id`   | `String` | No          | Scope the connection to an organization. Accepts the organization ID or slug. Required by company-scoped subscriptions such as `subscribeToActivity` and `subscribeToMyTodoCount`.     |
+| `blue-workspace-id`   | `String` | No          | Scope the connection to a workspace. Accepts the workspace ID or slug. Set alongside `blue-org-id` when a subscription is workspace-scoped.                                      |
 
-Organizations are `Company` objects and workspaces are `Project` objects in the API; both scoping params take an ID **or** a slug.
+Organizations are `Organization` objects and workspaces are `Workspace` objects in the API; both scoping params take an ID **or** a slug.
 
 <Callout variant="tip" title="Use a Personal Access Token">
 
-A Personal Access Token authenticates without a login session and never expires unless you set an expiry, which makes it the right credential for servers and integrations. Create one under your profile's API tab — see [Authentication](/api/start-guide/authentication). Send the Token ID as `x-bloo-token-id` and the Secret as `x-bloo-token-secret`, and **do not** also set `Authorization`, or the JWT path takes precedence and your token is skipped.
+A Personal Access Token authenticates without a login session and never expires unless you set an expiry, which makes it the right credential for servers and integrations. Create one under your profile's API tab — see [Authentication](/api/start-guide/authentication). Send the Token ID as `blue-token-id` and the Secret as `blue-token-secret`, and **do not** also set `Authorization`, or the JWT path takes precedence and your token is skipped.
 
 </Callout>
 
@@ -127,12 +127,12 @@ Because authentication is resolved once at connect time, refresh a short-lived J
 
 ## Permissions
 
-The handshake authenticates **who** you are; it does not pre-authorize **what** you can see. Permissions are enforced **per delivered event**: a subscription such as `subscribeToTodo` checks `permissions.todo(id).view()` before each record event reaches you. Subscribing always succeeds for an authenticated user, but you only receive events for the records, workspaces, and organizations you have access to. Scoping with `x-bloo-company-id` / `x-bloo-project-id` narrows which events are considered in the first place; it does not grant access you would not otherwise have.
+The handshake authenticates **who** you are; it does not pre-authorize **what** you can see. Permissions are enforced **per delivered event**: a subscription such as `subscribeToTodo` checks `permissions.todo(id).view()` before each record event reaches you. Subscribing always succeeds for an authenticated user, but you only receive events for the records, workspaces, and organizations you have access to. Scoping with `blue-org-id` / `blue-workspace-id` narrows which events are considered in the first place; it does not grant access you would not otherwise have.
 
 ## Related
 
 - [Real-time overview](/api/realtime) — the shared payload shape and the full list of subscriptions
-- [Record & Todo-List subscriptions](/api/realtime/record-subscriptions) — stream the core entity
+- [Record & RecordList subscriptions](/api/realtime/record-subscriptions) — stream the core entity
 - [Activity, mentions & notifications](/api/realtime/activity-notifications) — the `subscribeToActivity` channel used above
 - [Authentication](/api/start-guide/authentication) — create a Personal Access Token
 - [Making requests](/api/start-guide/making-requests) — the HTTP GraphQL endpoint

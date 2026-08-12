@@ -58,7 +58,7 @@ mutation CreateTotalOrderValue {
 
 ## Set a value
 
-Rollup fields are computed — `setTodoCustomField` rejects them with a `BAD_USER_INPUT` error. The value changes only when the underlying records or their aggregated field change.
+Rollup fields are computed — `setRecordCustomField` rejects them with a `BAD_USER_INPUT` error. The value changes only when the underlying records or their aggregated field change.
 
 ## Read a value
 
@@ -66,7 +66,7 @@ A rollup result lands in exactly one of three typed columns depending on what it
 
 ```graphql
 query RecordRollups {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: [], projectIds: ["project_123"] }, limit: 5) {
       items {
         id
@@ -89,7 +89,7 @@ query RecordRollups {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {

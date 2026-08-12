@@ -7,8 +7,8 @@ order: 3
 
 Removing a user revokes their access and cleans up their assignments. Blue offers two scopes, mapped to two mutations:
 
-- **`removeProjectUser`** detaches a user from a single workspace (`Project`) while keeping their organization (`Company`) membership and access to other workspaces.
-- **`removeCompanyUser`** removes a user from the organization entirely, cascading the removal across every workspace they belonged to.
+- **`removeProjectUser`** detaches a user from a single workspace (`Workspace`) while keeping their organization (`Organization`) membership and access to other workspaces.
+- **`removeOrganizationUser`** removes a user from the organization entirely, cascading the removal across every workspace they belonged to.
 
 Both are permanent. There is no "undo" — re-granting access means re-inviting the user with [`inviteUser`](/api/user-management/invite-user). Historical data the user created (records, comments, activity) is preserved.
 
@@ -18,9 +18,9 @@ All requests go to `https://api.blue.app/graphql` with your personal access toke
 
 ```bash
 curl https://api.blue.app/graphql \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -H "Content-Type: application/json" \
   --data '{"query":"..."}'
 ```
@@ -44,11 +44,11 @@ mutation RemoveWorkspaceUser {
 
 ### Remove a user from the organization
 
-Use `removeCompanyUser` to remove a user from the whole organization. `companyId` accepts either the organization **ID or slug**.
+Use `removeOrganizationUser` to remove a user from the whole organization. `companyId` accepts either the organization **ID or slug**.
 
 ```graphql
 mutation RemoveOrganizationUser {
-  removeCompanyUser(input: { companyId: "company_123", userId: "user_123" })
+  removeOrganizationUser(input: { companyId: "company_123", userId: "user_123" })
 }
 ```
 
@@ -83,12 +83,12 @@ mutation RemoveOrganizationUser {
 }
 ```
 
-`removeCompanyUser` returns a bare `Boolean` — `true` on success. There are no subfields to select.
+`removeOrganizationUser` returns a bare `Boolean` — `true` on success. There are no subfields to select.
 
 ```json
 {
   "data": {
-    "removeCompanyUser": true
+    "removeOrganizationUser": true
   }
 }
 ```
@@ -102,7 +102,7 @@ mutation RemoveOrganizationUser {
 | `success`     | `Boolean!` | `true` when the user was removed. |
 | `operationId` | `String`   | Always `null` for this mutation.  |
 
-#### removeCompanyUser — `Boolean`
+#### removeOrganizationUser — `Boolean`
 
 `true` when the user was removed from the organization.
 
@@ -112,14 +112,14 @@ These mutations do more than drop a membership row. Know what each one cleans up
 
 ### removeProjectUser
 
-- Unassigns the user from every record (`Todo`) in the workspace.
+- Unassigns the user from every record (`Record`) in the workspace.
 - Removes the user from any **assignee** custom-field values on records in the workspace.
 - Deletes the user's **personal** saved views in the workspace (shared saved views are kept).
 - Deletes the user's per-workspace folders.
 - Removes the workspace membership and publishes a real-time update to other members.
 - Writes an activity-log entry.
 
-### removeCompanyUser
+### removeOrganizationUser
 
 Cascades across every workspace in the organization:
 
@@ -134,7 +134,7 @@ Cascades across every workspace in the organization:
 
 <Callout variant="warning" title="Removing the last seat does not cancel billing">
 
-`removeCompanyUser` lowers the billed seat quantity on the Stripe subscription but does not cancel the subscription. Manage the plan itself through billing, not by removing users.
+`removeOrganizationUser` lowers the billed seat quantity on the Stripe subscription but does not cancel the subscription. Manage the plan itself through billing, not by removing users.
 
 </Callout>
 
@@ -143,7 +143,7 @@ Cascades across every workspace in the organization:
 | Code                | Returned by         | When                                                                                                                                                          |
 | ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PROJECT_NOT_FOUND` | `removeProjectUser` | No workspace matches `projectId`.                                                                                                                             |
-| `COMPANY_NOT_FOUND` | `removeCompanyUser` | No organization matches the `companyId` ID or slug.                                                                                                           |
+| `COMPANY_NOT_FOUND` | `removeOrganizationUser` | No organization matches the `companyId` ID or slug.                                                                                                           |
 | `USER_NOT_FOUND`    | both                | No user matches `userId`.                                                                                                                                     |
 | `FORBIDDEN`         | both                | The caller lacks the required role, the target is a workspace `OWNER` (cannot be removed), or the target user is not a member of that workspace/organization. |
 
@@ -174,7 +174,7 @@ Requires a workspace access level of `OWNER` or `ADMIN`. A workspace `OWNER` can
 | `COMMENT_ONLY`         | No               |
 | `VIEW_ONLY`            | No               |
 
-### removeCompanyUser
+### removeOrganizationUser
 
 Requires an organization access level of `OWNER`. Organization `ADMIN`s cannot remove users.
 

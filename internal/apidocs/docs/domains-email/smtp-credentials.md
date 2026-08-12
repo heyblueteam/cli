@@ -140,7 +140,7 @@ If the live connection fails, the credential is still created but `verifiedAt` i
 
 ## List credentials
 
-Use the `smtpCredentials` query to page through the SMTP credentials stored for the organization in the `X-Bloo-Company-ID` header. Results are scoped to that organization; only its members can read them.
+Use the `smtpCredentials` query to page through the SMTP credentials stored for the organization in the `blue-org-id` header. Results are scoped to that organization; only its members can read them.
 
 <Callout variant="warning" title="This query returns the password in plaintext">
 
@@ -222,7 +222,7 @@ query SmtpCredentials {
 
 | Code        | When                                                             |
 | ----------- | ---------------------------------------------------------------- |
-| `FORBIDDEN` | You are not a member of the organization in `X-Bloo-Company-ID`. |
+| `FORBIDDEN` | You are not a member of the organization in `blue-org-id`. |
 
 ## Update credentials
 
@@ -382,7 +382,7 @@ A failed connection returns `false` rather than erroring:
 Access to this resource is asymmetric:
 
 - **Mutations** (`createSmtpCredential`, `updateSmtpCredential`, `deleteSmtpCredential`, `verifySmtpCredential`) require you to be an `OWNER` or `ADMIN` of the organization **and** require the organization to have the **`white_label`** feature enabled. Missing membership/role yields `FORBIDDEN`; a missing feature yields `PRO_REQUIRED`. White-label is bundled with the Pro plan — see the [section overview](/api/domains-email).
-- **The `smtpCredentials` query** requires only that you are a member of the organization in `X-Bloo-Company-ID` (any `CompanyUser` row). It does **not** require the `white_label` feature. Because it returns the decrypted password, treat its output as sensitive.
+- **The `smtpCredentials` query** requires only that you are a member of the organization in `blue-org-id` (any `CompanyUser` row). It does **not** require the `white_label` feature. Because it returns the decrypted password, treat its output as sensitive.
 
 ## Related
 

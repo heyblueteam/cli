@@ -5,13 +5,13 @@ icon: AlignLeft
 order: 6
 ---
 
-A multi-line text field stores free-form text that can span several lines, such as descriptions, notes, or logs. It is the `TEXT_MULTI` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects scoped to a workspace (a `Project` in the API); records are `Todo` objects.
+A multi-line text field stores free-form text that can span several lines, such as descriptions, notes, or logs. It is the `TEXT_MULTI` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects scoped to a workspace (a `Workspace` in the API); records are `Record` objects.
 
 `TEXT_MULTI` and [`TEXT_SINGLE`](/api/custom-fields/text-single) store and validate text the same way — the difference is the editor the app renders (a multi-line textarea versus a single-line input). Choose `TEXT_MULTI` when you expect line breaks.
 
 ## Create
 
-Create the field with `createCustomField`. The workspace is taken from the `X-Bloo-Project-ID` header — there is no `projectId` argument.
+Create the field with `createCustomField`. The workspace is taken from the `blue-workspace-id` header — there is no `projectId` argument.
 
 ```graphql
 mutation CreateTextMultiField {
@@ -66,11 +66,11 @@ A successful call returns the created `CustomField`:
 
 ## Set a value
 
-Write text to a record with `setTodoCustomField`, using the `text` argument. The mutation returns `Boolean!` — `true` on success — so it takes no selection set.
+Write text to a record with `setRecordCustomField`, using the `text` argument. The mutation returns `Boolean!` — `true` on success — so it takes no selection set.
 
 ```graphql
 mutation SetTextMultiValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -81,22 +81,37 @@ mutation SetTextMultiValue {
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+To store formatting (bold, italic, headings, lists, links), pass sanitized HTML via `html` instead of `text`. The server derives a plain-text mirror from it automatically — a `text` sent alongside `html` in the same request is ignored.
 
-| Parameter       | Type      | Required | Description                                                         |
-| --------------- | --------- | -------- | ------------------------------------------------------------------- |
-| `todoId`        | `String!` | Yes      | ID of the record to write to.                                       |
-| `customFieldId` | `String!` | Yes      | ID of the `TEXT_MULTI` field.                                       |
-| `text`          | `String`  | No       | The text to store. Newlines are preserved. Omit to clear the value. |
+```graphql
+mutation SetTextMultiRichValue {
+  setRecordCustomField(
+    input: {
+      todoId: "todo_123"
+      customFieldId: "field_123"
+      html: "<p>Kickoff call done.</p><ul><li>Send proposal by Friday</li></ul>"
+    }
+  )
+}
+```
 
-You can also set the value when creating a record. `CreateTodoInput.customFields` takes `CreateTodoInputCustomField` entries (`{ customFieldId, value }`), where `value` is the text passed as a string:
+### SetRecordCustomFieldInput
+
+| Parameter       | Type      | Required | Description                                                                                                                                                             |
+| --------------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `todoId`        | `String!` | Yes      | ID of the record to write to.                                                                                                                                           |
+| `customFieldId` | `String!` | Yes      | ID of the `TEXT_MULTI` field.                                                                                                                                           |
+| `text`          | `String`  | No       | The text to store. Newlines are preserved. Ignored when `html` is also set. Omit both to clear the value.                                                               |
+| `html`          | `String`  | No       | Rich-text HTML to store. Sanitized server-side to a formatting-only allowlist (no images, files, embeds, tables, or mentions); `text` is derived from it automatically. |
+
+You can also set the value when creating a record. `CreateRecordInput.customFields` takes `CreateRecordInputCustomField` entries (`{ customFieldId, value }`), where `value` is the text passed as a string:
 
 ```graphql
 mutation CreateRecordWithNotes {
-  createTodo(
+  createRecord(
     input: {
       title: "Acme onboarding"
       todoListId: "list_123"
@@ -116,11 +131,11 @@ mutation CreateRecordWithNotes {
 
 ## Read a value
 
-`Todo.customFields` returns `CustomField` objects directly — there is no junction wrapper type. Read the value on each element. For `TEXT_MULTI`, the `value` field resolves to the stored string (the same string is also on the `text` field).
+`Record.customFields` returns `CustomField` objects directly — there is no junction wrapper type. Read the value on each element. For `TEXT_MULTI`, `text` and `value` always resolve to the plain-text string; `html` resolves to the sanitized rich-text HTML when the value was set with formatting (`null` otherwise).
 
 ```graphql
 query GetRecordNotes {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -129,6 +144,7 @@ query GetRecordNotes {
           name
           type
           text
+          html
           value
         }
       }
@@ -140,7 +156,7 @@ query GetRecordNotes {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -150,8 +166,9 @@ query GetRecordNotes {
               {
                 "name": "Notes",
                 "type": "TEXT_MULTI",
-                "text": "Kickoff call done.\n\nNext: send proposal by Friday.",
-                "value": "Kickoff call done.\n\nNext: send proposal by Friday."
+                "text": "Kickoff call done.\nSend proposal by Friday",
+                "html": "<p>Kickoff call done.</p><ul><li>Send proposal by Friday</li></ul>",
+                "value": "Kickoff call done.\nSend proposal by Friday"
               }
             ]
           }
@@ -164,19 +181,22 @@ query GetRecordNotes {
 
 ### CustomField (record context)
 
-When a `CustomField` is read through `Todo.customFields`, these fields carry the record's value:
+When a `CustomField` is read through `Record.customFields`, these fields carry the record's value:
 
-| Field   | Type               | Description                                                         |
-| ------- | ------------------ | ------------------------------------------------------------------- |
-| `name`  | `String!`          | The field's display name.                                           |
-| `type`  | `CustomFieldType!` | `TEXT_MULTI` for this field.                                        |
-| `text`  | `String`           | The stored text, including line breaks.                             |
-| `value` | `JSON`             | The resolved value — the plain text string for `TEXT_MULTI` fields. |
+| Field   | Type               | Description                                                                                          |
+| ------- | ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `name`  | `String!`          | The field's display name.                                                                            |
+| `type`  | `CustomFieldType!` | `TEXT_MULTI` for this field.                                                                         |
+| `text`  | `String`           | The plain-text mirror, including line breaks. Always plain text, even when the value has formatting. |
+| `html`  | `String`           | Sanitized rich-text HTML, `null` if the value has never been set with formatting.                    |
+| `value` | `JSON`             | The resolved value — the plain text string for `TEXT_MULTI` fields (same contract as `text`).        |
 
 ## Notes
 
 - Text is stored verbatim through the API: no trimming, no length limit beyond the column's storage capacity, and full Unicode support. Forms applied to the field may trim whitespace and enforce required-ness; the direct API does not.
-- `value` is only populated when the `CustomField` is read in a record context (through `Todo.customFields`). On a bare field definition fetched from the [`customFields`](/api/custom-fields/list-custom-fields) query it is `null`.
+- `text`/`value` are always plain text — CSV export, automations, webhooks, and this `value` field never receive HTML, regardless of how the value was set. `html` is the only field that carries formatting; read it explicitly if you need it.
+- `html` accepts a formatting-only allowlist (paragraphs, headings, bold/italic/underline/strikethrough, inline code, bullet/ordered lists, links) — images, files, embeds, tables, and mentions are stripped on write.
+- `value` is only populated when the `CustomField` is read in a record context (through `Record.customFields`). On a bare field definition fetched from the [`customFields`](/api/custom-fields/list-custom-fields) query it is `null`.
 - `TEXT_MULTI` and `TEXT_SINGLE` share storage and validation; this parity is current behavior, not a guaranteed contract.
 
 ## Errors
@@ -193,5 +213,5 @@ When a `CustomField` is read through `Todo.customFields`, these fields carry the
 - [Single-Line Text Field](/api/custom-fields/text-single) — short, single-line values.
 - [Email Field](/api/custom-fields/email) — email addresses.
 - [URL Field](/api/custom-fields/url) — links.
-- [Set custom field values](/api/custom-fields/custom-field-values) — the `setTodoCustomField` reference.
+- [Set custom field values](/api/custom-fields/custom-field-values) — the `setRecordCustomField` reference.
 - [Custom Fields overview](/api/custom-fields) — types, access control, and operations.

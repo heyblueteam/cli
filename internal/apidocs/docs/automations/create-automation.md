@@ -5,13 +5,13 @@ icon: Plus
 order: 1
 ---
 
-Use the `createAutomation` mutation to build an automation in a workspace: a single **trigger** (the event to watch for) plus one or more **actions** that run when the trigger fires. Automations are workspace-scoped (workspaces are `Project` objects in the API) and are created in an active state by default.
+Use the `createAutomation` mutation to build an automation in a workspace: a single **trigger** (the event to watch for) plus one or more **actions** that run when the trigger fires. Automations are workspace-scoped (workspaces are `Workspace` objects in the API) and are created in an active state by default.
 
-The automation is created in the workspace identified by the `X-Bloo-Project-ID` header, which accepts a workspace ID or slug.
+The automation is created in the workspace identified by the `blue-workspace-id` header, which accepts a workspace ID or slug.
 
 ## Request
 
-The smallest automation needs a trigger `type` and at least one action. This one adds a tag to every record (`Todo`) the moment it is created.
+The smallest automation needs a trigger `type` and at least one action. This one adds a tag to every record (`Record`) the moment it is created.
 
 ```graphql
 mutation CreateAutomation {
@@ -52,7 +52,7 @@ The trigger fields that apply depend on `type`. Most fields are filters that nar
 | `metadata`             | `AutomationTriggerMetadataInput`       | No       | Trigger-specific settings (e.g. due-date `offset` for `DUE_DATE_EXPIRED`).                                                             |
 | `customFieldId`        | `String`                               | No       | Custom field to watch (for custom-field triggers).                                                                                     |
 | `customFieldOptionIds` | `[String!]`                            | No       | Specific custom-field option IDs to match.                                                                                             |
-| `todoListId`           | `String`                               | No       | Restrict the trigger to a single list (`TodoList`).                                                                                    |
+| `todoListId`           | `String`                               | No       | Restrict the trigger to a single list (`RecordList`).                                                                                  |
 | `todoListIds`          | `[String!]`                            | No       | Restrict the trigger to multiple lists.                                                                                                |
 | `tagIds`               | `[String!]`                            | No       | Tag IDs that must match.                                                                                                               |
 | `todoIds`              | `[String!]`                            | No       | Restrict the trigger to specific records.                                                                                              |
@@ -115,13 +115,13 @@ The fields that apply depend on `type` — e.g. `tagIds` for `ADD_TAG`/`REMOVE_T
 
 ### AutomationActionMetadataInput
 
-| Parameter         | Type                                     | Required | Description                                                          |
-| ----------------- | ---------------------------------------- | -------- | -------------------------------------------------------------------- |
-| `email`           | `AutomationActionSendEmailInput`         | No       | Email configuration for `SEND_EMAIL`.                                |
-| `checklists`      | `[AutomationActionCreateChecklistInput]` | No       | Checklists to create for `CREATE_CHECKLIST`.                         |
-| `copyTodoOptions` | `[CopyTodoOption!]`                      | No       | What to copy for `COPY_TODO`. See [CopyTodoOption](#copytodooption). |
-| `number`          | `Float`                                  | No       | Numeric value for custom-field actions.                              |
-| `text`            | `String`                                 | No       | Text value for custom-field actions.                                 |
+| Parameter         | Type                                     | Required | Description                                                              |
+| ----------------- | ---------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| `email`           | `AutomationActionSendEmailInput`         | No       | Email configuration for `SEND_EMAIL`.                                    |
+| `checklists`      | `[AutomationActionCreateChecklistInput]` | No       | Checklists to create for `CREATE_CHECKLIST`.                             |
+| `copyTodoOptions` | `[CopyRecordOption!]`                    | No       | What to copy for `COPY_TODO`. See [CopyRecordOption](#copyrecordoption). |
+| `number`          | `Float`                                  | No       | Numeric value for custom-field actions.                                  |
+| `text`            | `String`                                 | No       | Text value for custom-field actions.                                     |
 
 ### AutomationActionSendEmailInput
 
@@ -274,7 +274,7 @@ Used by `MAKE_HTTP_REQUEST` actions.
 | `YEARLY`   | On `dayOfMonth` of `month` each year. |
 | `CUSTOM`   | On a `cronExpression`.                |
 
-### CopyTodoOption
+### CopyRecordOption
 
 What to carry over when a `COPY_TODO` action runs: `DESCRIPTION`, `DUE_DATE`, `ASSIGNEES`, `TAGS`, `COMMENTS`, `CHECKLISTS`, `CUSTOM_FIELDS`.
 
@@ -313,7 +313,7 @@ What to carry over when a `COPY_TODO` action runs: `DESCRIPTION`, `DUE_DATE`, `A
 | `actions`   | `[AutomationAction!]!` | The configured actions.                                       |
 | `isActive`  | `Boolean!`             | Whether the automation is active. New automations are active. |
 | `createdBy` | `User!`                | The user who created the automation.                          |
-| `project`   | `Project!`             | The workspace the automation belongs to.                      |
+| `project`   | `Workspace!`           | The workspace the automation belongs to.                      |
 | `createdAt` | `DateTime!`            | Creation timestamp.                                           |
 | `updatedAt` | `DateTime!`            | Last update timestamp.                                        |
 
@@ -513,7 +513,7 @@ mutation CreateDueDateAutomation {
 | ------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `UNAUTHENTICATED`   | No valid authentication was provided. Message: `You are not authenticated.`                                          |
 | `FORBIDDEN`         | The user is not an OWNER or ADMIN of the workspace, or the workspace is archived. Message: `You are not authorized.` |
-| `PROJECT_NOT_FOUND` | The `X-Bloo-Project-ID` header is missing or does not resolve. Message: `Project was not found.`                     |
+| `PROJECT_NOT_FOUND` | The `blue-workspace-id` header is missing or does not resolve. Message: `Project was not found.`                     |
 
 ```json
 {

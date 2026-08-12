@@ -7,7 +7,7 @@ order: 25
 
 A Reference field links a record to one or more records in another workspace — for example, connecting a task to the feature request it implements, or a deal to its account. References are the `REFERENCE` value of the `CustomFieldType` enum.
 
-Custom fields are `CustomField` objects in the API; records are `Todo` objects and workspaces are `Project` objects. A Reference field always points at a target workspace (`referenceProjectId`); the records a user can link are drawn from that workspace, optionally narrowed by a filter.
+Custom fields are `CustomField` objects in the API; records are `Record` objects and workspaces are `Workspace` objects. A Reference field always points at a target workspace (`referenceProjectId`); the records a user can link are drawn from that workspace, optionally narrowed by a filter.
 
 To pull specific data _out_ of linked records (their tags, assignees, or a single field value), pair a Reference with a [Lookup field](/api/custom-fields/lookup). To aggregate across linked records (sum, count, average), use a [Rollup field](/api/custom-fields/rollup). To see the records that point _at_ a given record, use a [Referenced-by field](/api/custom-fields/referenced-by).
 
@@ -16,8 +16,8 @@ To pull specific data _out_ of linked records (their tags, assignees, or a singl
 | Property          | Value                                                                      |
 | ----------------- | -------------------------------------------------------------------------- |
 | `CustomFieldType` | `REFERENCE`                                                                |
-| Set with          | `setTodoCustomField` → `customFieldReferenceTodoIds: [String!]`            |
-| Read with         | `selectedTodos: [Todo!]` (always an array) — or the raw `value` JSON       |
+| Set with          | `setRecordCustomField` → `customFieldReferenceTodoIds: [String!]`            |
+| Read with         | `selectedTodos: [Record!]` (always an array) — or the raw `value` JSON       |
 | Target workspace  | Required: `referenceProjectId`                                             |
 | Cardinality       | `referenceMultiple` — UI selection only; the wire shape is always an array |
 
@@ -25,7 +25,7 @@ To pull specific data _out_ of linked records (their tags, assignees, or a singl
 
 ## Create
 
-Create a Reference field that links to records in another workspace. `referenceProjectId` is required for `REFERENCE` fields — the resolver rejects the call without it. The field is scoped to the workspace in your `X-Bloo-Project-ID` header; there is no `projectId` argument.
+Create a Reference field that links to records in another workspace. `referenceProjectId` is required for `REFERENCE` fields — the resolver rejects the call without it. The field is scoped to the workspace in your `blue-workspace-id` header; there is no `projectId` argument.
 
 ```graphql
 mutation CreateReferenceField {
@@ -93,13 +93,13 @@ To change a Reference field's target workspace, filter, or cardinality after cre
 
 ## Set a value
 
-Link records with `setTodoCustomField`, passing the target record IDs in `customFieldReferenceTodoIds`. This is always an array — pass one ID for a single-select field, several for a multi-select field. The set call **replaces** the current link set: any IDs you omit are unlinked.
+Link records with `setRecordCustomField`, passing the target record IDs in `customFieldReferenceTodoIds`. This is always an array — pass one ID for a single-select field, several for a multi-select field. The set call **replaces** the current link set: any IDs you omit are unlinked.
 
-The mutation returns `Boolean!` — it has no selectable sub-fields. Read the value back with a separate `todoQueries { todos }` query (see [Read a value](#read-a-value)).
+The mutation returns `Boolean!` — it has no selectable sub-fields. Read the value back with a separate `recordQueries { todos }` query (see [Read a value](#read-a-value)).
 
 ```graphql
 mutation LinkRecords {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -110,12 +110,12 @@ mutation LinkRecords {
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
 To clear all links, pass an empty array: `customFieldReferenceTodoIds: []`.
 
-### SetTodoCustomFieldInput (Reference fields)
+### SetRecordCustomFieldInput (Reference fields)
 
 | Parameter                     | Type        | Required              | Description                                                                                                                                                         |
 | ----------------------------- | ----------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -131,11 +131,11 @@ Only IDs whose records belong to the field's `referenceProjectId` are linked. ID
 
 ## Read a value
 
-A Reference field's value comes back on `Todo.customFields` as a `CustomField` rendered in record context. `Todo.customFields` returns `[CustomField!]!` directly — there is no wrapper type. The linked records are exposed on `selectedTodos` (always an array) and, identically, on the raw `value` JSON.
+A Reference field's value comes back on `Record.customFields` as a `CustomField` rendered in record context. `Record.customFields` returns `[CustomField!]!` directly — there is no wrapper type. The linked records are exposed on `selectedTodos` (always an array) and, identically, on the raw `value` JSON.
 
 ```graphql
 query GetRecordWithReferences {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -169,7 +169,7 @@ query GetRecordWithReferences {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -203,34 +203,34 @@ query GetRecordWithReferences {
 
 ### CustomField (record context)
 
-When a `CustomField` is resolved through `Todo.customFields`, these are the relevant fields for a Reference field:
+When a `CustomField` is resolved through `Record.customFields`, these are the relevant fields for a Reference field:
 
 | Field           | Type               | Description                                                                                            |
 | --------------- | ------------------ | ------------------------------------------------------------------------------------------------------ |
 | `id`            | `ID!`              | The field definition ID.                                                                               |
 | `name`          | `String!`          | Field display name.                                                                                    |
 | `type`          | `CustomFieldType!` | `REFERENCE`.                                                                                           |
-| `selectedTodos` | `[Todo!]`          | The linked records. Always an array, regardless of `referenceMultiple`. `null` outside record context. |
+| `selectedTodos` | `[Record!]`        | The linked records. Always an array, regardless of `referenceMultiple`. `null` outside record context. |
 | `value`         | `JSON`             | The same linked records as raw JSON — `selectedTodos` is the typed accessor for it.                    |
-| `todo`          | `Todo`             | The record this value belongs to (the host record).                                                    |
+| `todo`          | `Record`           | The record this value belongs to (the host record).                                                    |
 | `createdAt`     | `DateTime!`        | When the field was created.                                                                            |
 | `updatedAt`     | `DateTime!`        | When the field was last modified.                                                                      |
 
-The value object is a `CustomField` carrying record-aware fields — there is no separate `TodoCustomField` join type and no `customField { … }` sub-object. Select linked-record fields directly on `selectedTodos`.
+The value object is a `CustomField` carrying record-aware fields — there is no separate `RecordCustomField` join type and no `customField { … }` sub-object. Select linked-record fields directly on `selectedTodos`.
 
-<Callout variant="warning" title="Use real Todo fields">
+<Callout variant="warning" title="Use real Record fields">
 
-A linked `Todo` has no `status`, `dueDate`, or `assignees` field, and there is no `TodoStatus` enum. Completion is `done: Boolean!`; the due date is `duedAt`; assignees are `users` (`User.fullName` / `firstName` / `lastName`). A `Tag` exposes `title`, not `name`.
+A linked `Record` has no `status`, `dueDate`, or `assignees` field, and there is no `RecordStatus` enum. Completion is `done: Boolean!`; the due date is `duedAt`; assignees are `users` (`User.fullName` / `firstName` / `lastName`). A `Tag` exposes `title`, not `name`.
 
 </Callout>
 
 ## Create a record with references
 
-`createTodo` accepts a `customFields` array of `CreateTodoInputCustomField` entries. Each entry takes a single `value` string, so it sets exactly one linked record at create time. To link several records at once, create the record first, then call `setTodoCustomField` with the full `customFieldReferenceTodoIds` array.
+`createRecord` accepts a `customFields` array of `CreateRecordInputCustomField` entries. Each entry takes a single `value` string, so it sets exactly one linked record at create time. To link several records at once, create the record first, then call `setRecordCustomField` with the full `customFieldReferenceTodoIds` array.
 
 ```graphql
 mutation CreateRecordWithReference {
-  createTodo(
+  createRecord(
     input: {
       title: "Implement onboarding flow"
       todoListId: "list_123"
@@ -255,10 +255,10 @@ mutation CreateRecordWithReference {
 ## Notes
 
 - **Cardinality is wire-shape neutral.** Whether `referenceMultiple` is `true` or `false`, you set values with the `customFieldReferenceTodoIds` array and read them from the `selectedTodos` array. The flag only limits how many records the app's picker allows.
-- **Set replaces, not appends.** `setTodoCustomField` overwrites the link set with exactly the IDs you pass. Include every link you want to keep.
+- **Set replaces, not appends.** `setRecordCustomField` overwrites the link set with exactly the IDs you pass. Include every link you want to keep.
 - **Filters are advisory.** `referenceFilter` shapes the in-app picker but is not enforced on API writes — you can link any record in the target workspace.
 - **Cross-workspace visibility.** A viewer only sees linked records in workspaces they can access. The link itself persists regardless of the viewer's access.
-- **REFERENCE vs. REFERENCED_BY.** A Reference field stores the links you set. A [Referenced-by field](/api/custom-fields/referenced-by) is the computed reverse view — it lists the records that point at the host record — and cannot be set with `setTodoCustomField`.
+- **REFERENCE vs. REFERENCED_BY.** A Reference field stores the links you set. A [Referenced-by field](/api/custom-fields/referenced-by) is the computed reverse view — it lists the records that point at the host record — and cannot be set with `setRecordCustomField`.
 
 ## Errors
 
@@ -266,8 +266,8 @@ mutation CreateRecordWithReference {
 | ------------------------ | --------------------------------------------------------------------------------------------------- |
 | `BAD_USER_INPUT`         | `referenceProjectId` is missing on a `REFERENCE` field at create time.                              |
 | `PROJECT_NOT_FOUND`      | `referenceProjectId` does not resolve to a workspace you can access.                                |
-| `CUSTOM_FIELD_NOT_FOUND` | `customFieldId` does not resolve to a field in a workspace you belong to (on `setTodoCustomField`). |
-| `TODO_NOT_FOUND`         | `todoId` does not resolve to a record you can edit.                                                 |
+| `CUSTOM_FIELD_NOT_FOUND` | `customFieldId` does not resolve to a field in a workspace you belong to (on `setRecordCustomField`). |
+| `TODO_NOT_FOUND`         | `todoId` does not resolve to a record you can edit.                                                   |
 | `FORBIDDEN`              | You lack permission to manage custom fields in this workspace, or your role cannot edit this field. |
 
 ## Related
@@ -275,6 +275,6 @@ mutation CreateRecordWithReference {
 - [Lookup Field](/api/custom-fields/lookup) — pull a value out of linked records.
 - [Rollup Field](/api/custom-fields/rollup) — aggregate across linked records.
 - [Referenced-by Field](/api/custom-fields/referenced-by) — the computed reverse view of incoming references.
-- [Set field values](/api/custom-fields/custom-field-values) — the full `setTodoCustomField` input mapping.
+- [Set field values](/api/custom-fields/custom-field-values) — the full `setRecordCustomField` input mapping.
 - [Create custom fields](/api/custom-fields/create-custom-fields) — the `createCustomField` mutation in full.
 - [List records](/api/records/list-records) — the `TodoFilterInput` fields available to `referenceFilter`.

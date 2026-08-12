@@ -7,7 +7,7 @@ order: 0
 
 Automations run actions automatically when something happens in a workspace — for example, moving a record to a list when it's marked complete, or assigning the person who triggered the change. Each automation is **project-scoped** and pairs one **trigger** (the event to watch) with one or more **actions** (what to do).
 
-Workspaces are `Project` objects in the API; records are `Todo` objects. Every automation belongs to a single project, identified by the `X-Bloo-Project-ID` header or the `projectId` filter argument.
+Workspaces are `Workspace` objects in the API; records are `Record` objects. Every automation belongs to a single workspace, identified by the `X-Bloo-Project-ID` header or the `projectId` filter argument.
 
 ## Operations
 
@@ -21,7 +21,7 @@ Workspaces are `Project` objects in the API; records are `Todo` objects. Every a
 
 ## Request
 
-Use the `automationList` query to retrieve the automations for a project. With no arguments it returns the current project's automations (from the `X-Bloo-Project-ID` header), newest first.
+Use the `automationList` query to retrieve the automations for a project. With no arguments it returns the current project's automations (from the `blue-workspace-id` header), newest first.
 
 ```graphql
 query ListAutomations {
@@ -112,7 +112,7 @@ When `customFieldIds` (or the deprecated `customFieldId`) is supplied, the query
 | `actions`   | `[AutomationAction!]!` | Ordered list of actions to run when the trigger fires. |
 | `isActive`  | `Boolean!`             | Whether the automation is currently enabled.           |
 | `createdBy` | `User!`                | The user who created the automation.                   |
-| `project`   | `Project!`             | The project this automation belongs to.                |
+| `project`   | `Workspace!`           | The workspace this automation belongs to.              |
 | `createdAt` | `DateTime!`            | When the automation was created.                       |
 | `updatedAt` | `DateTime!`            | When the automation was last changed.                  |
 
@@ -126,8 +126,8 @@ When `customFieldIds` (or the deprecated `customFieldId`) is supplied, the query
 | `customField`                  | `CustomField`                 | The custom field this trigger watches, when applicable.                                                 |
 | `customFieldOptions`           | `[CustomFieldOption!]`        | The select options the trigger reacts to.                                                               |
 | `todos(first: Int, skip: Int)` | `[CustomFieldReferenceTodo!]` | Referenced records, with optional pagination args.                                                      |
-| `todoList`                     | `TodoList`                    | A single related list.                                                                                  |
-| `todoLists`                    | `[TodoList!]!`                | Related lists for the trigger.                                                                          |
+| `todoList`                     | `RecordList`                  | A single related list.                                                                                  |
+| `todoLists`                    | `[RecordList!]!`              | Related lists for the trigger.                                                                          |
 | `tags`                         | `[Tag!]`                      | Related tags.                                                                                           |
 | `assignees`                    | `[User!]`                     | Related assignees.                                                                                      |
 | `color`                        | `String`                      | A single related color (hex).                                                                           |
@@ -153,11 +153,11 @@ When `customFieldIds` (or the deprecated `customFieldId`) is supplied, the query
 | `duedIn`             | `Int`                        | Days from execution to set as the due date (for due-date actions).                                                 |
 | `customField`        | `CustomField`                | The target custom field.                                                                                           |
 | `customFieldOptions` | `[CustomFieldOption!]`       | Select options to set.                                                                                             |
-| `todoList`           | `TodoList`                   | The destination list (for `CHANGE_TODO_LIST`).                                                                     |
+| `todoList`           | `RecordList`                 | The destination list (for `CHANGE_TODO_LIST`).                                                                     |
 | `metadata`           | `AutomationActionMetadata`   | Action-specific config (email, checklist, copy, or custom-field value).                                            |
 | `tags`               | `[Tag!]`                     | Tags to add or remove.                                                                                             |
 | `assignees`          | `[User!]`                    | Assignees to add or remove.                                                                                        |
-| `projects`           | `[Project!]`                 | Target projects (for `ADD_PROJECT`).                                                                               |
+| `projects`           | `[Workspace!]`               | Target workspaces (for `ADD_PROJECT`).                                                                             |
 | `color`              | `String`                     | Color to add or remove (hex).                                                                                      |
 | `assigneeTriggerer`  | `String`                     | Identifier for the user who triggered the automation (for `ADD_ASSIGNEE_TRIGGERER` / `REMOVE_ASSIGNEE_TRIGGERER`). |
 | `portableDocument`   | `PortableDocument`           | The document template used by `GENERATE_PDF`.                                                                      |

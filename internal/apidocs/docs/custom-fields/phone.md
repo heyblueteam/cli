@@ -1,93 +1,105 @@
 ---
-title: Phone Custom Field
-description: Create phone fields to store and validate phone numbers with international formatting
-category: Custom Fields
+title: Phone Field
+description: Store phone numbers on records with a PHONE custom field — international-format validation on create, raw storage on update.
 icon: Phone
+order: 15
 ---
 
-Phone custom fields allow you to store phone numbers in records with built-in validation and international formatting. They're ideal for tracking contact information, emergency contacts, or any phone-related data in your projects.
+A phone custom field stores a single phone number on a record. It's the `PHONE` value of the `CustomFieldType` enum and is the right type for contact numbers, emergency contacts, or any per-record phone you want to display and filter. Custom fields are `CustomField` objects in the API, and records are `Record` objects.
 
-## Basic Example
+The two mutations that write a phone value behave differently, and this is the single most important thing to know about this field type:
 
-Create a simple phone field:
+- **`createRecord`** validates and formats the number — it must include a country code, and the country is derived and stored automatically.
+- **`setRecordCustomField`** stores exactly what you send, with no validation or formatting.
+
+## Overview
+
+|            |                                                                              |
+| ---------- | ---------------------------------------------------------------------------- |
+| Field type | `PHONE`                                                                      |
+| Set with   | `setRecordCustomField` → `text` argument (plus optional `regionCode`)        |
+| Stored on  | `CustomField.text` (the number), `CustomField.regionCode` (ISO country code) |
+| Read with  | `CustomField.text`, `CustomField.regionCode`, or `CustomField.value`         |
+| Validated  | Only by `createRecord`/`createTodo`; `setRecordCustomField` stores as-is     |
+
+## Create
+
+Use the `createCustomField` mutation with `type: PHONE`. The field is scoped to the workspace you pass in the `X-Bloo-Project-ID` header — there is no `projectId` argument or input field.
 
 ```graphql
 mutation CreatePhoneField {
-  createCustomField(input: { name: "Contact Phone", type: PHONE }) {
-    id
-    name
-    type
-  }
-}
-```
-
-## Advanced Example
-
-Create a phone field with description:
-
-```graphql
-mutation CreateDetailedPhoneField {
   createCustomField(
-    input: {
-      name: "Emergency Contact"
-      type: PHONE
-      description: "Emergency contact number with country code"
-    }
+    input: { name: "Contact Phone", type: PHONE, description: "Include the country code" }
   ) {
     id
     name
     type
-    description
   }
 }
 ```
 
-## Input Parameters
-
 ### CreateCustomFieldInput
 
-| Parameter     | Type             | Required | Description                     |
-| ------------- | ---------------- | -------- | ------------------------------- |
-| `name`        | String!          | ✅ Yes   | Display name of the phone field |
-| `type`        | CustomFieldType! | ✅ Yes   | Must be `PHONE`                 |
-| `description` | String           | No       | Help text shown to users        |
+| Parameter     | Type               | Required | Description                          |
+| ------------- | ------------------ | -------- | ------------------------------------ |
+| `name`        | `String!`          | Yes      | Display name of the field.           |
+| `type`        | `CustomFieldType!` | Yes      | Must be `PHONE`.                     |
+| `description` | `String`           | No       | Help text shown to users in the app. |
 
-**Note**: Custom fields are automatically associated with the project based on the user's current project context. No `projectId` parameter is required.
+### Response
 
-## Setting Phone Values
+```json
+{
+  "data": {
+    "createCustomField": {
+      "id": "clm4n8qwx000008l0g4oxdqn7",
+      "name": "Contact Phone",
+      "type": "PHONE"
+    }
+  }
+}
+```
 
-To set or update a phone value on a record:
+## Set a value
+
+Use `setRecordCustomField` with the `text` argument to set the phone number on a record. The mutation returns `Boolean!` — `true` on success — so it takes no sub-selection.
 
 ```graphql
 mutation SetPhoneValue {
-  setTodoCustomField(
-    input: { todoId: "todo_123", customFieldId: "field_456", text: "+1 234 567 8900" }
+  setRecordCustomField(
+    input: { todoId: "todo_123", customFieldId: "field_123", text: "+1 234 567 8900" }
   )
 }
 ```
 
-### SetTodoCustomFieldInput Parameters
+```json
+{
+  "data": {
+    "setRecordCustomField": true
+  }
+}
+```
 
-| Parameter       | Type    | Required | Description                           |
-| --------------- | ------- | -------- | ------------------------------------- |
-| `todoId`        | String! | ✅ Yes   | ID of the record to update            |
-| `customFieldId` | String! | ✅ Yes   | ID of the phone custom field          |
-| `text`          | String  | No       | Phone number with country code        |
-| `regionCode`    | String  | No       | Country code (automatically detected) |
+### SetRecordCustomFieldInput
 
-**Note**: While `text` is optional in the schema, a phone number is required for the field to be meaningful. When using `setTodoCustomField`, no validation is performed - you can store any text value and regionCode. The automatic detection only happens during record creation.
+| Parameter       | Type      | Required | Description                                                                                                                     |
+| --------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `todoId`        | `String!` | Yes      | ID of the record to update.                                                                                                     |
+| `customFieldId` | `String!` | Yes      | ID of the phone field.                                                                                                          |
+| `text`          | `String`  | No       | Phone number to store. No validation or formatting is applied — send it pre-formatted if you need international display format. |
+| `regionCode`    | `String`  | No       | ISO country code to store alongside the number. Not derived automatically by this mutation.                                     |
 
-## Creating Records with Phone Values
+### Set the value when creating a record
 
-When creating a new record with phone values:
+`createRecord` accepts custom-field values inline through `customFields`. Each entry is a `CreateRecordInputCustomField` whose `value` is the phone number. Unlike `setRecordCustomField`, this path validates: the resolver parses the value with libphonenumber-js, stores it on `text` in international display format, and derives `regionCode` from the number automatically. A value that cannot be parsed is rejected with `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
 
 ```graphql
 mutation CreateRecordWithPhone {
-  createTodo(
+  createRecord(
     input: {
       title: "Call client"
       todoListId: "list_123"
-      customFields: [{ customFieldId: "phone_field_id", value: "+1-555-123-4567" }]
+      customFields: [{ customFieldId: "field_123", value: "+1 234 567 8900" }]
     }
   ) {
     id
@@ -103,219 +115,98 @@ mutation CreateRecordWithPhone {
 }
 ```
 
-## Response Fields
-
-### Returned fields (`CustomField` in record context)
-
-Each element of a record's `customFields` is a `CustomField` carrying the value for that record:
-
-| Field        | Type             | Description                                       |
-| ------------ | ---------------- | ------------------------------------------------- |
-| `id`         | ID!              | Unique identifier for the field value             |
-| `name`       | String           | The custom field's display name                   |
-| `type`       | CustomFieldType! | The field type (`PHONE`)                          |
-| `text`       | String           | The formatted phone number (international format) |
-| `regionCode` | String           | The country code (e.g., "US", "GB", "CA")         |
-| `todo`       | Todo!            | The record this value belongs to                  |
-| `createdAt`  | DateTime!        | When the value was created                        |
-| `updatedAt`  | DateTime!        | When the value was last modified                  |
-
-## Phone Number Validation
-
-**Important**: Phone number validation and formatting only occurs when creating new records via `createTodo`. When updating existing phone values using `setTodoCustomField`, no validation is performed and the values are stored as provided.
-
-### Accepted Formats (During Record Creation)
-
-Phone numbers must include a country code in one of these formats:
-
-- **E.164 format (preferred)**: `+12345678900`
-- **International format**: `+1 234 567 8900`
-- **International with punctuation**: `+1 (234) 567-8900`
-- **Country code with dashes**: `+1-234-567-8900`
-
-**Note**: National formats without country code (like `(234) 567-8900`) will be rejected during record creation.
-
-### Validation Rules (During Record Creation)
-
-- Uses libphonenumber-js for parsing and validation
-- Accepts various international phone number formats
-- Automatically detects country from the number
-- Formats number in international display format (e.g., `+1 234 567 8900`)
-- Extracts and stores country code separately (e.g., `US`)
-
-### Valid Phone Examples
-
-```
-+12345678900           # E.164 format
-+1 234 567 8900        # International format
-+1 (234) 567-8900      # With parentheses
-+1-234-567-8900        # With dashes
-+44 20 7946 0958       # UK number
-+33 1 42 86 83 26      # French number
-```
-
-### Invalid Phone Examples
-
-```
-(234) 567-8900         # Missing country code
-234-567-8900           # Missing country code
-123                    # Too short
-invalid-phone          # Not a number
-+1 234                 # Incomplete number
-```
-
-## Storage Format
-
-When creating records with phone numbers:
-
-- **text**: Stored in international format (e.g., `+1 234 567 8900`) after validation
-- **regionCode**: Stored as ISO country code (e.g., `US`, `GB`, `CA`) automatically detected
-
-When updating via `setTodoCustomField`:
-
-- **text**: Stored exactly as provided (no formatting)
-- **regionCode**: Stored exactly as provided (no validation)
-
-## Required Permissions
-
-| Action             | Required Permission                      |
-| ------------------ | ---------------------------------------- |
-| Create phone field | `OWNER` or `ADMIN` role at project level |
-| Update phone field | `OWNER` or `ADMIN` role at project level |
-| Set phone value    | Standard record edit permissions         |
-| View phone value   | Standard record view permissions         |
-
-## Error Responses
-
-### Invalid Phone Format
-
 ```json
 {
-  "errors": [
-    {
-      "message": "Invalid phone number format.",
-      "extensions": {
-        "code": "CUSTOM_FIELD_VALUE_PARSE_ERROR"
-      }
+  "data": {
+    "createRecord": {
+      "id": "clm4n8qwx000008l0g4oxdqn7",
+      "title": "Call client",
+      "customFields": [
+        {
+          "id": "clm4n8qwx000108l0a1b2c3d4",
+          "name": "Contact Phone",
+          "type": "PHONE",
+          "text": "+1 234 567 8900",
+          "regionCode": "US"
+        }
+      ]
     }
-  ]
+  }
 }
 ```
 
-### Field Not Found
+## Read a value
 
-```json
-{
-  "errors": [
-    {
-      "message": "Custom field not found",
-      "extensions": {
-        "code": "CUSTOM_FIELD_NOT_FOUND"
-      }
+Query the record with the top-level `todo(id:)` query and select `customFields`. The field returns `[CustomField!]!` directly — each element is a `CustomField`, with no wrapper object. For a `PHONE` field, the number is on `text` and the country on `regionCode`; `value` is a convenience accessor returning the same stored number.
+
+```graphql
+query GetRecordWithPhone {
+  todo(id: "todo_123") {
+    id
+    title
+    customFields {
+      id
+      name
+      type
+      text
+      regionCode
+      value
     }
-  ]
+  }
 }
 ```
 
-### Missing Country Code
-
 ```json
 {
-  "errors": [
-    {
-      "message": "Invalid phone number format.",
-      "extensions": {
-        "code": "CUSTOM_FIELD_VALUE_PARSE_ERROR"
-      }
+  "data": {
+    "todo": {
+      "id": "clm4n8qwx000008l0g4oxdqn7",
+      "title": "Call client",
+      "customFields": [
+        {
+          "id": "clm4n8qwx000108l0a1b2c3d4",
+          "name": "Contact Phone",
+          "type": "PHONE",
+          "text": "+1 234 567 8900",
+          "regionCode": "US",
+          "value": "+1 234 567 8900"
+        }
+      ]
     }
-  ]
+  }
 }
 ```
 
-## Best Practices
+### Returns
 
-### Data Entry
+| Field        | Type               | Description                                                                                                                    |
+| ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `id`         | `ID!`              | The custom field's ID.                                                                                                         |
+| `name`       | `String!`          | Display name of the field.                                                                                                     |
+| `type`       | `CustomFieldType!` | Always `PHONE` for this field.                                                                                                 |
+| `text`       | `String`           | The stored phone number.                                                                                                       |
+| `regionCode` | `String`           | ISO country code stored alongside the number (e.g. `US`, `GB`). Only populated if set explicitly or derived by `createRecord`. |
+| `value`      | `JSON`             | Convenience accessor returning the same phone string. Only populated when the field is read in a record context.               |
 
-- Always include country code in phone numbers
-- Use E.164 format for consistency
-- Validate numbers before storing for important operations
-- Consider regional preferences for display formatting
+## Notes
 
-### Data Quality
+- `createRecord`/`createTodo` requires the number to include a country code — E.164 (`+12345678900`) and international formats with punctuation (`+1 (234) 567-8900`, `+1-234-567-8900`) all work. National formats without a country code (e.g. `(234) 567-8900`) are rejected with `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
+- `createRecord` formats the accepted number to international display form (`+1 234 567 8900`) and derives `regionCode` from it automatically using libphonenumber-js.
+- `setRecordCustomField` does neither — it stores any string in `text` and any value in `regionCode`, unchanged. Validate and format numbers in your own code before calling it if you need clean data.
 
-- Store numbers in international format for global compatibility
-- Use regionCode for country-specific features
-- Validate phone numbers before critical operations (SMS, calls)
-- Consider time zone implications for contact timing
+## Errors
 
-### International Considerations
+| Code                             | When                                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | `createRecord`/`createTodo` receives a phone value it cannot parse — missing country code or malformed number. |
+| `CUSTOM_FIELD_NOT_FOUND`         | No custom field matches `customFieldId` in the workspace.                                                      |
+| `TODO_NOT_FOUND`                 | No record matches `todoId`.                                                                                    |
+| `FORBIDDEN`                      | The caller lacks permission to edit the field or the record.                                                   |
 
-- Country code is automatically detected and stored
-- Numbers are formatted in international standard
-- Regional display preferences can use regionCode
-- Consider local dialing conventions when displaying
+## Related
 
-## Common Use Cases
-
-1. **Contact Management**
-   - Client phone numbers
-   - Vendor contact information
-   - Team member phone numbers
-   - Support contact details
-
-2. **Emergency Contacts**
-   - Emergency contact numbers
-   - On-call contact information
-   - Crisis response contacts
-   - Escalation phone numbers
-
-3. **Customer Support**
-   - Customer phone numbers
-   - Support callback numbers
-   - Verification phone numbers
-   - Follow-up contact numbers
-
-4. **Sales & Marketing**
-   - Lead phone numbers
-   - Campaign contact lists
-   - Partner contact information
-   - Referral source phones
-
-## Integration Features
-
-### With Automations
-
-- Trigger actions when phone fields are updated
-- Send SMS notifications to stored phone numbers
-- Create follow-up tasks based on phone changes
-- Route calls based on phone number data
-
-### With Lookups
-
-- Reference phone data from other records
-- Aggregate phone lists from multiple sources
-- Find records by phone number
-- Cross-reference contact information
-
-### With Forms
-
-- Automatic phone validation
-- International format checking
-- Country code detection
-- Real-time format feedback
-
-## Limitations
-
-- Requires country code for all numbers
-- No built-in SMS or calling capabilities
-- No phone number verification beyond format checking
-- No storage of phone metadata (carrier, type, etc.)
-- National format numbers without country code are rejected
-- No automatic phone number formatting in UI beyond international standard
-
-## Related Resources
-
-- [Text Fields](/api/custom-fields/text-single) - For non-phone text data
-- [Email Fields](/api/custom-fields/email) - For email addresses
-- [URL Fields](/api/custom-fields/url) - For website addresses
-- [Custom Fields Overview](/custom-fields/list-custom-fields) - General concepts
+- [Set custom field values](/api/custom-fields/custom-field-values) — the shared pattern for every field type.
+- [Text field](/api/custom-fields/text-single) — general single-line text.
+- [Email field](/api/custom-fields/email) — email addresses.
+- [URL field](/api/custom-fields/url) — web addresses and links.
+- [Custom fields overview](/api/custom-fields) — concepts and the full type list.

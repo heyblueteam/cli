@@ -5,7 +5,7 @@ icon: FileSpreadsheet
 order: 2
 ---
 
-Use the `exportCSVTemplate` mutation to generate a blank CSV file pre-populated with the correct column headers for a workspace — including a column for every custom field. Fill in the template and upload it with `importTodos` to bulk-create records. Workspaces are `Project` objects and records are `Todo` objects in the API.
+Use the `exportCSVTemplate` mutation to generate a blank CSV file pre-populated with the correct column headers for a workspace — including a column for every custom field. Fill in the template and upload it with `importRecords` to bulk-create records. Workspaces are `Workspace` objects and records are `Record` objects in the API.
 
 The mutation returns a signed download URL as a plain `String!`. The URL forces a browser download (via `Content-Disposition: attachment`) and expires after 24 hours.
 
@@ -64,7 +64,7 @@ The generated CSV contains a single header row followed by one empty sample row.
 | `Updated At`           | Original last-updated timestamp.                                                                                                                                                        |
 | `Created By`           | Original creator name or email.                                                                                                                                                         |
 | `Color`                | Record color.                                                                                                                                                                           |
-| `Project`              | Workspace name.                                                                                                                                                                         |
+| `Workspace`            | Workspace name.                                                                                                                                                                         |
 | `Tags`                 | Comma-separated tag titles.                                                                                                                                                             |
 | _Custom field columns_ | One column per custom field in the workspace, ordered by position. A currency-type field adds a `Currency Types` column immediately after it for the currency code (e.g. `USD`, `EUR`). |
 
@@ -109,7 +109,7 @@ Requires project-level `OWNER`, `ADMIN`, or `MEMBER` access, and the workspace m
 1. Call `exportCSVTemplate` and download the template from the returned URL.
 2. Fill in record data, one row per record.
 3. Upload the completed CSV with the [file upload API](/api/files) to obtain an `s3Key`.
-4. Call `importTodos` with the `s3Key`, the `headers` mapping, and the `projectId`.
+4. Call `importRecords` with the `s3Key`, the `headers` mapping, and the `projectId`.
 5. Subscribe to `subscribeToImportExportProgress` to track import progress.
 
 ## Related

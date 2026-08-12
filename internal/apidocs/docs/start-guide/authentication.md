@@ -1,6 +1,6 @@
 ---
 title: Authentication
-description: Authenticate to the Blue API with a personal access token and the X-Bloo-* request headers.
+description: Authenticate to the Blue API with a personal access token and the blue-* request headers.
 icon: Key
 order: 1
 ---
@@ -16,26 +16,26 @@ Send your credentials on every request using these headers:
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{"query": "query Me { user { id email fullName } }"}'
 ```
 
-| Header                | Required        | Description                                                                                                                                  |
-| --------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X-Bloo-Token-ID`     | Yes             | Your token's public identifier (the `uid`).                                                                                                  |
-| `X-Bloo-Token-Secret` | Yes             | The token secret returned once at creation.                                                                                                  |
-| `X-Bloo-Company-ID`   | Most operations | The organization to act in. Accepts the company ID or its slug.                                                                              |
-| `X-Bloo-Project-ID`   | Some operations | The workspace to scope to. Accepts the project ID or its slug. Required for project-scoped reads and writes (records, lists, custom fields). |
+| Header              | Required        | Description                                                                                                                                  |
+| ------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blue-token-id`     | Yes             | Your token's public identifier (the `uid`).                                                                                                  |
+| `blue-token-secret` | Yes             | The token secret returned once at creation.                                                                                                  |
+| `blue-org-id`       | Most operations | The organization to act in. Accepts the company ID or its slug.                                                                              |
+| `blue-workspace-id` | Some operations | The workspace to scope to. Accepts the project ID or its slug. Required for project-scoped reads and writes (records, lists, custom fields). |
 
-Header names are **case-insensitive**, so `x-bloo-token-id` and `X-Bloo-Token-ID` are equivalent.
+Header names are **case-insensitive**, so `blue-token-id` and `Blue-Token-Id` are equivalent.
 
-`X-Bloo-Company-ID` and `X-Bloo-Project-ID` both accept either the cuid or the human-readable slug — the slug is the segment you see in the app URL: `blue.app/company/{company-slug}/project/{project-slug}/`.
+`blue-org-id` and `blue-workspace-id` both accept either the cuid or the human-readable slug — the slug is the segment you see in the app URL: `blue.app/company/{company-slug}/project/{project-slug}/`.
 
-<Callout variant="info" title="Deprecated header aliases">
+<Callout variant="info" title="Legacy header names still work">
 
-`x-company-id` and `x-project-id` are still accepted as aliases for `X-Bloo-Company-ID` and `X-Bloo-Project-ID`, but are deprecated. Use the `X-Bloo-*` names.
+These headers were previously named `x-bloo-token-id`, `x-bloo-token-secret`, `x-bloo-company-id`, and `x-bloo-project-id` (and the older `x-company-id` / `x-project-id`). All of those are still accepted, so existing integrations keep working unchanged. Use the `blue-*` names for anything new.
 
 </Callout>
 
@@ -55,8 +55,8 @@ Tokens are created in the app, not via the API. (The `createPersonalAccessToken`
 
 A token has two parts:
 
-- **Token ID** — your token's public identifier (the `uid` field on `PersonalAccessToken`). It is an unprefixed identifier and is **not** secret. Send it as `X-Bloo-Token-ID`.
-- **Secret** — the password half of the credential. It is **prefixed with `pat_`** for easy identification (for example, `pat_clm4n8qwx000008l0g4oxdqn7`). Send it as `X-Bloo-Token-Secret`.
+- **Token ID** — your token's public identifier (the `uid` field on `PersonalAccessToken`). It is an unprefixed identifier and is **not** secret. Send it as `blue-token-id`.
+- **Secret** — the password half of the credential. It is **prefixed with `pat_`** for easy identification (for example, `pat_clm4n8qwx000008l0g4oxdqn7`). Send it as `blue-token-secret`.
 
 <Callout variant="warning" title="The Secret is shown only once">
 
@@ -66,7 +66,7 @@ Blue stores the secret as a bcrypt hash, so it cannot be retrieved after creatio
 
 ## Find your Company and Project IDs
 
-Organizations (`Company` in the API) are the top-level entity; workspaces (`Project`) live inside them. Both the company and project values you pass in headers can be the ID **or** the slug, and the slug is visible in the app URL:
+Organizations (`Organization` in the API) are the top-level entity; workspaces (`Workspace`) live inside them. Both the company and project values you pass in headers can be the ID **or** the slug, and the slug is visible in the app URL:
 
 ```
 blue.app/company/{company-slug}/project/{project-slug}/
@@ -102,7 +102,7 @@ See [Error Codes](/api/start-guide/error-codes) for the full list.
 
 ## Authenticating subscriptions
 
-GraphQL subscriptions connect over WebSocket at `wss://api.blue.app/graphql` and authenticate through `connectionParams` rather than HTTP headers. Pass the same `X-Bloo-*` headers in `connectionParams`, or pass a session JWT as `Authorization: Bearer <jwt>`. See [Connect and authenticate](/api/realtime/connect-and-authenticate) for the connection payload and a full example.
+GraphQL subscriptions connect over WebSocket at `wss://api.blue.app/graphql` and authenticate through `connectionParams` rather than HTTP headers. Pass the same `blue-*` headers in `connectionParams`, or pass a session JWT as `Authorization: Bearer <jwt>`. See [Connect and authenticate](/api/realtime/connect-and-authenticate) for the connection payload and a full example.
 
 ## Related
 

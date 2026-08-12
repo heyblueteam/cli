@@ -7,18 +7,18 @@ order: 20
 
 A number custom field stores a numeric value on a record — quantities, scores, measurements, or any plain number. It maps to the `NUMBER` value of the `CustomFieldType` enum and is backed by a `CustomField` whose value is exposed as a `Float`. For monetary values use the [Currency field](/api/custom-fields/currency); for percentages use the [Percent field](/api/custom-fields/percent).
 
-Records are `Todo` objects in the API.
+Records are `Record` objects in the API.
 
 ## Overview
 
 - **Type enum:** `NUMBER`
 - **Optional config:** `min` / `max` bounds (`Float`) and a display `prefix` (`String`, e.g. `#`).
 - **Value shape:** a single `Float`. On a record, read it from `CustomField.number` (or `CustomField.value`, which returns the same bare number for this type).
-- **Bounds enforcement:** `min`/`max` are enforced when you create a record with `createTodo` (out-of-range values throw `CUSTOM_FIELD_VALUE_PARSE_ERROR`). They are **not** enforced by `setTodoCustomField` — see [Notes](#notes).
+- **Bounds enforcement:** `min`/`max` are enforced when you create a record with `createRecord` (out-of-range values throw `CUSTOM_FIELD_VALUE_PARSE_ERROR`). They are **not** enforced by `setRecordCustomField` — see [Notes](#notes).
 
 ## Create
 
-Use the `createCustomField` mutation with `type: NUMBER`. The field is created in the workspace named by your `X-Bloo-Project-ID` header — there is no `projectId` argument.
+Use the `createCustomField` mutation with `type: NUMBER`. The field is created in the workspace named by your `blue-workspace-id` header — there is no `projectId` argument.
 
 ```graphql
 mutation CreateNumberField {
@@ -77,28 +77,28 @@ mutation CreateConstrainedNumberField {
 | ------------- | ------------------ | -------- | ------------------------------------------------- |
 | `name`        | `String!`          | Yes      | Display name of the field.                        |
 | `type`        | `CustomFieldType!` | Yes      | Must be `NUMBER`.                                 |
-| `min`         | `Float`            | No       | Lower bound. Enforced by `createTodo`.            |
-| `max`         | `Float`            | No       | Upper bound. Enforced by `createTodo`.            |
+| `min`         | `Float`            | No       | Lower bound. Enforced by `createRecord`.            |
+| `max`         | `Float`            | No       | Upper bound. Enforced by `createRecord`.            |
 | `prefix`      | `String`           | No       | Display prefix shown before the value (e.g. `#`). |
 | `description` | `String`           | No       | Help text shown to users.                         |
 
-The workspace is taken from the `X-Bloo-Project-ID` header (ID or slug); `CreateCustomFieldInput` has no `projectId` field.
+The workspace is taken from the `blue-workspace-id` header (ID or slug); `CreateCustomFieldInput` has no `projectId` field.
 
 ## Set a value
 
-Use the `setTodoCustomField` mutation with the `number` argument. It returns `Boolean!` — `true` on success — so it has no sub-selection.
+Use the `setRecordCustomField` mutation with the `number` argument. It returns `Boolean!` — `true` on success — so it has no sub-selection.
 
 ```graphql
 mutation SetNumberValue {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 42.5 })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 42.5 })
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                                    |
 | --------------- | --------- | -------- | -------------------------------------------------------------- |
@@ -108,11 +108,11 @@ mutation SetNumberValue {
 
 ## Read a value
 
-`setTodoCustomField` returns only a boolean, so read the stored value back through the record's `customFields` connection. `Todo.customFields` returns `[CustomField!]!` directly — select the value fields on the element. For a `NUMBER` field, both `number` and `value` resolve to the bare numeric value.
+`setRecordCustomField` returns only a boolean, so read the stored value back through the record's `customFields` connection. `Record.customFields` returns `[CustomField!]!` directly — select the value fields on the element. For a `NUMBER` field, both `number` and `value` resolve to the bare numeric value.
 
 ```graphql
 query ReadNumberValue {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -133,7 +133,7 @@ query ReadNumberValue {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -156,15 +156,15 @@ query ReadNumberValue {
 }
 ```
 
-The `number` and `value` fields resolve only when the `CustomField` is read in a record context (via `Todo.customFields`); they are `null` when the field definition is read on its own. If no value is set, both return `null`.
+The `number` and `value` fields resolve only when the `CustomField` is read in a record context (via `Record.customFields`); they are `null` when the field definition is read on its own. If no value is set, both return `null`.
 
 ## Set a value at record creation
 
-`createTodo` accepts custom-field values inline through `CreateTodoInputCustomField`, which carries the value as a **string** in the `value` field (there is no `number` argument here). The string is parsed to a number, and `min`/`max` are enforced — an out-of-range or non-numeric value throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
+`createRecord` accepts custom-field values inline through `CreateRecordInputCustomField`, which carries the value as a **string** in the `value` field (there is no `number` argument here). The string is parsed to a number, and `min`/`max` are enforced — an out-of-range or non-numeric value throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
 
 ```graphql
 mutation CreateRecordWithNumber {
-  createTodo(
+  createRecord(
     input: {
       title: "Performance Review"
       todoListId: "list_123"
@@ -184,13 +184,13 @@ mutation CreateRecordWithNumber {
 
 ## Notes
 
-- **Bounds are enforced only at record creation.** `createTodo` parses the inline string value and rejects anything below `min`, above `max`, or non-numeric with `CUSTOM_FIELD_VALUE_PARSE_ERROR`. `setTodoCustomField` writes the `number` argument straight to storage with no bounds check — a value outside `min`/`max` is accepted and stored. Enforce bounds client-side when calling `setTodoCustomField`.
+- **Bounds are enforced only at record creation.** `createRecord` parses the inline string value and rejects anything below `min`, above `max`, or non-numeric with `CUSTOM_FIELD_VALUE_PARSE_ERROR`. `setRecordCustomField` writes the `number` argument straight to storage with no bounds check — a value outside `min`/`max` is accepted and stored. Enforce bounds client-side when calling `setRecordCustomField`.
 - **`prefix` is display-only.** It is returned on the field definition for clients to render; it is not part of the stored value.
 - **Filtering by value** is done through the `fields` JSON of `TodosFilter` (a `CUSTOM_FIELD` entry with `customFieldType: "NUMBER"`), not through per-field operators. See [List records](/api/records/list-records) for the full `fields` filter shape.
 
 ```graphql
 query FilterByNumber {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]
@@ -219,14 +219,14 @@ query FilterByNumber {
 
 | Code                             | When                                                                     |
 | -------------------------------- | ------------------------------------------------------------------------ |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | A `createTodo` inline value is non-numeric, below `min`, or above `max`. |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | A `createRecord` inline value is non-numeric, below `min`, or above `max`. |
 | `CUSTOM_FIELD_NOT_FOUND`         | `customFieldId` does not match a field in the active workspace.          |
 | `FORBIDDEN`                      | The caller lacks permission for the operation (see Permissions).         |
 
 ## Permissions
 
 - **Create the field:** `createCustomField` requires the `OWNER` or `ADMIN` role on the workspace.
-- **Set a value:** `setTodoCustomField` requires an authenticated caller with edit access to the record (any company role, or a custom project role granting edit on the field).
+- **Set a value:** `setRecordCustomField` requires an authenticated caller with edit access to the record (any company role, or a custom project role granting edit on the field).
 
 ## Related
 

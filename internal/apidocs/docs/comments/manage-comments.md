@@ -1,17 +1,17 @@
 ---
 title: Create, edit & delete comments
-description: Post, edit, and soft-delete comments on any record, discussion, or status update with one polymorphic set of mutations.
+description: Post, edit, and soft-delete comments on any record, chat, or status update with one polymorphic set of mutations.
 icon: MessageCircle
 order: 1
 ---
 
-Blue has one `Comment` type and one set of write mutations that work on every surface that supports discussion. You target the surface with `category` + `categoryId`: a record (`category: TODO`), a discussion (`category: DISCUSSION`), or a status update (`category: STATUS_UPDATE`). The `categoryId` is the id of that record, discussion, or status update respectively. Records are `Todo` objects in the API. See the [comments overview](/api/comments) for the full mental model.
+Blue has one `Comment` type and one set of write mutations that work on every surface that supports chat. You target the surface with `category` + `categoryId`: a record (`category: TODO`), a chat (`category: DISCUSSION`), or a status update (`category: STATUS_UPDATE`). The `categoryId` is the id of that record, chat, or status update respectively. Records are `Todo` objects in the API. See the [comments overview](/api/comments) for the full mental model.
 
 - Use `createComment` to post a comment (or a threaded reply via `parentId`).
 - Use `editComment` to replace the body of a comment you own.
 - Use `deleteComment` to soft-delete a comment — the row stays, its body is blanked, and `deletedAt` / `deletedBy` are stamped.
 
-To read comments back, use the [`commentList` query](/api/comments/query-comments) — not the deprecated `Todo.comments` / `Discussion.comments` / `StatusUpdate.comments` fields.
+To read comments back, use the [`commentList` query](/api/comments/query-comments) — not the deprecated `Todo.comments` / `Chat.comments` / `StatusUpdate.comments` fields.
 
 ## createComment
 
@@ -51,7 +51,7 @@ mutation CreateComment {
 | `html`       | `String!`          | Yes      | The comment body as HTML. Sanitized server-side; embedded `@mentions`, images, and file attachments are extracted from it.                          |
 | `text`       | `String!`          | Yes      | The plain-text rendering of the body, used in notifications, search, and clients that don't render HTML.                                            |
 | `category`   | `CommentCategory!` | Yes      | Which surface to comment on: `TODO`, `DISCUSSION`, or `STATUS_UPDATE`.                                                                              |
-| `categoryId` | `String!`          | Yes      | The id of the target — a record id (`TODO`), discussion id (`DISCUSSION`), or status update id (`STATUS_UPDATE`).                                   |
+| `categoryId` | `String!`          | Yes      | The id of the target — a record id (`TODO`), chat id (`DISCUSSION`), or status update id (`STATUS_UPDATE`).                                   |
 | `tiptap`     | `Boolean`          | No       | Set `true` if `html` is Tiptap-formatted; the server then runs the Tiptap sanitizer (which also extracts image/file nodes). Omit for standard HTML. |
 | `parentId`   | `String`           | No       | The id of an existing comment on the same target to reply to. Creates a threaded reply. Threads are at most two levels deep.                        |
 
@@ -60,7 +60,7 @@ mutation CreateComment {
 | Value           | `categoryId` refers to | Target type    |
 | --------------- | ---------------------- | -------------- |
 | `TODO`          | A record id            | `Todo`         |
-| `DISCUSSION`    | A discussion id        | `Discussion`   |
+| `DISCUSSION`    | A chat id        | `Chat`   |
 | `STATUS_UPDATE` | A status update id     | `StatusUpdate` |
 
 ### Response
@@ -109,7 +109,7 @@ mutation MentionInComment {
   createComment(
     input: {
       category: DISCUSSION
-      categoryId: "discussion_123"
+      categoryId: "chat_123"
       html: "<p>Can you take a look, <a href=\"#view-profile-user_123\">@Dana</a>?</p>"
       text: "Can you take a look, @Dana?"
     }
@@ -200,7 +200,7 @@ Returns the updated [`Comment`](/api/comments).
 
 Soft-delete a comment. The row is **not** removed: its `html` and `text` are blanked, `deletedAt` is set to the current time, and `deletedBy` is set to the caller. Any files attached to the comment are deleted. Threaded replies remain in place and still reference the now-emptied parent.
 
-This differs from `deleteDiscussion`, which is a hard delete — see [Manage discussions](/api/comments/manage-discussions).
+This differs from `deleteChat`, which is a hard delete — see [Manage chats](/api/comments/manage-discussions).
 
 ### Request
 
@@ -266,5 +266,5 @@ All three mutations require the caller to be a member of the target's project an
 - [Comments overview](/api/comments) — the `Comment` type, `CommentCategory`, threading, and read state.
 - [Query comments](/api/comments/query-comments) — fetch comments for any target with `commentList`.
 - [Reactions](/api/comments/reactions) — add or remove emoji reactions on a comment.
-- [Manage discussions](/api/comments/manage-discussions) — create the discussions that comments attach to.
-- [Comment & discussion subscriptions](/api/realtime/comment-discussion-subscriptions) — stream comment changes in real time.
+- [Manage chats](/api/comments/manage-discussions) — create the chats that comments attach to.
+- [Comment & chat subscriptions](/api/realtime/comment-discussion-subscriptions) — stream comment changes in real time.

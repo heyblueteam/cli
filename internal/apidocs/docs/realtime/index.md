@@ -5,7 +5,7 @@ icon: Radio
 order: 0
 ---
 
-Blue's GraphQL API exposes a large `type Subscription` root that delivers real-time push updates over a WebSocket transport ([graphql-ws](https://github.com/enisdenjo/graphql-ws)) at `wss://api.blue.app/graphql` — the same URL as the HTTP GraphQL endpoint. This section explains how to open and authenticate a subscription, then documents every operation grouped by domain: entity change-feeds (records, projects, comments, custom fields, files, activity), presence and notifications, and progress streams for long-running jobs.
+Blue's GraphQL API exposes a large `type Subscription` root that delivers real-time push updates over a WebSocket transport ([graphql-ws](https://github.com/enisdenjo/graphql-ws)) at `wss://api.blue.app/graphql` — the same URL as the HTTP GraphQL endpoint. This section explains how to open and authenticate a subscription, then documents every operation grouped by domain: entity change-feeds (records, workspaces, comments, custom fields, files, activity), presence and notifications, and progress streams for long-running jobs.
 
 Authentication uses the same credentials as HTTP requests, passed through graphql-ws [`connectionParams`](/api/realtime/connect-and-authenticate) at connection init (a Personal Access Token or a Bearer JWT). The same permission checks apply: subscribing succeeds, but you only receive events for the records and projects you are allowed to see.
 
@@ -25,7 +25,7 @@ Most subscriptions are _change-feeds_ for an entity (a record, project, comment,
 
 ```graphql
 subscription OnRecordChange {
-  subscribeToTodo(projectId: "project_123") {
+  subscribeToTodo(projectId: "workspace_123") {
     mutation # CREATED | UPDATED | DELETED
     node {
       # the entity in its new state (null on DELETED)
@@ -78,30 +78,31 @@ Start with the transport/auth primer, then jump to the domain you need. Each pag
 | Page                                                                              | What it covers                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Connect & Authenticate](/api/realtime/connect-and-authenticate)                  | Open an authenticated graphql-ws connection: `connectionParams`, the three credential forms, company/project scoping, and a runnable client example.                                            |
-| [Record & Todo-List Subscriptions](/api/realtime/record-subscriptions)            | `subscribeToTodo`, `subscribeToTodoAction`, `subscribeToTodoList`, the `subscribeToMyTodoCount` badge counter, and the `onMoveTodo` / `onMarkTodoListAsDone` / `onMarkTodoListAsUndone` events. |
+| [Record & RecordList Subscriptions](/api/realtime/record-subscriptions)           | `subscribeToTodo`, `subscribeToTodoAction`, `subscribeToTodoList`, the `subscribeToMyTodoCount` badge counter, and the `onMoveTodo` / `onMarkTodoListAsDone` / `onMarkTodoListAsUndone` events. |
 | [Project & Workspace Subscriptions](/api/realtime/project-subscriptions)          | `subscribeToProject` plus people-list, role, folder, tag, and saved-view streams, and the full set of project `on*` events (membership, archive, folder, template, copy status).                |
-| [Comments, Discussions & Chat](/api/realtime/comment-discussion-subscriptions)    | `subscribeToComment`, the `subscribeToCommentTyping` typing indicator, `subscribeToDiscussion`, `subscribeToStatusUpdate`, `subscribeToChat`, and `subscribeToDocument`.                        |
+| [Comments, Chats & Chat](/api/realtime/comment-discussion-subscriptions)    | `subscribeToComment`, the `subscribeToCommentTyping` typing indicator, `subscribeToChat`, `subscribeToStatusUpdate`, and `subscribeToDocument`.                                           |
 | [Custom Field Subscriptions](/api/realtime/custom-field-subscriptions)            | `subscribeToCustomField`, `subscribeToCustomFieldOption`, and the `onCustomFieldOptionsCreated` batch event.                                                                                    |
 | [File & Link Subscriptions](/api/realtime/file-subscriptions)                     | `subscribeToFile`, `subscribeToLink`, and the `onDeleteFiles` batch deletion event.                                                                                                             |
 | [Activity, Mentions & Notifications](/api/realtime/activity-notifications)        | `subscribeToActivity`, `subscribeToMyMention`, and the `onMarkAllActivityAsSeen` / `onMarkAllMentionsAsRead` events.                                                                            |
+| [Inbox subscriptions](/api/realtime/inbox-subscriptions)                          | `subscribeToMyInboxActivity` (live Inbox updates) and `onMarkAllInboxThreadsRead` (cross-tab "mark all read" sync).                                                                             |
 | [User Presence](/api/realtime/presence-subscriptions)                             | `subscribeToUserPresence` (online/offline driven by the connection lifecycle), `subscribeToCompanyPeopleList`, `subscribeToCompany`, and `subscribeToInvitation`.                               |
-| [Progress & Long-Running Jobs](/api/realtime/progress-subscriptions)              | Job-status channels: import/export and lookup progress, AI auto-tagging, cover-image generation, automation config and execution runs, and OAuth connection status.                             |
+| [Progress & Long-Running Jobs](/api/realtime/progress-subscriptions)              | Job-status channels: import/export and lookup progress, cover-image generation, automation config and execution runs, and OAuth connection status.                                              |
 | [Dashboards, Charts & Community](/api/realtime/analytics-community-subscriptions) | `subscribeToDashboard`, `subscribeToChart`, `subscribeToForm`, and the community feeds (`subscribeToCommunityPost`, `subscribeToCommunityPosts`).                                               |
 
 ## Product nouns to schema types
 
 Subscription names use the schema type names, not the UI words. The mapping:
 
-| UI / docs word         | Schema type   |
-| ---------------------- | ------------- |
-| Record                 | `Todo`        |
-| Workspace / Project    | `Project`     |
-| Organization / Company | `Company`     |
-| List                   | `TodoList`    |
-| Custom field           | `CustomField` |
-| Saved view             | `SavedView`   |
-| Dashboard              | `Dashboard`   |
-| @-mention              | `Mention`     |
+| UI / docs word         | Schema type    |
+| ---------------------- | -------------- |
+| Record                 | `Record`       |
+| Workspace / Project    | `Workspace`    |
+| Organization / Company | `Organization` |
+| List                   | `RecordList`   |
+| Custom field           | `CustomField`  |
+| Saved view             | `SavedView`    |
+| Dashboard              | `Dashboard`    |
+| @-mention              | `Mention`      |
 
 ## Deprecated subscriptions
 

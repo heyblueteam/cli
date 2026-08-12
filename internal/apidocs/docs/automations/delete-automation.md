@@ -7,7 +7,7 @@ order: 4
 
 Use the `deleteAutomation` mutation to permanently remove an automation from a workspace. Deleting an automation also tears down everything attached to it: an active schedule is unscheduled, due-date monitoring jobs are removed, the conditional-evaluation cache is invalidated, and a deletion event is published to subscribers. This action cannot be undone.
 
-Automations belong to a workspace (a `Project` in the API) and require the `X-Bloo-Project-ID` header. Only owners and admins of an active workspace can delete them.
+Automations belong to a workspace (a `Workspace` in the API) and require the `X-Bloo-Project-ID` header. Only owners and admins of an active workspace can delete them.
 
 ## Request
 

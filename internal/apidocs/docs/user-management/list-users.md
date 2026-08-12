@@ -5,9 +5,9 @@ icon: List
 order: 1
 ---
 
-Blue exposes several queries for reading people. Use `companyUserList` to list everyone in an organization, `projectUserList` to list the members of a single workspace, `user` to look up one person by ID, and `currentUser` to identify the authenticated caller. People are `User` objects in the API; organizations are `Company` and workspaces are `Project`.
+Blue exposes several queries for reading people. Use `organizationUserList` to list everyone in an organization, `workspaceUserList` to list the members of a single workspace, `user` to look up one person by ID, and `currentUser` to identify the authenticated caller. People are `User` objects in the API; organizations are `Organization` and workspaces are `Workspace`.
 
-All of these queries require [authentication](/api/start-guide/authentication) headers. Workspace-scoped reads also need the `X-Bloo-Project-ID` header.
+All of these queries require [authentication](/api/start-guide/authentication) headers. Workspace-scoped reads also need the `blue-workspace-id` header.
 
 ## Request
 
@@ -15,7 +15,7 @@ List the users in an organization. `companyId` accepts either the organization I
 
 ```graphql
 query ListCompanyUsers {
-  companyUserList(companyId: "company_123") {
+  organizationUserList(companyId: "company_123") {
     users {
       id
       fullName
@@ -34,7 +34,7 @@ query ListCompanyUsers {
 
 ## Parameters
 
-### `companyUserList`
+### `organizationUserList`
 
 | Parameter        | Type               | Required | Description                                                                                                 |
 | ---------------- | ------------------ | -------- | ----------------------------------------------------------------------------------------------------------- |
@@ -48,16 +48,16 @@ query ListCompanyUsers {
 | `last`           | `Int`              | No       | Accepted but ignored by the resolver.                                                                       |
 | `orderBy`        | `UserOrderByInput` | No       | Accepted but ignored — results are always sorted by first name (A→Z).                                       |
 
-### `projectUserList`
+### `workspaceUserList`
 
-Lists the members of a single workspace. Same return shape and the same pagination behavior as `companyUserList`.
+Lists the members of a single workspace. Same return shape and the same pagination behavior as `organizationUserList`.
 
-| Parameter                                         | Type      | Required | Description                                      |
-| ------------------------------------------------- | --------- | -------- | ------------------------------------------------ |
-| `projectId`                                       | `String!` | Yes      | Workspace ID or slug.                            |
-| `search`                                          | `String`  | No       | Filter by first or last name (substring match).  |
-| `skip`                                            | `Int`     | No       | Number of users to skip.                         |
-| `after` / `before` / `first` / `last` / `orderBy` | —         | No       | Accepted but ignored, as with `companyUserList`. |
+| Parameter                                         | Type      | Required | Description                                           |
+| ------------------------------------------------- | --------- | -------- | ----------------------------------------------------- |
+| `projectId`                                       | `String!` | Yes      | Workspace ID or slug.                                 |
+| `search`                                          | `String`  | No       | Filter by first or last name (substring match).       |
+| `skip`                                            | `Int`     | No       | Number of users to skip.                              |
+| `after` / `before` / `first` / `last` / `orderBy` | —         | No       | Accepted but ignored, as with `organizationUserList`. |
 
 ### `user`
 
@@ -73,7 +73,7 @@ Takes no arguments. Returns the `User!` for the authenticated caller — the can
 
 <Callout variant="info" title="Pagination is offset-based">
 
-Despite accepting cursor arguments, both `companyUserList` and `projectUserList` ignore `first`, `last`, `after`, `before`, and `orderBy`. Each request returns at most **200** users sorted by first name. To page through a larger organization, increase `skip` by 200 on each call and stop when `pageInfo.hasNextPage` is `false`.
+Despite accepting cursor arguments, both `organizationUserList` and `workspaceUserList` ignore `first`, `last`, `after`, `before`, and `orderBy`. Each request returns at most **200** users sorted by first name. To page through a larger organization, increase `skip` by 200 on each call and stop when `pageInfo.hasNextPage` is `false`.
 
 </Callout>
 
@@ -82,7 +82,7 @@ Despite accepting cursor arguments, both `companyUserList` and `projectUserList`
 ```json
 {
   "data": {
-    "companyUserList": {
+    "organizationUserList": {
       "users": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -104,7 +104,7 @@ Despite accepting cursor arguments, both `companyUserList` and `projectUserList`
 
 ### Returns
 
-`companyUserList` and `projectUserList` both return the same object.
+`organizationUserList` and `workspaceUserList` both return the same object.
 
 | Field        | Type        | Description                                             |
 | ------------ | ----------- | ------------------------------------------------------- |
@@ -160,7 +160,7 @@ List the members of one workspace, reading each person's access level and custom
 
 ```graphql
 query ListProjectUsers {
-  projectUserList(projectId: "project_123", search: "ada", skip: 0) {
+  workspaceUserList(projectId: "project_123", search: "ada", skip: 0) {
     users {
       id
       fullName
@@ -183,7 +183,7 @@ To build an "add member to workspace" picker, list organization users who are no
 
 ```graphql
 query AddableMembers {
-  companyUserList(companyId: "company_123", notInProjectId: "project_123") {
+  organizationUserList(companyId: "company_123", notInProjectId: "project_123") {
     users {
       id
       fullName
@@ -207,7 +207,7 @@ query Me {
 }
 ```
 
-The `assignees` query returns the users who can be assigned to records in a workspace. It reads the workspace from the `X-Bloo-Project-ID` header unless you pass `filter.projectId`.
+The `assignees` query returns the users who can be assigned to records in a workspace. It reads the workspace from the `blue-workspace-id` header unless you pass `filter.projectId`.
 
 ```graphql
 query AssignableUsers {
@@ -221,17 +221,17 @@ query AssignableUsers {
 
 ## Errors
 
-| Code                | When                                                                                             |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| `COMPANY_NOT_FOUND` | `companyUserList` was called with a `companyId` you are not a member of, or that does not exist. |
-| `USER_NOT_FOUND`    | `user(id:)` was called with an ID that matches no user.                                          |
-| `FORBIDDEN`         | `assignees` was called for a workspace you are not a member of.                                  |
-| `UNAUTHENTICATED`   | The request is missing or has invalid authentication headers.                                    |
+| Code                | When                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `COMPANY_NOT_FOUND` | `organizationUserList` was called with a `companyId` you are not a member of, or that does not exist. |
+| `USER_NOT_FOUND`    | `user(id:)` was called with an ID that matches no user.                                               |
+| `FORBIDDEN`         | `assignees` was called for a workspace you are not a member of.                                       |
+| `UNAUTHENTICATED`   | The request is missing or has invalid authentication headers.                                         |
 
 ## Permissions
 
-- `companyUserList` requires membership in the target organization. A non-OWNER caller only sees users who share at least one workspace with them.
-- `projectUserList` requires membership in the target workspace.
+- `organizationUserList` requires membership in the target organization. A non-OWNER caller only sees users who share at least one workspace with them.
+- `workspaceUserList` requires membership in the target workspace.
 - Email addresses are returned only to the organization OWNER and to project OWNER/ADMIN users; everyone else receives an empty string for `email`.
 
 ## Related

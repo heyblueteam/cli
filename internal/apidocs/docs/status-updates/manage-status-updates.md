@@ -45,9 +45,9 @@ mutation PostStatusUpdate {
 
 Include your authentication headers on every request:
 
-- `X-Bloo-Token-ID` — your API token ID
-- `X-Bloo-Token-Secret` — your API token secret
-- `X-Bloo-Company-ID` — your organization ID or slug
+- `blue-token-id` — your API token ID
+- `blue-token-secret` — your API token secret
+- `blue-org-id` — your organization ID or slug
 
 `projectId` accepts a workspace ID or slug.
 

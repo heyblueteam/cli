@@ -5,7 +5,7 @@ icon: ListChecks
 order: 2
 ---
 
-Checklist items are the individual to-dos inside a checklist. Each one can be assigned to users, scheduled with start and due dates, and marked complete. In the API they are `ChecklistItem` objects, attached to a `Checklist`, which in turn belongs to a record (`Todo`).
+Checklist items are the individual to-dos inside a checklist. Each one can be assigned to users, scheduled with start and due dates, and marked complete. In the API they are `ChecklistItem` objects, attached to a `Checklist`, which in turn belongs to a record (`Record`).
 
 This page covers the five mutations that operate on checklist items:
 
@@ -23,14 +23,14 @@ All requests go to `https://api.blue.app/graphql` and authenticate with your per
 
 ```bash
 curl https://api.blue.app/graphql \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -H "Content-Type: application/json" \
   -d '{"query": "..."}'
 ```
 
-`X-Bloo-Company-ID` accepts either the organization ID or its slug. See [Authentication](/api/start-guide/authentication) for how to create tokens.
+`blue-org-id` accepts either the organization ID or its slug. See [Authentication](/api/start-guide/authentication) for how to create tokens.
 
 ## Create a checklist item
 
@@ -253,11 +253,13 @@ mutation SetItemDueDate {
 
 #### UpdateChecklistItemDueDateInput
 
-| Parameter         | Type       | Required | Description                                       |
-| ----------------- | ---------- | -------- | ------------------------------------------------- |
-| `checklistItemId` | `String!`  | Yes      | ID of the checklist item.                         |
-| `startedAt`       | `DateTime` | No       | Start date/time (ISO 8601). Pass `null` to clear. |
-| `duedAt`          | `DateTime` | No       | Due date/time (ISO 8601). Pass `null` to clear.   |
+| Parameter         | Type              | Required | Description                                                                                                                                 |
+| ----------------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `checklistItemId` | `String!`         | Yes      | ID of the checklist item.                                                                                                                   |
+| `startedAt`       | `DateTime`        | No       | Start date/time (ISO 8601). Pass `null` to clear.                                                                                           |
+| `duedAt`          | `DateTime`        | No       | Due date/time (ISO 8601). Pass `null` to clear.                                                                                             |
+| `timezone`        | `String`          | No       | IANA timezone used to interpret `startedAt`/`duedAt`. Only affects inference when `granularity` is omitted.                                 |
+| `granularity`     | `DateGranularity` | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](/api/records/update-record#all-day-vs-timed-dates). Omit to infer from the values sent. |
 
 ### Response
 
@@ -316,19 +318,20 @@ Clearing or changing the dates fires the matching webhook event: `TODO_CHECKLIST
 
 `createChecklistItem`, `editChecklistItem`, and `updateChecklistItemDueDate` return a `ChecklistItem`. (`deleteChecklistItem` and `setChecklistItemAssignees` return `Boolean!` — see their Response sections.) Select any of these fields:
 
-| Field       | Type         | Description                                                                           |
-| ----------- | ------------ | ------------------------------------------------------------------------------------- |
-| `id`        | `ID!`        | Unique identifier for the checklist item.                                             |
-| `title`     | `String!`    | Item title.                                                                           |
-| `position`  | `Float!`     | Position within the checklist.                                                        |
-| `done`      | `Boolean!`   | Whether the item is marked complete.                                                  |
-| `startedAt` | `DateTime`   | Start date/time, if set.                                                              |
-| `duedAt`    | `DateTime`   | Due date/time, if set.                                                                |
-| `createdAt` | `DateTime!`  | When the item was created.                                                            |
-| `updatedAt` | `DateTime!`  | When the item was last updated.                                                       |
-| `checklist` | `Checklist!` | The parent checklist (which exposes its own `todo`).                                  |
-| `createdBy` | `User`       | The user who created the item. **Nullable** — null-guard it before reading subfields. |
-| `users`     | `[User!]!`   | Users assigned to this item.                                                          |
+| Field                | Type              | Description                                                                                              |
+| -------------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `id`                 | `ID!`             | Unique identifier for the checklist item.                                                                |
+| `title`              | `String!`         | Item title.                                                                                              |
+| `position`           | `Float!`          | Position within the checklist.                                                                           |
+| `done`               | `Boolean!`        | Whether the item is marked complete.                                                                     |
+| `startedAt`          | `DateTime`        | Start date/time, if set.                                                                                 |
+| `duedAt`             | `DateTime`        | Due date/time, if set.                                                                                   |
+| `dueDateGranularity` | `DateGranularity` | `ALL_DAY` or `TIMED` — see [All-day vs. timed dates](/api/records/update-record#all-day-vs-timed-dates). |
+| `createdAt`          | `DateTime!`       | When the item was created.                                                                               |
+| `updatedAt`          | `DateTime!`       | When the item was last updated.                                                                          |
+| `checklist`          | `Checklist!`      | The parent checklist (which exposes its own `todo`).                                                     |
+| `createdBy`          | `User`            | The user who created the item. **Nullable** — null-guard it before reading subfields.                    |
+| `users`              | `[User!]!`        | Users assigned to this item.                                                                             |
 
 <Callout variant="info" title="createdBy nullability">
 

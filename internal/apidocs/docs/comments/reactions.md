@@ -9,7 +9,9 @@ Use the `addReaction` and `removeReaction` mutations to toggle an emoji reaction
 
 Reactions are stored one row per user, emoji, and target, so a user contributes at most one of any given emoji to a target. Both mutations are idempotent: adding a reaction you already have, or removing one you never had, succeeds and returns the current set unchanged.
 
-The `targetType` is a `ReactionTargetType` enum with two values — `COMMENT` and `CHAT_MESSAGE`. This page covers reacting to comments. The `CHAT_MESSAGE` target works identically but applies to chat messages, documented with the rest of the chat API. Comments are `Comment` objects in the API; see [Comments overview](/api/comments) for how a comment attaches to a record, discussion, or status update.
+The `targetType` is a `ReactionTargetType` enum with a single value — `COMMENT`. Comments are `Comment` objects in the API; see [Comments overview](/api/comments) for how a comment attaches to a record, chat, or status update.
+
+This covers chat and direct messages too: a chat message _is_ a `Comment` (one whose `chat` is set), so react to it with `targetType: COMMENT` and the message's comment id as `targetId`.
 
 <Callout variant="info" title="Not the community forum">
 
@@ -69,10 +71,9 @@ Identical to `AddReactionInput`. The `emoji` is matched against the calling user
 
 ### ReactionTargetType
 
-| Value          | Description                                                                               |
-| -------------- | ----------------------------------------------------------------------------------------- |
-| `COMMENT`      | React to a `Comment`. `targetId` is the comment id.                                       |
-| `CHAT_MESSAGE` | React to a chat message. `targetId` is the chat message id. Documented with the chat API. |
+| Value     | Description                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `COMMENT` | React to a `Comment`. `targetId` is the comment id. Chat and direct messages are comments too. |
 
 ## Response
 
@@ -144,10 +145,10 @@ query CommentReactions {
 
 For a comment attached to a **record**, both mutations require comment-level access to that record — the same access required to post a comment there. Callers with view-only access are denied with `FORBIDDEN`.
 
-Comments attached to a **discussion** or **status update** are not currently access-checked beyond authentication, so any authenticated member of the organization can react to them. Do not rely on a per-thread guarantee for those targets.
+Comments attached to a **chat** or **status update** are not currently access-checked beyond authentication, so any authenticated member of the organization can react to them. Do not rely on a per-thread guarantee for those targets.
 
 ## Related
 
-- [Comments overview](/api/comments) — how a `Comment` attaches to a record, discussion, or status update.
+- [Comments overview](/api/comments) — how a `Comment` attaches to a record, chat, or status update.
 - [Create, edit & delete comments](/api/comments/manage-comments) — the comment write lifecycle.
 - [Query comments](/api/comments/query-comments) — fetch comments (and their `reactions`) for any target.

@@ -5,7 +5,7 @@ icon: ListOrdered
 order: 7
 ---
 
-Almost every list query in the Blue API is paginated, and most accept a filter. This page documents the conventions so you don't have to relearn them per query: the two pagination styles, the `PageInfo` shape returned by both, the default and maximum page sizes, and the shared filter input used to narrow record queries. Records are `Todo` objects and workspaces are `Project` objects in the API.
+Almost every list query in the Blue API is paginated, and most accept a filter. This page documents the conventions so you don't have to relearn them per query: the two pagination styles, the `PageInfo` shape returned by both, the default and maximum page sizes, and the shared filter input used to narrow record queries. Records are `Record` objects and workspaces are `Workspace` objects in the API.
 
 ## Two pagination styles
 
@@ -55,15 +55,15 @@ query ListForms {
 }
 ```
 
-The page-size argument is named **`take`** on most queries (`forms`, `customFields`, `projectList`, `templates`, …) and **`limit`** on the record-oriented queries (`todoQueries { todos }`, `publicViewRecords`). The skip argument is always `skip`. A couple of container types also carry a `totalCount` field, but it's **deprecated** in favor of `pageInfo.totalItems` — don't select it.
+The page-size argument is named **`take`** on most queries (`forms`, `customFields`, `workspaceList`, `templates`, …) and **`limit`** on the record-oriented queries (`recordQueries { todos }`, `publicViewRecords`). The skip argument is always `skip`. A couple of container types also carry a `totalCount` field, but it's **deprecated** in favor of `pageInfo.totalItems` — don't select it.
 
 ### Cursor style (partial — legacy)
 
-Three `*List` queries — `companyUserList`, `commentList`, and `activityList` — expose the relay-flavored `after`, `before`, `first`, `last`, and `orderBy` arguments alongside `skip`. Their resolvers do **not** implement full bidirectional cursoring. What each actually honors:
+Three `*List` queries — `organizationUserList`, `commentList`, and `activityList` — expose the relay-flavored `after`, `before`, `first`, `last`, and `orderBy` arguments alongside `skip`. Their resolvers do **not** implement full bidirectional cursoring. What each actually honors:
 
 | Query             | Honors                                          | Ignores                            | Notes                                                                                          |
 | ----------------- | ----------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `companyUserList` | `skip`, `search`, `orderBy`                     | `first`, `last`, `before`, `after` | Page size is hard-capped at **200** server-side regardless of `first`. Page with `skip`.       |
+| `organizationUserList` | `skip`, `search`, `orderBy`                     | `first`, `last`, `before`, `after` | Page size is hard-capped at **200** server-side regardless of `first`. Page with `skip`.       |
 | `commentList`     | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a **keyset** cursor: pass a comment `id`, results start at rows with `id >= after`. |
 | `activityList`    | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a keyset cursor on the activity `id`.                                               |
 
@@ -102,7 +102,7 @@ The total-rows field is `totalItems`, not `total`. An older `PaginationInfo` typ
 
 | Query                                  | Page-size arg | Default  | Maximum / cap                                                        |
 | -------------------------------------- | ------------- | -------- | -------------------------------------------------------------------- |
-| `todoQueries { todos }`                | `limit`       | `20`     | **500** (hard cap; `limit <= 0` or `> 500` clamps to 500)            |
+| `recordQueries { todos }`              | `limit`       | `20`     | **500** (hard cap; `limit <= 0` or `> 500` clamps to 500)            |
 | `forms`                                | `take`        | `20`     | —                                                                    |
 | `customFields`                         | `take`        | `500`    | —                                                                    |
 | `publicViewRecords`                    | `limit`       | required | `limit` must be **25 or 150**; `skip` a multiple of `limit`, ≤ 10000 |
@@ -110,7 +110,7 @@ The total-rows field is `totalItems`, not `total`. An older `PaginationInfo` typ
 
 <Callout variant="warning" title="The records query caps at 500">
 
-`todoQueries { todos }` silently clamps `limit` to **500**: any value `<= 0` or `> 500` is treated as 500. To read more than 500 records, page with `skip` — the clamp is per-page, not a total ceiling.
+`recordQueries { todos }` silently clamps `limit` to **500**: any value `<= 0` or `> 500` is treated as 500. To read more than 500 records, page with `skip` — the clamp is per-page, not a total ceiling.
 
 </Callout>
 
@@ -122,7 +122,7 @@ Page off `skip` plus `pageInfo.hasNextPage`. Start at `skip: 0`, then add the pa
 
 ```graphql
 query RecordsPage($skip: Int!) {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"] }, limit: 100, skip: $skip) {
       items {
         id
@@ -157,7 +157,7 @@ query CountRecords {
 
 ## Filtering records
 
-The record queries share a filter vocabulary. `todoQueries { todos }` and `publicViewRecords` take a `TodosFilter!` (its `companyIds` is required); `todosCount` and `activityList` take a `TodoFilterInput`. The two inputs overlap heavily — the table below covers the most useful `TodoFilterInput` fields. (`TodosFilter` adds the required `companyIds` plus `todoIds`, `todoListTitles`, search ranges, and more.)
+The record queries share a filter vocabulary. `recordQueries { todos }` and `publicViewRecords` take a `TodosFilter!` (its `companyIds` is required); `todosCount` and `activityList` take a `TodoFilterInput`. The two inputs overlap heavily — the table below covers the most useful `TodoFilterInput` fields. (`TodosFilter` adds the required `companyIds` plus `todoIds`, `todoListTitles`, search ranges, and more.)
 
 ### TodoFilterInput
 
@@ -220,7 +220,7 @@ Active records in two workspaces, assigned to a given user, whose title contains
 
 ```graphql
 query FilteredRecords {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]
@@ -249,7 +249,7 @@ query FilteredRecords {
 
 <Callout variant="info" title="Filtering is the only way to search server-side">
 
-The in-app search box filters records on the client after they load — it does not hit the API. To find records across a workspace larger than one page, you must filter server-side with the `todos` query's `TodosFilter` (e.g. `q` for free-text, or `fields` for custom-field conditions).
+The in-app search box filters records on the client after they load — it does not hit the API. To find records across a workspace larger than one page, you must filter server-side with the `recordQueries { todos }` query's `TodosFilter` (e.g. `q` for free-text, or `fields` for custom-field conditions).
 
 </Callout>
 
@@ -259,7 +259,7 @@ The in-app search box filters records on the client after they load — it does 
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `BAD_USER_INPUT`        | `publicViewRecords` got an invalid `limit` (not 25/150), a `skip` that isn't a multiple of `limit`, or `skip > 10000`. |
 | `FORBIDDEN`             | The filter references a workspace or organization the caller can't access.                                             |
-| `COMPANY_NOT_FOUND`     | `companyUserList` got a `companyId` the caller isn't a member of.                                                      |
+| `COMPANY_NOT_FOUND`     | `organizationUserList` got a `companyId` the caller isn't a member of.                                                      |
 | `PUBLIC_VIEW_NOT_FOUND` | `publicViewRecords` got a `publicViewId` that doesn't exist.                                                           |
 | `UNAUTHENTICATED`       | A password-protected public view was queried without a valid view token.                                               |
 

@@ -7,7 +7,7 @@ order: 28
 
 A Unique ID field assigns each record a sequential number — the basis for ticket numbers, order IDs, invoice numbers, or any per-workspace counter. It maps to the `UNIQUE_ID` value of the `CustomFieldType` enum.
 
-Records are `Todo` objects and workspaces are `Project` objects in the API. A Unique ID field runs in one of two modes: **sequence mode** (`useSequenceUniqueId: true`) auto-numbers records in creation order, or **manual mode** (the default) behaves like a text field you fill in yourself.
+Records are `Record` objects and workspaces are `Workspace` objects in the API. A Unique ID field runs in one of two modes: **sequence mode** (`useSequenceUniqueId: true`) auto-numbers records in creation order, or **manual mode** (the default) behaves like a text field you fill in yourself.
 
 ## Overview
 
@@ -15,7 +15,7 @@ In sequence mode, Blue maintains a counter per field and assigns the next intege
 
 ## Create
 
-Create a sequence-mode field with the `createCustomField` mutation. The field is scoped to the workspace in the `X-Bloo-Project-ID` header — there is no `projectId` argument.
+Create a sequence-mode field with the `createCustomField` mutation. The field is scoped to the workspace in the `blue-workspace-id` header — there is no `projectId` argument.
 
 ```graphql
 mutation CreateUniqueIdField {
@@ -89,27 +89,27 @@ When the field is created in sequence mode, a background job numbers every exist
 
 ## Set a value
 
-In **sequence mode** you do not set the value — Blue assigns it automatically. The four lines below apply only to **manual mode** (`useSequenceUniqueId` omitted or `false`), where the field behaves like a text field. Write a value with `setTodoCustomField` using the `text` parameter.
+In **sequence mode** you do not set the value — Blue assigns it automatically. The four lines below apply only to **manual mode** (`useSequenceUniqueId` omitted or `false`), where the field behaves like a text field. Write a value with `setRecordCustomField` using the `text` parameter.
 
 ```graphql
 mutation SetUniqueIdValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", text: "CUSTOM-ID-001" }
   )
 }
 ```
 
-`setTodoCustomField` returns a `Boolean!` — there are no subfields to select. Read the value back with a separate query (see below).
+`setRecordCustomField` returns a `Boolean!` — there are no subfields to select. Read the value back with a separate query (see below).
 
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-### SetTodoCustomFieldInput (UNIQUE_ID, manual mode)
+### SetRecordCustomFieldInput (UNIQUE_ID, manual mode)
 
 | Parameter       | Type      | Required | Description                     |
 | --------------- | --------- | -------- | ------------------------------- |
@@ -119,11 +119,11 @@ mutation SetUniqueIdValue {
 
 ## Read a value
 
-Read records and their field values with the `todos` query under `todoQueries`. `TodosFilter.companyIds` is required; scope further with `projectIds`. The query returns a `TodosResult` (`items` + `pageInfo`), and `Todo.customFields` is a list of `CustomField` objects — there is no wrapper type.
+Read records and their field values with the `todos` query under `recordQueries`. `TodosFilter.companyIds` is required; scope further with `projectIds`. The query returns a `TodosResult` (`items` + `pageInfo`), and `Record.customFields` is a list of `CustomField` objects — there is no wrapper type.
 
 ```graphql
 query GetRecordsWithUniqueIds {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], projectIds: ["project_123"] }) {
       items {
         id
@@ -155,7 +155,7 @@ On each `CustomField` element:
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -211,7 +211,7 @@ Creating or editing a Unique ID field requires the `OWNER` or `ADMIN` role on th
 | ------------------------ | -------------------------------------------------------------------------------- |
 | `FORBIDDEN`              | The caller lacks `OWNER`/`ADMIN` on the workspace, or edit access to the record. |
 | `CUSTOM_FIELD_NOT_FOUND` | The `customFieldId` does not exist in this workspace.                            |
-| `TODO_NOT_FOUND`         | The `todoId` in `setTodoCustomField` does not exist.                             |
+| `TODO_NOT_FOUND`         | The `todoId` in `setRecordCustomField` does not exist.                             |
 | `BAD_USER_INPUT`         | The input is malformed (e.g. `enableBulkAction` on an unsupported type).         |
 
 ## Related

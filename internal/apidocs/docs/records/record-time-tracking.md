@@ -5,7 +5,7 @@ icon: Timer
 order: 11
 ---
 
-Blue tracks how long each record spends in every list automatically. Read this data through the `timeTracking` field on a record (records are `Todo` objects in the API). There is no dedicated query and no mutation — select `timeTracking` inside any of the existing record queries (`todo`, `todoQueries.todos`, or `todoList`) and the values are computed on read.
+Blue tracks how long each record spends in every list automatically. Read this data through the `timeTracking` field on a record (records are `Record` objects in the API). There is no dedicated query and no mutation — select `timeTracking` inside any of the existing record queries (`todo`, `recordQueries.todos`, or `todoList`) and the values are computed on read.
 
 Every value is a duration in **seconds** (a `Float`). Time tracking is read-only: it is derived from the record's list-movement history, not from a manual timer you start and stop.
 
@@ -33,11 +33,11 @@ query RecordTimeTracking {
 }
 ```
 
-The same selection works inside `todoQueries.todos` to read time tracking for many records at once — see [List records](/api/records/list-records).
+The same selection works inside `recordQueries.todos` to read time tracking for many records at once — see [List records](/api/records/list-records).
 
 ## Parameters
 
-`timeTracking` takes no arguments. It is a nested field selected on a `Todo`; the record is identified by the enclosing query (`todo(id:)`, `todoQueries.todos(filter:)`, or a `todoList` selection).
+`timeTracking` takes no arguments. It is a nested field selected on a `Record`; the record is identified by the enclosing query (`todo(id:)`, `recordQueries.todos(filter:)`, or a `todoList` selection).
 
 ## Response
 
@@ -99,11 +99,11 @@ Each time a record is created in or moved between lists, Blue writes a list-hist
 
 ## Filter records by time in list
 
-You can find records by how long they have spent in a list using a `TIME_IN_LIST` filter entry. This works in the `fields` array of [`todoQueries.todos`](/api/records/list-records) and in `todosCount` (via `TodoFilterInput`), routed by the `TIME_IN_LIST` value of `TodoFilterFieldType`. The list and matching options come from `TimeInListFilterInput`.
+You can find records by how long they have spent in a list using a `TIME_IN_LIST` filter entry. This works in the `fields` array of [`recordQueries.todos`](/api/records/list-records) and in `todosCount` (via `TodoFilterInput`), routed by the `TIME_IN_LIST` value of `TodoFilterFieldType`. The list and matching options come from `TimeInListFilterInput`.
 
 ```graphql
 query RecordsSittingTooLong {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]
@@ -175,4 +175,4 @@ A `null` result is not an error — select the field and check for `null` in you
 - [Move a record between lists](/api/records/move-record-list) — every move writes the list-history entry that time tracking is computed from.
 - [Toggle record status](/api/records/toggle-record-status) — completing a record fixes its `timeToCompletion`.
 - [Duration field](/api/custom-fields/time-duration) — the separate `TIME_DURATION` custom field, for storing a duration value you set yourself (distinct from this automatic time tracking).
-- [Records overview](/api/records) — the full `Todo` field surface and the record query namespaces.
+- [Records overview](/api/records) — the full `Record` field surface and the record query namespaces.

@@ -1,15 +1,15 @@
 ---
 title: Delete a Workspace
-description: Permanently delete a workspace and all of its records, lists, comments, and files using the deleteProject mutation.
+description: Delete a workspace with the deleteWorkspace mutation, moving it to the organization's Trash where an admin can restore it until the retention window expires.
 icon: Trash2
 order: 6
 ---
 
-Use the `deleteProject` mutation to permanently delete a workspace and everything inside it — records, lists, comments, custom fields, automations, tags, and file attachments. Deletion is irreversible through the API. If you might need the workspace later, [archive it](/api/workspaces/archive-workspace) instead. Workspaces are `Project` objects in the API.
+Use the `deleteWorkspace` mutation to delete a workspace and everything inside it — records, lists, comments, custom fields, automations, tags, and file attachments. Deletion moves the workspace to the organization's Trash: nothing inside it is destroyed, the workspace is hidden from every read, and its slug is freed so a "delete and recreate" flow works. An organization admin can [restore it](#restoring-a-deleted-workspace) until the organization's retention window expires, after which it is purged for good. Workspaces are `Workspace` objects in the API.
 
-<Callout variant="danger" title="Deletion is permanent">
+<Callout variant="warning" title="Purging is permanent">
 
-`deleteProject` cannot be undone through the API. The workspace and all of its records, lists, comments, custom field values, automations, tags, dependencies, and file attachments are removed. Archive the workspace first if there is any chance you will need the data again.
+A workspace in Trash is recoverable, but **Delete forever** (or reaching the end of the retention window) purges it — removing all of its records, lists, comments, custom field values, automations, tags, dependencies, and file attachments with no way to restore them. If you might need the workspace later, leave it in Trash or [archive it](/api/workspaces/archive-workspace) instead of purging.
 
 </Callout>
 
@@ -17,9 +17,8 @@ Use the `deleteProject` mutation to permanently delete a workspace and everythin
 
 ```graphql
 mutation DeleteWorkspace {
-  deleteProject(id: "project_123") {
+  deleteWorkspace(id: "project_123") {
     success
-    operationId
   }
 }
 ```
@@ -34,14 +33,13 @@ The `id` argument accepts either the workspace ID or its slug.
 
 ## Response
 
-The workspace record is removed immediately and `success: true` is returned. The associated child data (records, lists, comments, and files) is removed by an asynchronous background cleanup job identified by `operationId`.
+The workspace is moved to Trash and `success: true` is returned. Its child data is left intact for a full-fidelity restore; the cleanup that removes it runs later, at purge time.
 
 ```json
 {
   "data": {
-    "deleteProject": {
-      "success": true,
-      "operationId": "clm4n8qwx000008l0g4oxdqn7"
+    "deleteWorkspace": {
+      "success": true
     }
   }
 }
@@ -49,12 +47,12 @@ The workspace record is removed immediately and `success: true` is returned. The
 
 ### Returns
 
-`deleteProject` returns a `MutationResult`.
+`deleteWorkspace` returns a `MutationResult`.
 
-| Field         | Type       | Description                                                                                       |
-| ------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| `success`     | `Boolean!` | `true` when the workspace was deleted.                                                            |
-| `operationId` | `String`   | Identifier for the background cleanup job that removes the workspace's child data. May be `null`. |
+| Field         | Type       | Description                                                                                                       |
+| ------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| `success`     | `Boolean!` | `true` when the workspace was moved to Trash.                                                                     |
+| `operationId` | `String`   | Identifier for an asynchronous follow-up job. `null` for a soft delete — the cleanup now runs at purge, not here. |
 
 ## Errors
 
@@ -100,6 +98,22 @@ To delete a workspace, the user must be both:
 | `CLIENT`       | No         |
 | `COMMENT_ONLY` | No         |
 | `VIEW_ONLY`    | No         |
+
+## Restoring a deleted workspace
+
+While the workspace is in the organization's Trash, an organization `OWNER` or `ADMIN` can restore it with the `restoreWorkspace` mutation, which returns the restored `Workspace`. Everything inside it comes back, and its original slug is reinstated (with a `-restored` suffix if the slug has since been reused).
+
+```graphql
+mutation RestoreWorkspace {
+  restoreWorkspace(id: "project_123") {
+    id
+    name
+    slug
+  }
+}
+```
+
+Once the workspace is purged — via **Delete forever** or by reaching the end of the organization's retention window — it can no longer be restored.
 
 ## Related
 

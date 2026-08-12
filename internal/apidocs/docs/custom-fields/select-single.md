@@ -7,7 +7,7 @@ order: 16
 
 A single-select field stores exactly one option chosen from a predefined list. Use it for status, priority, category, or any value that must come from a controlled set where only one choice is valid at a time. In the API this is a `CustomField` with `type: SELECT_SINGLE`; selectable options are `CustomFieldOption` objects, and the chosen option for a given record is exposed as `selectedOption`.
 
-Custom fields are scoped to a workspace (a `Project`), set with the `X-Bloo-Project-ID` header. Records are `Todo` objects.
+Custom fields are scoped to a workspace (a `Workspace`), set with the `X-Bloo-Project-ID` header. Records are `Record` objects.
 
 ## Overview
 
@@ -97,25 +97,25 @@ mutation AddOneOption {
 
 ## Set a value
 
-Set the selected option on a record with `setTodoCustomField`, passing the chosen option's id as `customFieldOptionId`. Setting a new option replaces any previous selection. `setTodoCustomField` returns `Boolean!` — select no subfields on it.
+Set the selected option on a record with `setRecordCustomField`, passing the chosen option's id as `customFieldOptionId`. Setting a new option replaces any previous selection. `setRecordCustomField` returns `Boolean!` — select no subfields on it.
 
 ```graphql
 mutation SetPriority {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", customFieldOptionId: "option_123" }
   )
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-You can also create a record with the value already set. In `createTodo`, the option id is passed as the string `value` (not a separate option-id field).
+You can also create a record with the value already set. In `createRecord`, the option id is passed as the string `value` (not a separate option-id field).
 
 ```graphql
 mutation CreateRecordWithPriority {
-  createTodo(
+  createRecord(
     input: {
       title: "Review onboarding flow"
       todoListId: "list_123"
@@ -128,7 +128,7 @@ mutation CreateRecordWithPriority {
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter              | Type        | Required | Description                                                            |
 | ---------------------- | ----------- | -------- | ---------------------------------------------------------------------- |
@@ -139,17 +139,17 @@ mutation CreateRecordWithPriority {
 
 <Callout variant="info" title="Only one id is kept">
 
-If you pass `customFieldOptionIds` to a `SELECT_SINGLE` field, the resolver keeps only the first id and ignores the rest. To clear the selection, call `setTodoCustomField` with neither `customFieldOptionId` nor `customFieldOptionIds`.
+If you pass `customFieldOptionIds` to a `SELECT_SINGLE` field, the resolver keeps only the first id and ignores the rest. To clear the selection, call `setRecordCustomField` with neither `customFieldOptionId` nor `customFieldOptionIds`.
 
 </Callout>
 
 ## Read a value
 
-A record's custom field values come back on `Todo.customFields`, which returns `[CustomField!]!` directly. For a single-select field, read the chosen option from `selectedOption`. There is no wrapper type — select option fields straight off the element.
+A record's custom field values come back on `Record.customFields`, which returns `[CustomField!]!` directly. For a single-select field, read the chosen option from `selectedOption`. There is no wrapper type — select option fields straight off the element.
 
 ```graphql
 query GetRecordPriority {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -173,7 +173,7 @@ query GetRecordPriority {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -298,5 +298,5 @@ mutation RemoveOption {
 
 - [Multi-Select Field](/api/custom-fields/select-multi) — choose several options at once.
 - [Checkbox Field](/api/custom-fields/checkbox) — a single boolean value.
-- [Set Custom Field Values](/api/custom-fields/custom-field-values) — the full `setTodoCustomField` reference across field types.
+- [Set Custom Field Values](/api/custom-fields/custom-field-values) — the full `setRecordCustomField` reference across field types.
 - [Custom Fields Overview](/api/custom-fields) — concepts shared by every field type.

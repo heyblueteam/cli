@@ -20,7 +20,7 @@ When `lookupType` is `TODO_CUSTOM_FIELD`, you also pass **`lookupId`** — the I
 
 ## Create
 
-Create a Lookup that surfaces the tags of every record linked through a Reference field. Custom fields are scoped by the `X-Bloo-Project-ID` header, so no workspace ID appears in the input.
+Create a Lookup that surfaces the tags of every record linked through a Reference field. Custom fields are scoped by the `blue-workspace-id` header, so no workspace ID appears in the input.
 
 ```graphql
 mutation CreateLookupField {
@@ -98,7 +98,7 @@ mutation CreateCustomFieldLookup {
 
 ## Read a value
 
-A Lookup field has no stored value of its own — its result is computed in the context of the record it is rendered on. Read it from `Todo.customFields`, which returns `[CustomField!]!` directly (there is no wrapper type), and select `customFieldLookupOption` on the element:
+A Lookup field has no stored value of its own — its result is computed in the context of the record it is rendered on. Read it from `Record.customFields`, which returns `[CustomField!]!` directly (there is no wrapper type), and select `customFieldLookupOption` on the element:
 
 ```graphql
 query GetLookupValues {
@@ -213,7 +213,7 @@ For `TODO_CUSTOM_FIELD`, `lookupResult` mirrors the value shape of the field nam
 
 ## Notes
 
-- **Read-only.** You cannot set a Lookup value with `setTodoCustomField`; it always reflects the current linked data and recomputes when that data changes.
+- **Read-only.** You cannot set a Lookup value with `setRecordCustomField`; it always reflects the current linked data and recomputes when that data changes.
 - **No aggregation.** A Lookup extracts the linked values as-is — it has no built-in sum, count, or average across linked records.
 - **Source must be a Reference.** `referenceId` must point at a `REFERENCE` or `REFERENCED_BY` field. Pointing it at another `LOOKUP` is rejected — Lookup-of-Lookup chains are not supported.
 - **Cross-workspace access.** A viewer only sees Lookup results for linked records in workspaces they have access to.

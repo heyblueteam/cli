@@ -156,10 +156,10 @@ Most operations are governed by the per-tier rate-limit middleware documented on
 | Rule              | Window | Max | Applies to                                                                                                     |
 | ----------------- | ------ | --- | -------------------------------------------------------------------------------------------------------------- |
 | Default           | 60s    | 5   | Per-operation guard on assorted authenticated mutations (e.g. `submitForm`, `sendTestEmail`, `createDocument`) |
-| Request           | 60s    | 3   | High-impact account actions (e.g. `deleteCompany`, `updateEmail`, `verifySecurityCode`)                        |
+| Request           | 60s    | 3   | High-impact account actions (e.g. `deleteOrganization`, `updateEmail`, `verifySecurityCode`)                   |
 | Sign-in           | 60s    | 10  | `signIn`, `socialAuth`                                                                                         |
 | Sign-in request   | 60s    | 10  | `signInRequest`, `signUpRequest`                                                                               |
-| Export            | 50s    | 1   | `exportTodos`, `exportReport`                                                                                  |
+| Export            | 50s    | 1   | `exportRecords`, `exportReport`                                                                                |
 | Public view       | 60s    | 100 | `publicViewData`, `publicViewRecords`                                                                          |
 | Accept invitation | 60s    | 100 | `verifyAcceptInvitation`                                                                                       |
 | Check auth method | 60s    | 20  | `checkAuthMethod`                                                                                              |
@@ -180,7 +180,7 @@ Every code below is thrown by the API. Messages are the exact strings the server
 | `PLAN_LIMIT_REACHED`    | _(varies; see structured detail above)_          |
 | `PRO_REQUIRED`          | This feature requires a Pro subscription.        |
 | `COMPANY_BANNED`        | Company is banned                                |
-| `NOT_AVAILABLE_COUNTRY` | Blue is currently not available in your country. |
+| `NOT_AVAILABLE_COUNTRY` | This service is currently not available in your country. |
 | `RATE_LIMITED`          | Too many requests, please try again later.       |
 
 ### Validation & input
@@ -200,7 +200,7 @@ Every code below is thrown by the API. Messages are the exact strings the server
 | Code                              | Message                                                                                             |
 | --------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `EMAIL_IS_TAKEN`                  | User is already existed with this email.                                                            |
-| `EMAIL_NOT_REGISTERED`            | This email is not registered in Blue.                                                               |
+| `EMAIL_NOT_REGISTERED`            | This email is not registered.                                                                       |
 | `DISPOSABLE_EMAIL_NOT_ALLOWED`    | Temporary or disposable email addresses are not allowed.                                            |
 | `PENDING_INVITATION`              | You have a pending invitation… Please check your email and accept the invitation before signing in. |
 | `INVITATION_NOT_FOUND`            | The invitation has expired or no longer exists.                                                     |
@@ -212,7 +212,7 @@ Every code below is thrown by the API. Messages are the exact strings the server
 | `SOCIAL_TOKEN_INVALID`            | Social login token is invalid or expired                                                            |
 | `SOCIAL_EMAIL_NOT_PROVIDED`       | Email not provided by social provider                                                               |
 | `SOCIAL_EMAIL_NOT_VERIFIED`       | Email not verified by social provider                                                               |
-| `SOCIAL_EMAIL_NOT_REGISTERED`     | This email is not registered in Blue.                                                               |
+| `SOCIAL_EMAIL_NOT_REGISTERED`     | This email is not registered.                                                                       |
 | `SOCIAL_UID_ALREADY_LINKED`       | This social account is already linked to another user                                               |
 | `OAUTH_CONNECTION_NOT_FOUND`      | OAuth connection was not found.                                                                     |
 | `PERSONAL_ACCESS_TOKEN_NOT_FOUND` | Personal access token was not found.                                                                |
@@ -333,11 +333,11 @@ Every code below is thrown by the API. Messages are the exact strings the server
 
 ### Imports
 
-| Code                         | Message                                                                                                                       |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `TODO_IMPORT_LIMIT`          | This file exceeds the 2,500 record limit. Upgrade to Enterprise for unlimited imports, or split your file into smaller parts. |
-| `TODO_LIST_IMPORT_LIMIT`     | This import would create too many lists. Reduce the number of unique list names in your CSV.                                  |
-| `IMPORT_ALREADY_IN_PROGRESS` | An import is already running for this workspace. Please wait for it to finish before starting another.                        |
+| Code                         | Message                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `IMPORT_ALREADY_IN_PROGRESS` | An import is already running for this workspace. Please wait for it to finish before starting another. |
+
+An import that would exceed your plan's per-workspace record cap is rejected before it starts with `PLAN_LIMIT_REACHED` (`resource: "records"`) — see that section above for the full error shape. There's no import-specific limit code; the cap scales with your plan, same as everywhere else records are counted.
 
 ### Custom domains & email
 

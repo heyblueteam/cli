@@ -9,14 +9,14 @@ Use the `createCustomField` mutation to add a structured data field to a workspa
 
 The field's behavior is driven by its `type` (a `CustomFieldType` enum value). Each type reads a different subset of the input — for example a `CURRENCY` field uses `currency`/`min`/`max`, a `REFERENCE` field uses `referenceProjectId`, and a `LOOKUP` field uses `lookupOption`. See [Field Types](#field-types) below for the per-type configuration.
 
-The target workspace comes from the `X-Bloo-Project-ID` request header, **not** from the input — there is no `projectId` field on `CreateCustomFieldInput`.
+The target workspace comes from the `blue-workspace-id` request header, **not** from the input — there is no `projectId` field on `CreateCustomFieldInput`.
 
 ```
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 Company and project headers accept an ID or a slug. Header names are case-insensitive. See [Authentication](/api/start-guide/authentication) for the full header reference.

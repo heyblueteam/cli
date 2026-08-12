@@ -11,9 +11,9 @@ Both queries return only the views the caller can see: their own personal views 
 
 ```
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
 ```
 
 Company headers accept an ID or a slug. Header names are case-insensitive. See [Authentication](/api/start-guide/authentication) for the full header reference.

@@ -7,7 +7,7 @@ order: 3
 
 Use the `updateWebhook` mutation to change an existing webhook's URL, name, subscribed events, workspace scope, or enabled status. Every field except `webhookId` is optional, so you can patch a single attribute or several at once. Only the user who created a webhook can update it.
 
-Webhooks are scoped to an organization (a `Company` in the API) and the request runs with your personal access token headers. Re-enabling a webhook (`enabled: true`) triggers a live health check before the change is committed — see [Health check](#health-check) below.
+Webhooks are scoped to an organization (an `Organization` in the API) and the request runs with your personal access token headers. Re-enabling a webhook (`enabled: true`) triggers a live health check before the change is committed — see [Health check](#health-check) below.
 
 ## Request
 
@@ -36,9 +36,9 @@ Send your credentials as headers (header names are case-insensitive):
 
 ```http
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
 Content-Type: application/json
 ```
 

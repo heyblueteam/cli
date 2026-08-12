@@ -1,11 +1,11 @@
 ---
 title: Query an Organization
-description: Retrieve an organization's profile, plan, and limits by ID or slug with the company query.
+description: Retrieve an organization's profile, plan, and limits by ID or slug with the organization query.
 icon: Search
 order: 2
 ---
 
-Use the `company` query to fetch a single organization's profile — its name, owner, plan, access level, and usage limits. Organizations are `Company` objects in the API, and each one maps to a workspace group under a single billing account.
+Use the `organization` query to fetch a single organization's profile — its name, owner, plan, access level, and usage limits. Organizations are `Organization` objects in the API, and each one maps to a workspace group under a single billing account.
 
 The query resolves an organization by **ID or slug**, but only one the authenticated user is a member of. It is the read counterpart to [Create an Organization](/api/organization-management/create-organization).
 
@@ -15,7 +15,7 @@ All requests go to `https://api.blue.app/graphql` with your personal access toke
 
 ```graphql
 query GetOrganization {
-  company(id: "company_123") {
+  organization(id: "company_123") {
     id
     name
     slug
@@ -26,19 +26,19 @@ query GetOrganization {
 ```bash
 curl https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
-  -d '{"query": "query GetOrganization { company(id: \"company_123\") { id name slug } }"}'
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
+  -d '{"query": "query GetOrganization { organization(id: \"company_123\") { id name slug } }"}'
 ```
 
-The `id` argument accepts either the organization's ID or its slug, so `company(id: "acme-corp")` and `company(id: "clm4n8qwx000008l0g4oxdqn7")` resolve the same organization. Header names are case-insensitive.
+The `id` argument accepts either the organization's ID or its slug, so `organization(id: "acme-corp")` and `organization(id: "clm4n8qwx000008l0g4oxdqn7")` resolve the same organization. Header names are case-insensitive.
 
 ## Parameters
 
-| Argument | Type     | Required | Description                                                                                                                                                                                                                             |
-| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`     | `String` | No       | The organization ID or slug to look up. Resolves only organizations the authenticated user belongs to. When omitted, the query returns an organization the user is a member of (typically the one in your `X-Bloo-Company-ID` context). |
+| Argument | Type     | Required | Description                                                                                                                                                                                                                       |
+| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`     | `String` | No       | The organization ID or slug to look up. Resolves only organizations the authenticated user belongs to. When omitted, the query returns an organization the user is a member of (typically the one in your `blue-org-id` context). |
 
 <Callout variant="info" title="Lookups are scoped to your memberships">
 
@@ -51,7 +51,7 @@ The query never reveals organizations you don't belong to. An ID or slug for an 
 ```json
 {
   "data": {
-    "company": {
+    "organization": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "Acme Corporation",
       "slug": "acme-corp",
@@ -71,7 +71,7 @@ The query never reveals organizations you don't belong to. An ID or slug for an 
 
 ### Returns
 
-The query returns a single `Company` object. The most useful selectable fields:
+The query returns a single `Organization` object. The most useful selectable fields:
 
 | Field            | Type               | Description                                                                   |
 | ---------------- | ------------------ | ----------------------------------------------------------------------------- |
@@ -95,7 +95,7 @@ The query returns a single `Company` object. The most useful selectable fields:
 
 <Callout variant="warning" title="Don't use the deprecated relation fields">
 
-`Company.customFields` and `Company.projects` are deprecated. Query [custom fields](/api/custom-fields) and [workspaces](/api/workspaces) through the top-level `customFields` and `projects` queries instead — they support filtering and pagination.
+`Organization.customFields` and `Organization.projects` are deprecated. Query [custom fields](/api/custom-fields) and [workspaces](/api/workspaces) through the top-level `customFields` and `projects` queries instead — they support filtering and pagination.
 
 </Callout>
 
@@ -105,7 +105,7 @@ Fetch the full profile including the owner and current usage against limits:
 
 ```graphql
 query GetOrganizationDetails {
-  company(id: "acme-corp") {
+  organization(id: "acme-corp") {
     id
     uid
     name
@@ -146,7 +146,7 @@ query GetOrganizationDetails {
 | ------------------- | ------------------------------------------------------------------------------------------------------- |
 | `COMPANY_NOT_FOUND` | No organization matches the given ID or slug among the organizations the authenticated user belongs to. |
 
-A request made **as** a banned organization (a banned company in your `X-Bloo-Company-ID` context) is rejected at the auth layer with `COMPANY_BANNED` before the query runs — this is not raised by passing a banned org's ID to `company`. See [Error Codes](/api/start-guide/error-codes) for the full list.
+A request made **as** a banned organization (a banned company in your `blue-org-id` context) is rejected at the auth layer with `COMPANY_BANNED` before the query runs — this is not raised by passing a banned org's ID to `organization`. See [Error Codes](/api/start-guide/error-codes) for the full list.
 
 ## Related
 

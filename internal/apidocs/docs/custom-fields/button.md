@@ -7,7 +7,7 @@ order: 24
 
 A button field renders a clickable button on a record. Unlike every other field type, it stores no value — clicking it fires a `CUSTOM_FIELD_BUTTON_CLICKED` event that your automations can listen for. Use it to give people a one-click way to kick off a workflow (send an invoice, sync to a CRM, notify a channel) from inside a record.
 
-Button fields are `CustomField` objects with `type: BUTTON`. Records are `Todo` objects, and workspaces are `Project` objects in the API.
+Button fields are `CustomField` objects with `type: BUTTON`. Records are `Record` objects, and workspaces are `Workspace` objects in the API.
 
 ## Overview
 
@@ -15,7 +15,7 @@ Button fields are `CustomField` objects with `type: BUTTON`. Records are `Todo` 
 
 ## Create
 
-Custom fields are scoped to a workspace by the `X-Bloo-Project-ID` header — there is no `projectId` input field. Pass `type: BUTTON` and a `name`:
+Custom fields are scoped to a workspace by the `blue-workspace-id` header — there is no `projectId` input field. Pass `type: BUTTON` and a `name`:
 
 ```graphql
 mutation CreateButtonField {
@@ -68,21 +68,21 @@ mutation CreateConfirmingButton {
 
 ## Set a value
 
-Buttons have no value to set. "Setting" a button means clicking it. Call `setTodoCustomField` with just the `todoId` and `customFieldId` — clicking fires the `CUSTOM_FIELD_BUTTON_CLICKED` automation trigger for that record. The mutation returns `Boolean!`:
+Buttons have no value to set. "Setting" a button means clicking it. Call `setRecordCustomField` with just the `todoId` and `customFieldId` — clicking fires the `CUSTOM_FIELD_BUTTON_CLICKED` automation trigger for that record. The mutation returns `Boolean!`:
 
 ```graphql
 mutation ClickButton {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123" })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123" })
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
 <Callout variant="warning" title="Clicks execute immediately">
 
-The API never enforces confirmation. `buttonType` and `buttonConfirmText` are stored only for UI clients to build confirmation dialogs — the API does not check them, so any `setTodoCustomField` call fires the event right away. Confirmation is purely a client-side safety feature.
+The API never enforces confirmation. `buttonType` and `buttonConfirmText` are stored only for UI clients to build confirmation dialogs — the API does not check them, so any `setRecordCustomField` call fires the event right away. Confirmation is purely a client-side safety feature.
 
 </Callout>
 
@@ -119,7 +119,7 @@ A button field never stores data. When you read it on a record, `CustomField.val
 
 ```graphql
 query ReadButton {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoListIds: ["list_123"] }) {
       items {
         id
@@ -137,7 +137,7 @@ query ReadButton {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -162,7 +162,7 @@ query ReadButton {
 | Code                     | When                                                                                                             |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `CUSTOM_FIELD_NOT_FOUND` | No button field with that `customFieldId` exists in the workspace.                                               |
-| `TODO_NOT_FOUND`         | The `todoId` doesn't exist or you can't access it.                                                               |
+| `TODO_NOT_FOUND`         | The `todoId` doesn't exist or you can't access it.                                                              |
 | `FORBIDDEN`              | You lack permission to create the field, or the button is marked non-editable for your role.                     |
 | `BAD_USER_INPUT`         | Bulk click on a non-button field, on a field without `enableBulkAction`, or with neither `todoIds` nor `filter`. |
 

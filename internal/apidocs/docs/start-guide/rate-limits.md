@@ -46,7 +46,7 @@ If an organization has no resolvable tier (for example, an unconfigured or locke
 
 Every request runs through up to three layers before any resolver executes. All applicable layers must pass; if any one is exceeded, the request is rejected with `429 Too Many Requests`.
 
-1. **Per API key** — limits a single token's usage so one integration can't consume the whole org's capacity. This layer applies **only when both PAT headers** (`X-Bloo-Token-ID` and `X-Bloo-Token-Secret`) are present. Requests authenticated with a session JWT (`Authorization: Bearer`) skip this layer.
+1. **Per API key** — limits a single token's usage so one integration can't consume the whole org's capacity. This layer applies **only when both PAT headers** (`blue-token-id` and `blue-token-secret`) are present. Requests authenticated with a session JWT (`Authorization: Bearer`) skip this layer.
 2. **Per user** — limits total usage across all of a user's tokens, so rotating keys can't bypass the per-key limit.
 3. **Per organization** — the hard ceiling on all API activity within the organization.
 
@@ -103,12 +103,12 @@ Some sensitive operations carry their own limit, independent of the tier limits 
 | `createDocument`                 | 5 requests   | 60 seconds |
 | `sendTestEmail`                  | 5 requests   | 60 seconds |
 | `submitForm`                     | 5 requests   | 60 seconds |
-| `exportTodos`                    | 1 request    | 50 seconds |
+| `exportRecords`                  | 1 request    | 50 seconds |
 | `exportReport`                   | 1 request    | 50 seconds |
 | `publicViewData`                 | 100 requests | 60 seconds |
 | `publicViewRecords`              | 100 requests | 60 seconds |
-| `deleteCompany`                  | 3 requests   | 60 seconds |
-| `deleteCompanyRequest`           | 3 requests   | 60 seconds |
+| `deleteOrganization`             | 3 requests   | 60 seconds |
+| `deleteOrganizationRequest`      | 3 requests   | 60 seconds |
 | `updateEmail`                    | 3 requests   | 60 seconds |
 | `updateEmailRequest`             | 3 requests   | 60 seconds |
 | `createCommunityPost`            | 5 requests   | 1 hour     |

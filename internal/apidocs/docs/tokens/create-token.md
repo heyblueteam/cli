@@ -5,7 +5,7 @@ icon: KeyRound
 order: 1
 ---
 
-Use the `createPersonalAccessToken` mutation to generate a new personal access token (PAT) for the Blue API. The token is created against your own user account and is the credential you supply in the `X-Bloo-Token-ID` and `X-Bloo-Token-Secret` request headers. In the API a token is a `PersonalAccessToken` object.
+Use the `createPersonalAccessToken` mutation to generate a new personal access token (PAT) for the Blue API. The token is created against your own user account and is the credential you supply in the `blue-token-id` and `blue-token-secret` request headers. In the API a token is a `PersonalAccessToken` object.
 
 The create response is the **only** place the plaintext Secret is ever returned — see [Capture the Secret now](#capture-the-secret-now) below before you run this.
 
@@ -40,7 +40,7 @@ mutation CreateExpiringToken {
 }
 ```
 
-This mutation requires an authenticated user session (Firebase/JWT login), so it needs only the `X-Bloo-Company-ID` header alongside your session token — not the `X-Bloo-Token-*` headers. See [Permissions](#permissions).
+This mutation requires an authenticated user session (Firebase/JWT login), so it needs only the `blue-org-id` header alongside your session token — not the `blue-token-*` headers. See [Permissions](#permissions).
 
 ## Parameters
 
@@ -77,9 +77,9 @@ The mutation returns the created `PersonalAccessToken`. The `secret` field is po
 | Field        | Type        | Description                                                                                                                                                           |
 | ------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`         | `ID!`       | Internal record ID of the token. Use this with [`deletePersonalAccessToken`](/api/tokens/delete-token) to revoke it. **Not** a header value.                          |
-| `uid`        | `String!`   | The unprefixed **Token ID**. Send this as the `X-Bloo-Token-ID` header.                                                                                               |
+| `uid`        | `String!`   | The unprefixed **Token ID**. Send this as the `blue-token-id` header.                                                                                               |
 | `name`       | `String!`   | The sanitized label you supplied.                                                                                                                                     |
-| `secret`     | `String`    | The `pat_`-prefixed plaintext **Secret**. Send this as the `X-Bloo-Token-Secret` header. **Non-null only on this create response** — every other read returns `null`. |
+| `secret`     | `String`    | The `pat_`-prefixed plaintext **Secret**. Send this as the `blue-token-secret` header. **Non-null only on this create response** — every other read returns `null`. |
 | `scopes`     | `String`    | Always `null` in practice (the input value is not persisted). Reserved.                                                                                               |
 | `expiredAt`  | `DateTime`  | The expiry you set, or `null` if the token never expires.                                                                                                             |
 | `lastUsedAt` | `DateTime`  | Last-used timestamp for auditing. `null` on a freshly created token.                                                                                                  |
@@ -99,8 +99,8 @@ The two values you read here map directly to the request headers used by every a
 
 | Create response field | Request header        | Example value                   |
 | --------------------- | --------------------- | ------------------------------- |
-| `uid`                 | `X-Bloo-Token-ID`     | `clm4n8qwx000108l0h2pzeabc`     |
-| `secret`              | `X-Bloo-Token-Secret` | `pat_clm4n8qwx000208l0k7rytxyz` |
+| `uid`                 | `blue-token-id`     | `clm4n8qwx000108l0h2pzeabc`     |
+| `secret`              | `blue-token-secret` | `pat_clm4n8qwx000208l0k7rytxyz` |
 
 The `pat_` prefix belongs to the **Secret**, not the Token ID. See [Making Requests](/api/start-guide/making-requests) for a full authenticated request.
 
@@ -108,19 +108,19 @@ The `pat_` prefix belongs to the **Secret**, not the Token ID. See [Making Reque
 
 | Code              | When                                                                                                                                                          |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FORBIDDEN`       | The request is authenticating with a token (`X-Bloo-Token-ID` header present) instead of a user session. Token creation requires a session — see Permissions. |
+| `FORBIDDEN`       | The request is authenticating with a token (`blue-token-id` header present) instead of a user session. Token creation requires a session — see Permissions. |
 | `BAD_USER_INPUT`  | `name` is missing, not a string, or exceeds 50 characters; or `expiredAt` is not a valid date.                                                                |
 | `UNAUTHENTICATED` | No valid session credential was supplied at all.                                                                                                              |
 
 ## Permissions
 
-Creating a token requires an **authenticated user session** — the Firebase/JWT login the app uses, not token auth. The resolver rejects the request with `FORBIDDEN` if it detects PAT headers (`X-Bloo-Token-ID`), so **you cannot mint a new token using an existing token**. Generate tokens from a logged-in session. The same guard applies to [revoking a token](/api/tokens/delete-token).
+Creating a token requires an **authenticated user session** — the Firebase/JWT login the app uses, not token auth. The resolver rejects the request with `FORBIDDEN` if it detects PAT headers (`blue-token-id`), so **you cannot mint a new token using an existing token**. Generate tokens from a logged-in session. The same guard applies to [revoking a token](/api/tokens/delete-token).
 
 Tokens are always owned by the calling user. A token grants that user's full access; there is no scope narrowing today (see the `scopes` note above).
 
 ## Related
 
-- [Personal Access Tokens](/api/tokens) — overview of the Token ID / Secret split and the `X-Bloo-*` headers.
+- [Personal Access Tokens](/api/tokens) — overview of the Token ID / Secret split and the `blue-*` headers.
 - [List Tokens](/api/tokens/query-tokens) — page through and audit your tokens (`secret` is always `null` there).
 - [Revoke a Token](/api/tokens/delete-token) — delete a token by `id`; it stops authenticating immediately.
 - [Authentication](/api/start-guide/authentication) — the in-app flow for generating a token.

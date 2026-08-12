@@ -5,33 +5,33 @@ icon: Building2
 order: 0
 ---
 
-An organization is the top-level tenant in Blue — it owns workspaces, members, billing, and branding. Organizations are `Company` objects in the API, and every authenticated request runs inside exactly one of them, selected by the `X-Bloo-Company-ID` header.
+An organization is the top-level tenant in Blue — it owns workspaces, members, billing, and branding. Organizations are `Organization` objects in the API, and every authenticated request runs inside exactly one of them, selected by the `X-Bloo-Company-ID` header.
 
 This section covers the organization lifecycle a normal API consumer can drive: create an organization, read one, list the organizations the calling user belongs to, update an organization's profile, and check whether a slug is free. For adding and removing members, see [User Management](/api/user-management).
 
 ## Operations
 
-| Operation               | GraphQL                               | Description                                                                                                                         |
-| ----------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Create an organization  | `createCompany`                       | [Create a new organization](/api/organization-management/create-organization) with a name and slug; the caller becomes its `OWNER`. |
-| Get an organization     | `company(id)`                         | [Read a single organization](/api/organization-management/query-organization) by ID or slug.                                        |
-| List organizations      | `companies(filter, sort, skip, take)` | Page through the organizations the calling user is a member of. Returns `CompanyPagination` (`{ items, pageInfo }`).                |
-| Update an organization  | `editCompany(input)`                  | Update an organization's name, slug, image, white-label settings, and other profile fields. Requires `OWNER` access.                |
-| Check slug availability | `isCompanySlugAvailable(slug)`        | Returns `true` if no organization already uses that exact slug.                                                                     |
+| Operation               | GraphQL                                   | Description                                                                                                                         |
+| ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Create an organization  | `createOrganization`                      | [Create a new organization](/api/organization-management/create-organization) with a name and slug; the caller becomes its `OWNER`. |
+| Get an organization     | `organization(id)`                        | [Read a single organization](/api/organization-management/query-organization) by ID or slug.                                        |
+| List organizations      | `organizations(filter, sort, skip, take)` | Page through the organizations the calling user is a member of. Returns `OrganizationPagination` (`{ items, pageInfo }`).           |
+| Update an organization  | `editOrganization(input)`                 | Update an organization's name, slug, image, white-label settings, and other profile fields. Requires `OWNER` access.                |
+| Check slug availability | `isOrganizationSlugAvailable(slug)`            | Returns `true` if no organization already uses that exact slug.                                                                     |
 
-Membership and lifecycle operations live alongside these: `leaveCompany` (leave an organization you belong to), `removeCompanyUser` (remove another member), and `deleteCompanyRequest` (request deletion of an organization). See [User Management](/api/user-management) for member operations.
+Membership and lifecycle operations live alongside these: `leaveOrganization` (leave an organization you belong to), `removeOrganizationUser` (remove another member), and `deleteOrganizationRequest` (request deletion of an organization). See [User Management](/api/user-management) for member operations.
 
 ## Authentication
 
 Send every request to `https://api.blue.app/graphql` with your personal access token headers:
 
 ```
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
 ```
 
-`X-Bloo-Company-ID` accepts an organization ID or its slug, and it sets the organization context for the whole request. See [Authentication](/api/start-guide/authentication) for how to obtain a token and [Making Requests](/api/start-guide/making-requests) for the full request shape. Headers are case-insensitive.
+`blue-org-id` accepts an organization ID or its slug, and it sets the organization context for the whole request. See [Authentication](/api/start-guide/authentication) for how to obtain a token and [Making Requests](/api/start-guide/making-requests) for the full request shape. Headers are case-insensitive.
 
 ## Key concepts
 
@@ -39,14 +39,14 @@ X-Bloo-Company-ID: YOUR_COMPANY_ID
 
 Every organization has two stable identifiers, and operations that take an organization accept either:
 
-- **ID** — a unique cuid generated by Blue when the organization is created. Returned as `Company.id`.
-- **Slug** — a URL-friendly string. You propose the slug when creating an organization, but Blue normalizes it server-side (lowercased, symbols stripped, spaces replaced with hyphens) and appends a numeric suffix on collision. The final stored slug is returned on the created `Company` and may differ from what you submitted. Use `isCompanySlugAvailable` to check a candidate before you create, or read `Company.slug` afterward to learn the value that was actually stored.
+- **ID** — a unique cuid generated by Blue when the organization is created. Returned as `Organization.id`.
+- **Slug** — a URL-friendly string. You propose the slug when creating an organization, but Blue normalizes it server-side (lowercased, symbols stripped, spaces replaced with hyphens) and appends a numeric suffix on collision. The final stored slug is returned on the created `Organization` and may differ from what you submitted. Use `isOrganizationSlugAvailable` to check a candidate before you create, or read `Organization.slug` afterward to learn the value that was actually stored.
 
 ### Access control
 
-- A user can only read organizations they are a member of. `company` and `companies` resolve against the caller's memberships; requesting an organization you don't belong to returns `COMPANY_NOT_FOUND`.
-- `editCompany` requires `OWNER` access to the target organization; other members get `FORBIDDEN`.
-- If the organization set in your `X-Bloo-Company-ID` header is banned, every request in that context fails with `COMPANY_BANNED`. The ban is enforced when the request context is built from the header — it is not a check performed by the `company` read path on some other target organization.
+- A user can only read organizations they are a member of. `organization` and `organizations` resolve against the caller's memberships; requesting an organization you don't belong to returns `COMPANY_NOT_FOUND`.
+- `editOrganization` requires `OWNER` access to the target organization; other members get `FORBIDDEN`.
+- If the organization set in your `X-Bloo-Company-ID` header is banned, every request in that context fails with `COMPANY_BANNED`. The ban is enforced when the request context is built from the header — it is not a check performed by the `organization` read path on some other target organization.
 
 <Callout variant="info" title="Billing is per organization">
 

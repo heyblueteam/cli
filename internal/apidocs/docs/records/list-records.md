@@ -5,17 +5,17 @@ icon: List
 order: 1
 ---
 
-Use the `todoQueries.todos` query to read records from Blue with filtering, sorting, and pagination. Records are `Todo` objects in the API; in the app they appear as the cards inside a workspace's lists. A single call can span one organization, several workspaces, or a precise slice defined by assignees, tags, dates, and custom-field conditions.
+Use the `recordQueries.todos` query to read records from Blue with filtering, sorting, and pagination. Records are `Record` objects in the API; in the app they appear as the cards inside a workspace's lists. A single call can span one organization, several workspaces, or a precise slice defined by assignees, tags, dates, and custom-field conditions.
 
 This is the only operation that filters records server-side. (In-app search filters client-side after records load, so it can't reach records beyond what the client has fetched.)
 
 ## Request
 
-The query lives under the `todoQueries` namespace. The only required input is `companyIds` — one or more organization IDs or slugs.
+The query lives under the `recordQueries` namespace. The only required input is `companyIds` — one or more organization IDs or slugs.
 
 ```graphql
 query ListRecords {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"] }) {
       items {
         id
@@ -38,12 +38,13 @@ The `companyIds`, `projectIds`, and `todoListIds` arrays each accept **IDs or sl
 
 ### Arguments
 
-| Argument | Type           | Required | Description                                                                                                      |
-| -------- | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `filter` | `TodosFilter!` | Yes      | Filter criteria (below). `companyIds` is the only required field.                                                |
-| `sort`   | `[TodosSort!]` | No       | Ordering. Defaults to `[]` (the engine's natural order). Multiple keys apply in sequence.                        |
-| `limit`  | `Int`          | No       | Items per page. Omit to get **20**. Any value over 500 — and any value `<= 0` — is coerced to **500** (the max). |
-| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`.                                                            |
+| Argument | Type           | Required | Description                                                                                                                                                  |
+| -------- | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filter` | `TodosFilter!` | Yes      | Filter criteria (below). `companyIds` is the only required field.                                                                                            |
+| `sort`   | `[TodosSort!]` | No       | Ordering. Defaults to `[]` (the engine's natural order). Multiple keys apply in sequence.                                                                    |
+| `limit`  | `Int`          | No       | Items per page. Omit to get **20**. Any value over 500 — and any value `<= 0` — is coerced to **500** (the max).                                             |
+| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`. Cannot be combined with `after`.                                                                       |
+| `after`  | `String`       | No       | Opaque keyset cursor for constant-cost pagination on large single-workspace scans. Opt-in and narrowly scoped — see [Cursor pagination](#cursor-pagination). |
 
 <Callout variant="warning" title="limit: 0 is not the default">
 
@@ -140,7 +141,7 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -168,27 +169,28 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 
 ### TodosResult
 
-| Field      | Type        | Description               |
-| ---------- | ----------- | ------------------------- |
-| `items`    | `[Todo!]!`  | The records on this page. |
-| `pageInfo` | `PageInfo!` | Pagination metadata.      |
+| Field      | Type         | Description               |
+| ---------- | ------------ | ------------------------- |
+| `items`    | `[Record!]!` | The records on this page. |
+| `pageInfo` | `PageInfo!`  | Pagination metadata.      |
 
 ### PageInfo
 
-| Field             | Type       | Description                                                                   |
-| ----------------- | ---------- | ----------------------------------------------------------------------------- |
-| `totalItems`      | `Int`      | Total records matching the filter, across all pages.                          |
-| `totalPages`      | `Int`      | Total pages at the current `limit`.                                           |
-| `page`            | `Int`      | Current page, derived from `skip` and `limit`.                                |
-| `perPage`         | `Int`      | Page size in effect (the resolved `limit`).                                   |
-| `hasNextPage`     | `Boolean!` | Whether a next page exists.                                                   |
-| `hasPreviousPage` | `Boolean!` | Whether a previous page exists.                                               |
-| `startCursor`     | `String`   | Deprecated. Cursor pagination is not used here; paginate with `skip`/`limit`. |
-| `endCursor`       | `String`   | Deprecated. See `startCursor`.                                                |
+| Field             | Type       | Description                                                                                                                                                                                                          |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `totalItems`      | `Int`      | Total records matching the filter, across all pages. `null` on cursor (`after`) pages — the exact-count query is skipped for speed.                                                                                  |
+| `totalPages`      | `Int`      | Total pages at the current `limit`. `null` on cursor (`after`) pages.                                                                                                                                                |
+| `page`            | `Int`      | Current page, derived from `skip` and `limit`.                                                                                                                                                                       |
+| `perPage`         | `Int`      | Page size in effect (the resolved `limit`).                                                                                                                                                                          |
+| `hasNextPage`     | `Boolean!` | Whether a next page exists.                                                                                                                                                                                          |
+| `hasPreviousPage` | `Boolean!` | Whether a previous page exists.                                                                                                                                                                                      |
+| `nextCursor`      | `String`   | Opaque cursor to pass as `after` for the next page. Returned on cursor-eligible queries (see [Cursor pagination](#cursor-pagination)); `null` on the final page and on any query not eligible for cursor pagination. |
+| `startCursor`     | `String`   | Deprecated. Use `nextCursor` with the `after` argument instead.                                                                                                                                                      |
+| `endCursor`       | `String`   | Deprecated. See `nextCursor`.                                                                                                                                                                                        |
 
-### Todo
+### Record
 
-The most useful fields on each returned record. The `Todo` type exposes more — these are the ones you'll select most often.
+The most useful fields on each returned record. The `Record` type exposes more — these are the ones you'll select most often.
 
 | Field                     | Type              | Description                                                                                                                                                               |
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -219,15 +221,15 @@ The most useful fields on each returned record. The `Todo` type exposes more —
 | `reminder`                | `JSON`            | Reminder configuration.                                                                                                                                                   |
 | `isRead`                  | `Boolean`         | Read state for the current user.                                                                                                                                          |
 | `isSeen`                  | `Boolean`         | Seen state for the current user.                                                                                                                                          |
-| `todoList`                | `TodoList!`       | The list this record belongs to.                                                                                                                                          |
-| `todoLists`               | `[TodoList!]`     | All lists this record appears in (for cross-list records).                                                                                                                |
-| `repeatingTodoList`       | `TodoList`        | The list a recurring record was generated into.                                                                                                                           |
+| `todoList`                | `RecordList!`     | The list this record belongs to.                                                                                                                                          |
+| `todoLists`               | `[RecordList!]`   | All lists this record appears in (for cross-list records).                                                                                                                |
+| `repeatingTodoList`       | `RecordList`      | The list a recurring record was generated into.                                                                                                                           |
 | `users`                   | `[User!]!`        | Assigned users. Select `fullName`/`email`, not `name`.                                                                                                                    |
 | `tags`                    | `[Tag!]!`         | Tags. Select `title`/`color` (a `Tag` has no `name`).                                                                                                                     |
 | `checklists`              | `[Checklist!]!`   | Checklists on the record.                                                                                                                                                 |
 | `customFields`            | `[CustomField!]!` | Custom-field values. Select value fields on each element (`name`, `type`, `value`, `text`, `number`, `checked`, `selectedOption { title }`, `selectedOptions { title }`). |
-| `dependOn`                | `[Todo!]`         | Records this one depends on (blocking).                                                                                                                                   |
-| `dependBy`                | `[Todo!]`         | Records that depend on this one.                                                                                                                                          |
+| `dependOn`                | `[Record!]`       | Records this one depends on (blocking).                                                                                                                                   |
+| `dependBy`                | `[Record!]`       | Records that depend on this one.                                                                                                                                          |
 | `timeTracking`            | `TimeTracking`    | Time-tracking summary.                                                                                                                                                    |
 
 ## Full example
@@ -236,7 +238,7 @@ Filter to open, high-priority records in two workspaces, due in 2026, sorted by 
 
 ```graphql
 query ListRecordsAdvanced {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]
@@ -326,7 +328,7 @@ There is **no value that returns active and archived records together** in a sin
 
 ```graphql
 query ArchivedRecords {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], projectIds: ["project_123"], archived: true }) {
       items {
         id
@@ -354,7 +356,7 @@ To read every record in one workspace, filter by that workspace and page through
 
 ```graphql
 query AllWorkspaceRecords {
-  todoQueries {
+  recordQueries {
     todos(
       filter: { companyIds: ["company_123"], projectIds: ["project_123"] }
       limit: 500
@@ -384,6 +386,42 @@ A few things to keep in mind:
 - **One query covers the whole workspace.** There's no per-list call to make — a single query with no `todoListIds` returns records from every list in the workspace.
 - **Span workspaces or the whole org.** `projectIds` accepts several IDs to cover multiple workspaces at once; drop `projectIds` entirely to read across every workspace in the organizations named in `companyIds`.
 - **Visibility still applies.** Records the caller can't see — restricted lists, assigned-only roles, tag-based rules — are filtered out silently rather than erroring.
+
+## Cursor pagination
+
+Offset pagination (`skip`) is simple, but it gets more expensive the deeper you page — reaching row 100,000 still means the database walks past the 99,999 rows before it. For large single-workspace scans, the optional `after` argument provides a keyset cursor that seeks directly to the page boundary through an index, so page 100 costs the same as page 1.
+
+`after` is opt-in and deliberately narrow. It is honored only when **all** of the following hold; violating any one returns a `BAD_USER_INPUT` error rather than silently falling back to offset mode:
+
+- The query is scoped to a single workspace that does not use multi-list records (records that appear in more than one list). Cross-workspace queries are not supported yet — use `skip`.
+- `sort` is exactly `[position_DESC]`. Passing any other sort — including omitting `sort` — is rejected; use `skip` for other orderings.
+- `after` is not combined with `skip`.
+
+To start a chain, run a request that meets those conditions (with or without `skip`) and read `pageInfo.nextCursor` — an eligible offset request hands back a usable cursor from page 1, so there is no dedicated "give me a cursor" round trip. Pass that value as `after` on the next request, and keep following `nextCursor` until it returns `null`, which marks the final page.
+
+Cursor pages skip the exact-count query for speed, so `pageInfo.totalItems` and `totalPages` come back `null` on any request that passes `after`. Drive the loop with `hasNextPage`/`nextCursor` instead of a total.
+
+```graphql
+query CursorPage {
+  recordQueries {
+    todos(
+      filter: { companyIds: ["company_123"], projectIds: ["project_123"] }
+      sort: [position_DESC]
+      limit: 100
+      after: "eyJwb3NpdGlvbiI6..."
+    ) {
+      items {
+        id
+        title
+      }
+      pageInfo {
+        hasNextPage
+        nextCursor
+      }
+    }
+  }
+}
+```
 
 ## Custom-field filtering
 
@@ -430,7 +468,7 @@ For mixed AND/OR logic, supply `groups`. **When `groups` is present, the flat `T
 
 ```graphql
 query ListRecordsByGroups {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]

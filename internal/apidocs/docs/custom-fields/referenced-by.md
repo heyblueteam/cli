@@ -57,7 +57,7 @@ The referencing field must be a `REFERENCE` field that belongs to the same organ
 
 ## Set a value
 
-Referenced-by fields are computed — `setTodoCustomField` rejects them with a `BAD_USER_INPUT` error. To change what a record is referenced by, edit the reference field on the source record instead.
+Referenced-by fields are computed — `setRecordCustomField` rejects them with a `BAD_USER_INPUT` error. To change what a record is referenced by, edit the reference field on the source record instead.
 
 ## Read a value
 
@@ -65,7 +65,7 @@ The resolved source records come back in `referencedByResult` (a `JSON` value, p
 
 ```graphql
 query RecordReferencedBy {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: [], projectIds: ["project_123"] }, limit: 5) {
       items {
         id
@@ -84,7 +84,7 @@ query RecordReferencedBy {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {

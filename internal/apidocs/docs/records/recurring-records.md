@@ -5,17 +5,17 @@ icon: Repeat
 order: 10
 ---
 
-Use the `createRepeatingTodo`, `updateRepeatingTodo`, and `deleteRepeatingTodo` mutations to manage a repeating schedule on a record. The schedule is attached to an existing record, which acts as the template: each time the schedule fires, Blue copies the template into a target list. Records are `Todo` objects in the API; lists are `TodoList` objects.
+Use the `createRepeatingRecord`, `updateRepeatingRecord`, and `deleteRepeatingRecord` mutations to manage a repeating schedule on a record. The schedule is attached to an existing record, which acts as the template: each time the schedule fires, Blue copies the template into a target list. Records are `Record` objects in the API; lists are `RecordList` objects.
 
 You control the cadence with a preset (`DAILY`, `WEEKLY`, `MONTHLY`, …) or a fully custom interval, choose when the schedule ends, and pick which elements (assignees, tags, custom fields, and more) carry over to each copy. All three mutations return `Boolean`.
 
 Send these headers with every request. Company and project accept either an ID or a slug, and header names are case-insensitive.
 
 ```http
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 ## Request
@@ -24,7 +24,7 @@ Attach a daily repeating schedule to an existing record, copying assignees and t
 
 ```graphql
 mutation CreateRecurringRecord {
-  createRepeatingTodo(
+  createRepeatingRecord(
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
@@ -38,21 +38,22 @@ mutation CreateRecurringRecord {
 
 ## Parameters
 
-### CreateRepeatingTodoInput
+### CreateRepeatingRecordInput
 
-| Parameter    | Type                           | Required | Description                                                    |
-| ------------ | ------------------------------ | -------- | -------------------------------------------------------------- |
-| `todoId`     | `String!`                      | Yes      | The existing record to turn into a recurring template.         |
-| `todoListId` | `String!`                      | Yes      | The list where each new copy is created.                       |
-| `type`       | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence. Use a preset, or `CUSTOM` with `interval`. |
-| `fields`     | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.                     |
-| `from`       | `DateTime!`                    | Yes      | The first occurrence date/time the schedule starts from.       |
-| `interval`   | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`.             |
-| `end`        | `RepeatingTodoEndInput`        | No       | When the schedule stops. Omit to repeat indefinitely.          |
+| Parameter    | Type                           | Required | Description                                                                                |
+| ------------ | ------------------------------ | -------- | ------------------------------------------------------------------------------------------ |
+| `todoId`     | `String!`                      | Yes      | The existing record to turn into a recurring template.                                     |
+| `todoListId` | `String!`                      | Yes      | The list where each new copy is created.                                                   |
+| `type`       | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence. Use a preset, or `CUSTOM` with `interval`.                             |
+| `fields`     | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.                                                 |
+| `from`       | `DateTime!`                    | Yes      | The first occurrence date/time the schedule starts from.                                   |
+| `interval`   | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`.                                         |
+| `end`        | `RepeatingTodoEndInput`        | No       | When the schedule stops. Omit to repeat indefinitely.                                      |
+| `time`       | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at. Omit to keep the legacy default (midnight UTC). |
 
-### UpdateRepeatingTodoInput
+### UpdateRepeatingRecordInput
 
-Same shape as `CreateRepeatingTodoInput`, plus `repeatCounts`.
+Same shape as `CreateRepeatingRecordInput`, plus `repeatCounts`.
 
 | Parameter      | Type                           | Required | Description                                        |
 | -------------- | ------------------------------ | -------- | -------------------------------------------------- |
@@ -64,6 +65,15 @@ Same shape as `CreateRepeatingTodoInput`, plus `repeatCounts`.
 | `interval`     | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`. |
 | `end`          | `RepeatingTodoEndInput`        | No       | When the schedule stops.                           |
 | `repeatCounts` | `Int`                          | No       | How many times the record has already repeated.    |
+| `time`         | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at.         |
+
+### RepeatingTodoTimeInput
+
+| Parameter  | Type      | Required | Description                                                                        |
+| ---------- | --------- | -------- | ---------------------------------------------------------------------------------- |
+| `hour`     | `Int!`    | Yes      | Hour of day, 24-hour format (`0`-`23`).                                            |
+| `minute`   | `Int!`    | Yes      | Minute of the hour (`0`-`59`).                                                     |
+| `timezone` | `String!` | Yes      | IANA timezone name (e.g. `"America/New_York"`) the hour/minute are interpreted in. |
 
 ### RepeatingTodoIntervalInput
 
@@ -135,24 +145,24 @@ Each mutation returns a `Boolean` under the operation name.
 ```json
 {
   "data": {
-    "createRepeatingTodo": true
+    "createRepeatingRecord": true
   }
 }
 ```
 
 ### Returns
 
-| Field                 | Type      | Description                                                                                                         |
-| --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- |
-| `createRepeatingTodo` | `Boolean` | `true` when the schedule is attached.                                                                               |
-| `updateRepeatingTodo` | `Boolean` | `true` when the schedule is updated and the next copy is created; `false` if creating the copy failed (see Errors). |
-| `deleteRepeatingTodo` | `Boolean` | `true` when the schedule is removed.                                                                                |
+| Field                   | Type      | Description                                                                                                         |
+| ----------------------- | --------- | ------------------------------------------------------------------------------------------------------------------- |
+| `createRepeatingRecord` | `Boolean` | `true` when the schedule is attached.                                                                               |
+| `updateRepeatingRecord` | `Boolean` | `true` when the schedule is updated and the next copy is created; `false` if creating the copy failed (see Errors). |
+| `deleteRepeatingRecord` | `Boolean` | `true` when the schedule is removed.                                                                                |
 
 To read the active schedule's target list back, select `repeatingTodoList` on the record. It is `null` when no schedule is set.
 
 ```graphql
 query RecurringTarget {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -173,7 +183,7 @@ Repeat every 2 weeks on Monday and Wednesday, end after 10 occurrences, and copy
 
 ```graphql
 mutation CreateRecurringRecordCustom {
-  createRepeatingTodo(
+  createRepeatingRecord(
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
@@ -191,7 +201,7 @@ Update a record's schedule to repeat monthly by date, ending on a fixed date:
 
 ```graphql
 mutation UpdateRecurringRecord {
-  updateRepeatingTodo(
+  updateRepeatingRecord(
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
@@ -210,7 +220,7 @@ Remove a schedule from a record (the `id` is the record's `todoId`):
 
 ```graphql
 mutation DeleteRecurringRecord {
-  deleteRepeatingTodo(id: "todo_123")
+  deleteRepeatingRecord(id: "todo_123")
 }
 ```
 
@@ -220,7 +230,9 @@ mutation DeleteRecurringRecord {
 - Each occurrence is a fresh copy created in `todoListId` via the same mechanism as [copying a record](/api/records/copy-record). The target list can be in the same workspace or a different one.
 - `fields` controls exactly what carries over. Anything not listed is left off the copy.
 - Preset cadences (`DAILY`, `WEEKDAYS`, `WEEKLY`, `MONTHLY`, `YEARLY`) need no `interval`. `CUSTOM` requires one — use `interval.days` to pin specific weekdays on `WEEKS` intervals, and `interval.month` to anchor `MONTHS` intervals to a date (`BY_DD`) or a weekday position (`BY_DDDD`).
-- When `updateRepeatingTodo` generates a copy, it logs a `REPEAT_TODO` activity, records a todo action, notifies the copy's assignees, and publishes the new record in real time. If creating the copy fails, the mutation clears the schedule to avoid a stuck state and returns `false` instead of throwing — always check the return value.
+- `time` applies uniformly across every cadence and interval type. Omit it to keep the legacy default of creating each occurrence at midnight UTC.
+- `time` only controls when the copy is _created_ (its `createdAt`) — it does not set a due date on the copy. `fields` has no due-date option today, so recurring copies are created without one.
+- When `updateRepeatingRecord` generates a copy, it logs a `REPEAT_TODO` activity, records a todo action, notifies the copy's assignees, and publishes the new record in real time. If creating the copy fails, the mutation clears the schedule to avoid a stuck state and returns `false` instead of throwing — always check the return value.
 
 ## Errors
 

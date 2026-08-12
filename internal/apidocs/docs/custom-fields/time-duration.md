@@ -7,19 +7,19 @@ order: 27
 
 A time duration custom field measures the elapsed time between two events in a record's lifecycle — for example, from creation to completion, or from one status change to another. The value is computed automatically by Blue; you never write it directly. It maps to the `TIME_DURATION` value of the `CustomFieldType` enum and is backed by a `CustomField` whose stored duration (in seconds) is exposed on `CustomField.number`.
 
-Records are `Todo` objects in the API.
+Records are `Record` objects in the API.
 
 ## Overview
 
 - **Type enum:** `TIME_DURATION`
 - **Configuration:** a start event (`timeDurationStartInput`) and an end event (`timeDurationEndInput`), each a `CustomFieldTimeDurationInput`; a display format (`timeDurationDisplay`); and an optional SLA target (`timeDurationTargetTime`, seconds).
 - **Value shape:** the elapsed time in **seconds**, read from `CustomField.number` (a `Float`) in a record context. `CustomField.value` is JSON and is not the duration — use `number`.
-- **Read-only:** the value is derived from the configured events. `setTodoCustomField` does not apply to this type; there is no write path for the duration.
+- **Read-only:** the value is derived from the configured events. `setRecordCustomField` does not apply to this type; there is no write path for the duration.
 - **Schema-optional, practically required:** in `CreateCustomFieldInput` the three time-duration inputs are nullable (no `!`), because the input is shared across all field types. For `TIME_DURATION` the resolver rejects the call if any of `timeDurationDisplay`, `timeDurationStartInput`, or `timeDurationEndInput` is missing.
 
 ## Create
 
-Use the `createCustomField` mutation with `type: TIME_DURATION`. The field is created in the workspace named by your `X-Bloo-Project-ID` header (ID or slug) — there is no `projectId` argument.
+Use the `createCustomField` mutation with `type: TIME_DURATION`. The field is created in the workspace named by your `blue-workspace-id` header (ID or slug) — there is no `projectId` argument.
 
 This example tracks how long a record takes to complete, from creation to the moment it's marked done:
 
@@ -77,7 +77,7 @@ mutation CreateDurationField {
 | `timeDurationTargetTime` | `Float`                              | No       | Optional SLA target in seconds, returned alongside the value for comparison (e.g. `86400`). |
 | `description`            | `String`                             | No       | Help text shown to users.                                                                   |
 
-The workspace is taken from the `X-Bloo-Project-ID` header; `CreateCustomFieldInput` has no `projectId` field. The same time-duration inputs also appear on `EditCustomFieldInput` for updating an existing field.
+The workspace is taken from the `blue-workspace-id` header; `CreateCustomFieldInput` has no `projectId` field. The same time-duration inputs also appear on `EditCustomFieldInput` for updating an existing field.
 
 ### CustomFieldTimeDurationInput
 
@@ -126,11 +126,11 @@ The display format controls only how clients render the value — the stored dur
 
 ## Read a value
 
-The duration is computed by Blue and read back through the record's `customFields` connection. `Todo.customFields` returns `[CustomField!]!` directly — select the value fields on the element. For a `TIME_DURATION` field, the elapsed seconds are on `CustomField.number`.
+The duration is computed by Blue and read back through the record's `customFields` connection. `Record.customFields` returns `[CustomField!]!` directly — select the value fields on the element. For a `TIME_DURATION` field, the elapsed seconds are on `CustomField.number`.
 
 ```graphql
 query ReadDuration {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -152,7 +152,7 @@ query ReadDuration {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -176,7 +176,7 @@ query ReadDuration {
 }
 ```
 
-`number` resolves only when the `CustomField` is read in a record context (via `Todo.customFields`); it is `null` when the field definition is read on its own, and also `null` when the interval is incomplete (see [Notes](#notes)). Here `93784` seconds is 1 day, 2 hours, 3 minutes, 4 seconds — and it exceeds the `86400`-second SLA target.
+`number` resolves only when the `CustomField` is read in a record context (via `Record.customFields`); it is `null` when the field definition is read on its own, and also `null` when the interval is incomplete (see [Notes](#notes)). Here `93784` seconds is 1 day, 2 hours, 3 minutes, 4 seconds — and it exceeds the `86400`-second SLA target.
 
 ### CustomField (TIME_DURATION fields)
 
@@ -198,7 +198,7 @@ The shape returned for `timeDurationStart` and `timeDurationEnd`.
 | `condition`          | `CustomFieldTimeDurationCondition` | `FIRST` or `LAST`.                                   |
 | `customField`        | `CustomField`                      | The watched field, for a `TODO_CUSTOM_FIELD` event.  |
 | `customFieldOptions` | `[CustomFieldOption!]`             | The matched options, if option IDs were supplied.    |
-| `todoList`           | `TodoList`                         | The watched list, for a `TODO_MOVED` event.          |
+| `todoList`           | `RecordList`                       | The watched list, for a `TODO_MOVED` event.          |
 | `tag`                | `Tag`                              | The watched tag, for a `TODO_TAG_ADDED` event.       |
 | `assignee`           | `User`                             | The watched user, for a `TODO_ASSIGNEE_ADDED` event. |
 
@@ -267,7 +267,7 @@ timeDurationEndInput:   { type: TODO_CUSTOM_FIELD, condition: FIRST, customField
 
 ## Notes
 
-- **The value is read-only and asynchronous.** Blue recomputes the duration in the background when a configured event fires (record created, custom field changed, tag/assignee added, record moved or marked complete). There is no mutation to set it — `setTodoCustomField` is not used for this type.
+- **The value is read-only and asynchronous.** Blue recomputes the duration in the background when a configured event fires (record created, custom field changed, tag/assignee added, record moved or marked complete). There is no mutation to set it — `setRecordCustomField` is not used for this type.
 - **`CustomField.number` holds the duration, not `CustomField.value`.** `value` is the generic JSON value column; for a time-duration field, read the seconds from `number`.
 - **`number` is `null` until the interval completes.** It returns `null` when the start event hasn't occurred, the end event hasn't occurred, or a referenced field/list/tag/user no longer exists.
 - **`FIRST` vs `LAST` matters for repeated events.** A status field can be set multiple times; `FIRST` pins the clock to the earliest match and `LAST` to the most recent. Pick deliberately when an event can recur.
@@ -288,7 +288,7 @@ timeDurationEndInput:   { type: TODO_CUSTOM_FIELD, condition: FIRST, customField
 ## Permissions
 
 - **Create or edit the field:** `createCustomField` / `editCustomField` require the `OWNER` or `ADMIN` role on the workspace.
-- **Read the value:** any member who can view the record can read its time-duration value through `todoQueries`.
+- **Read the value:** any member who can view the record can read its time-duration value through `recordQueries`.
 
 ## Related
 

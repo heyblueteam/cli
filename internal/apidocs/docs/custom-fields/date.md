@@ -7,22 +7,22 @@ order: 19
 
 A date field stores a point in time or a span of time on a record — a deadline, an event window, a milestone. Each value has a `startDate`, an `endDate`, and an optional `timezone`. A single date is just a range whose start and end are equal. Dates are stored in UTC; the `timezone` is preserved separately so the value can be rendered correctly per viewer.
 
-Date fields are `CustomField` objects with `type: DATE`. Records are `Todo` objects in the API; a workspace is a `Project`.
+Date fields are `CustomField` objects with `type: DATE`. Records are `Record` objects in the API; a workspace is a `Workspace`.
 
 ## Overview
 
-|                   |                                                           |
-| ----------------- | --------------------------------------------------------- |
-| `CustomFieldType` | `DATE`                                                    |
-| Set with          | `setTodoCustomField` → `startDate`, `endDate`, `timezone` |
-| Reads back as     | `CustomField.value` → `{ startDate, endDate, timezone }`  |
-| Stores            | UTC timestamps + a timezone identifier                    |
+|                   |                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `CustomFieldType` | `DATE`                                                                                       |
+| Set with          | `setRecordCustomField` → `startDate`, `endDate`, `timezone`, `granularity`                   |
+| Reads back as     | `CustomField.value` → `{ startDate, endDate, timezone }`, plus `CustomField.dateGranularity` |
+| Stores            | UTC timestamps + a timezone identifier + an `ALL_DAY`/`TIMED` granularity                    |
 
 Mark a date field as the record's due date with `isDueDate: true`. Due-date fields can drive automations (`DUE_DATE_CHANGED`, `DUE_DATE_REMOVED`) and scheduled reminders.
 
 ## Create
 
-Create a date field with the `createCustomField` mutation. The field is scoped to the workspace in your `X-Bloo-Project-ID` header — there is no `projectId` argument.
+Create a date field with the `createCustomField` mutation. The field is scoped to the workspace in your `blue-workspace-id` header — there is no `projectId` argument.
 
 ```graphql
 mutation CreateDateField {
@@ -65,13 +65,13 @@ mutation CreateDueDateField {
 
 ## Set a value
 
-Set a date with `setTodoCustomField`, supplying `startDate`, `endDate`, and an optional `timezone`. The mutation returns `Boolean!` — it does not return the updated value, so select no subfields. Read the value back with a follow-up query (see [Read a value](#read-a-value)).
+Set a date with `setRecordCustomField`, supplying `startDate`, `endDate`, and an optional `timezone`. The mutation returns `Boolean!` — it does not return the updated value, so select no subfields. Read the value back with a follow-up query (see [Read a value](#read-a-value)).
 
 A **single date** has the same `startDate` and `endDate`:
 
 ```graphql
 mutation SetSingleDate {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -87,7 +87,7 @@ A **date range** spans two distinct timestamps:
 
 ```graphql
 mutation SetDateRange {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -99,37 +99,44 @@ mutation SetDateRange {
 }
 ```
 
-An **all-day event** spans the full day in the field's timezone (00:00 to 23:59):
+An **all-day event** is a floating calendar date — the same day for every viewer, independent of timezone. Pass `granularity: ALL_DAY` explicitly (recommended):
 
 ```graphql
 mutation SetAllDayEvent {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
       startDate: "2025-01-15T00:00:00Z"
-      endDate: "2025-01-15T23:59:59Z"
-      timezone: "Asia/Tokyo"
+      endDate: "2025-01-15T00:00:00Z"
+      granularity: ALL_DAY
     }
   )
 }
 ```
 
+<Callout variant="info" title="Legacy heuristic still supported">
+
+If `granularity` is omitted, Blue still infers `ALL_DAY` from a value spanning `00:00` to `23:59` in the field's `timezone` (the old detection method) — but an explicit `granularity` always takes precedence and is the more reliable way to set an all-day value going forward.
+
+</Callout>
+
 To clear a date, set both `startDate` and `endDate` to `null`.
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
-| Parameter       | Type       | Required | Description                                                                                                      |
-| --------------- | ---------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `todoId`        | `String!`  | Yes      | ID of the record to update.                                                                                      |
-| `customFieldId` | `String!`  | Yes      | ID of the date field.                                                                                            |
-| `startDate`     | `DateTime` | No       | Start of the range, in ISO 8601 (UTC stored).                                                                    |
-| `endDate`       | `DateTime` | No       | End of the range, in ISO 8601. For a single date, set it equal to `startDate`.                                   |
-| `timezone`      | `String`   | No       | IANA timezone identifier (e.g. `America/New_York`). Defaults to the calling user's detected timezone if omitted. |
+| Parameter       | Type              | Required | Description                                                                                                      |
+| --------------- | ----------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `todoId`        | `String!`         | Yes      | ID of the record to update.                                                                                      |
+| `customFieldId` | `String!`         | Yes      | ID of the date field.                                                                                            |
+| `startDate`     | `DateTime`        | No       | Start of the range, in ISO 8601 (UTC stored).                                                                    |
+| `endDate`       | `DateTime`        | No       | End of the range, in ISO 8601. For a single date, set it equal to `startDate`.                                   |
+| `timezone`      | `String`          | No       | IANA timezone identifier (e.g. `America/New_York`). Defaults to the calling user's detected timezone if omitted. |
+| `granularity`   | `DateGranularity` | No       | `ALL_DAY` or `TIMED`. Omit to infer from `startDate`/`endDate`/`timezone` (see callout above).                   |
 
 <Callout variant="warning" title="endDate is not auto-filled">
 
-`setTodoCustomField` writes `startDate` and `endDate` exactly as given — supplying only `startDate` leaves `endDate` empty. Always send both (set them equal for a single date). The auto-fill behaviour described below applies only to the `createTodo` shorthand.
+`setRecordCustomField` writes `startDate` and `endDate` exactly as given — supplying only `startDate` leaves `endDate` empty. Always send both (set them equal for a single date). The auto-fill behaviour described below applies only to the `createRecord` shorthand.
 
 </Callout>
 
@@ -138,14 +145,14 @@ To clear a date, set both `startDate` and `endDate` to `null`.
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-| Field                | Type       | Description                        |
-| -------------------- | ---------- | ---------------------------------- |
-| `setTodoCustomField` | `Boolean!` | `true` when the value was written. |
+| Field                  | Type       | Description                        |
+| ---------------------- | ---------- | ---------------------------------- |
+| `setRecordCustomField` | `Boolean!` | `true` when the value was written. |
 
 ## Set a value at record creation
 
@@ -153,7 +160,7 @@ When creating a record, pass date fields inline through `customFields`. Each ent
 
 ```graphql
 mutation CreateRecordWithDate {
-  createTodo(
+  createRecord(
     input: {
       title: "Project Milestone"
       todoListId: "list_123"
@@ -166,7 +173,7 @@ mutation CreateRecordWithDate {
 }
 ```
 
-### CreateTodoInputCustomField
+### CreateRecordInputCustomField
 
 | Parameter       | Type     | Required | Description                                                                                                   |
 | --------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------- |
@@ -181,7 +188,7 @@ mutation CreateRecordWithDate {
 
 ## Read a value
 
-A date value comes back on the `CustomField.value` field as `{ startDate, endDate, timezone }`. `startDate` and `endDate` are ISO 8601 strings (or `null`); `value` itself is `null` until the field is read in a record context. There is no `TodoCustomField` wrapper — `Todo.customFields` returns `CustomField` objects directly.
+A date value comes back on the `CustomField.value` field as `{ startDate, endDate, timezone }`. `startDate` and `endDate` are ISO 8601 strings (or `null`); `value` itself is `null` until the field is read in a record context. There is no `RecordCustomField` wrapper — `Record.customFields` returns `CustomField` objects directly.
 
 ```graphql
 query GetRecordDates {
@@ -223,21 +230,22 @@ query GetRecordDates {
 
 ### CustomField date fields
 
-| Field       | Type       | Description                                                                                  |
-| ----------- | ---------- | -------------------------------------------------------------------------------------------- |
-| `value`     | `JSON`     | `{ startDate, endDate, timezone }` for a `DATE` field in a record context; `null` otherwise. |
-| `startDate` | `DateTime` | Start of the range (also exposed directly on `CustomField`).                                 |
-| `endDate`   | `DateTime` | End of the range.                                                                            |
-| `timezone`  | `String`   | IANA timezone identifier stored with the value.                                              |
-| `isDueDate` | `Boolean`  | Whether this field is configured as the record's due date.                                   |
+| Field             | Type              | Description                                                                                  |
+| ----------------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| `value`           | `JSON`            | `{ startDate, endDate, timezone }` for a `DATE` field in a record context; `null` otherwise. |
+| `startDate`       | `DateTime`        | Start of the range (also exposed directly on `CustomField`).                                 |
+| `endDate`         | `DateTime`        | End of the range.                                                                            |
+| `timezone`        | `String`          | IANA timezone identifier stored with the value.                                              |
+| `dateGranularity` | `DateGranularity` | `ALL_DAY` or `TIMED` — see [Set a value](#set-a-value).                                      |
+| `isDueDate`       | `Boolean`         | Whether this field is configured as the record's due date.                                   |
 
 ## Filter records by date
 
-To filter records on a date, use the record query `todoQueries { todos(filter: TodosFilter!) }`. For a field marked `isDueDate: true`, the dedicated `TodosFilter` due-date fields are the simplest path.
+To filter records on a date, use the record query `recordQueries { todos(filter: TodosFilter!) }`. For a field marked `isDueDate: true`, the dedicated `TodosFilter` due-date fields are the simplest path.
 
 ```graphql
 query DueThisQuarter {
-  todoQueries {
+  recordQueries {
     todos(
       filter: {
         companyIds: ["company_123"]
@@ -260,7 +268,7 @@ Find records that have no due date set with the `hasDueDate` existence flag:
 
 ```graphql
 query MissingDueDate {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], hasDueDate: false }) {
       items {
         id
@@ -276,10 +284,10 @@ Relevant `TodosFilter` fields: `duedAt`, `duedAtStart`, `duedAtEnd`, `hasDueDate
 ## Notes
 
 - **Storage is UTC.** Timestamps are normalised to UTC on write; the `timezone` is stored alongside so values render correctly per viewer.
-- **All-day detection.** A value spanning 00:00 to 23:59 in its timezone is treated as an all-day event and rendered without a time.
+- **All-day detection.** Pass `granularity: ALL_DAY` explicitly to store a floating calendar date (recommended). If omitted, a value spanning 00:00 to 23:59 in its timezone is still inferred as all-day for backward compatibility.
 - **No end > start validation.** A range with `endDate` before `startDate` is accepted as-is; validate ordering in your client.
 - **Time requires a date.** You cannot store a time without a date — every value has at least a `startDate`.
-- **`createTodo` end-of-day default.** A single date passed to `createTodo` sets `endDate` to the end of that day. `setTodoCustomField` does not auto-fill; send both dates.
+- **`createRecord` end-of-day default.** A single date passed to `createRecord` sets `endDate` to the end of that day. `setRecordCustomField` does not auto-fill; send both dates.
 
 ## Errors
 

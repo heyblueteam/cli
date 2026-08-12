@@ -9,14 +9,14 @@ Personal access tokens (PATs) are the programmatic credentials behind Blue's API
 
 A token has two parts:
 
-- **Token ID** — the unprefixed `uid`, sent as the `X-Bloo-Token-ID` header.
-- **Secret** — the `pat_`-prefixed value, sent as the `X-Bloo-Token-Secret` header.
+- **Token ID** — the unprefixed `uid`, sent as the `blue-token-id` header.
+- **Secret** — the `pat_`-prefixed value, sent as the `blue-token-secret` header.
 
 The Secret is shown **exactly once**, at creation. Blue stores only a bcrypt hash of it, so it can never be retrieved again — capture it when the create mutation returns it.
 
 <Callout variant="warning" title="Token management needs a user session">
 
-All three operations require an authenticated user session (the Firebase/JWT login used by the app). They **cannot** be performed while authenticating with a token itself — calling them with `X-Bloo-Token-ID` headers present returns `FORBIDDEN`. Generate, audit, and revoke tokens from a logged-in browser session, not from an API integration.
+All three operations require an authenticated user session (the Firebase/JWT login used by the app). They **cannot** be performed while authenticating with a token itself — calling them with `blue-token-id` headers present returns `FORBIDDEN`. Generate, audit, and revoke tokens from a logged-in browser session, not from an API integration.
 
 </Callout>
 
@@ -32,5 +32,5 @@ In the API, a token is a `PersonalAccessToken` object. The list query returns a 
 
 ## Related
 
-- [Authentication](/api/start-guide/authentication) — the in-app flow for generating a token and the `X-Bloo-*` request headers.
+- [Authentication](/api/start-guide/authentication) — the in-app flow for generating a token and the `blue-*` request headers.
 - [Making Requests](/api/start-guide/making-requests) — how to send authenticated GraphQL requests with curl, Python, or Node.

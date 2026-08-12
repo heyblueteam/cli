@@ -26,9 +26,9 @@ Send the request to `https://api.blue.app/graphql` with your authentication head
 ```bash
 curl https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{"query": "mutation { createDashboard(input: { companyId: \"company_123\", title: \"Sales Performance\" }) { id title createdAt } }"}'
 ```
 

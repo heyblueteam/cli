@@ -31,7 +31,7 @@ query GetDocument {
 }
 ```
 
-List a workspace's documents with the `documents` query. Pass the workspace via `filter.projectId`, or omit it to default to the `X-Bloo-Project-ID` header.
+List a workspace's documents with the `documents` query. Pass the workspace via `filter.projectId`, or omit it to default to the `blue-workspace-id` header.
 
 ```graphql
 query ListDocuments {
@@ -76,7 +76,7 @@ query ListDocuments {
 
 | Field       | Type      | Required | Description                                                                                                                         |
 | ----------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `projectId` | `String`  | No       | Workspace to list documents from. Falls back to the `X-Bloo-Project-ID` header when omitted.                                        |
+| `projectId` | `String`  | No       | Workspace to list documents from. Falls back to the `blue-workspace-id` header when omitted.                                        |
 | `wiki`      | `Boolean` | No       | `true` returns only Wiki pages; `false` returns only regular documents. Omit to return both (subject to the role constraint above). |
 
 ### DocumentSort

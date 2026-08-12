@@ -1,13 +1,13 @@
 ---
 title: Update Record
-description: Edit a record's title, description, dates, color, cover, and tags with editTodo, and write custom field values with setTodoCustomField.
+description: Edit a record's title, description, dates, color, cover, and tags with editRecord, and write custom field values with setRecordCustomField.
 icon: FileEdit
 order: 2
 ---
 
-Use the `editTodo` mutation to change a record's built-in fields — title, description, due dates, color, cover, and tags — and use the `setTodoCustomField` mutation to write a value to one custom field on a record. Records are `Todo` objects in the API and custom fields are `CustomField` objects.
+Use the `editRecord` mutation to change a record's built-in fields — title, description, due dates, color, cover, and tags — and use the `setRecordCustomField` mutation to write a value to one custom field on a record. Records are `Record` objects in the API and custom fields are `CustomField` objects.
 
-`editTodo` returns the updated `Todo`. `setTodoCustomField` returns `Boolean!` — it does not return the field value, so read it back with [List Records](/api/records/list-records) when you need to confirm the result.
+`editRecord` returns the updated `Record`. `setRecordCustomField` returns `Boolean!` — it does not return the field value, so read it back with [List Records](/api/records/list-records) when you need to confirm the result.
 
 ## Request
 
@@ -15,7 +15,7 @@ Update a record's title and description. `todoId` is the only required field; in
 
 ```graphql
 mutation UpdateRecord {
-  editTodo(
+  editRecord(
     input: {
       todoId: "todo_123"
       title: "Finalize Q3 proposal"
@@ -33,29 +33,56 @@ mutation UpdateRecord {
 
 <Callout variant="info" title="Set the workspace header">
 
-`editTodo` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; the header determines which one the move/position change applies to.
+`editRecord` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; the header determines which one the move/position change applies to.
 
 </Callout>
 
 ## Parameters
 
-### EditTodoInput
+### EditRecordInput
 
-| Parameter    | Type                    | Required | Description                                                                                                                                               |
-| ------------ | ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `todoId`     | `String!`               | Yes      | ID of the record to update.                                                                                                                               |
-| `title`      | `String`                | No       | New record title. Rejected if the workspace has a name formula enabled (see [Errors](#errors)).                                                           |
-| `html`       | `String`                | No       | New description as sanitized HTML. The matching `text` is derived automatically — you do not need to send both.                                           |
-| `text`       | `String`                | No       | New description as plain text.                                                                                                                            |
-| `startedAt`  | `DateTime`              | No       | Start of the record's due-date range, ISO 8601.                                                                                                           |
-| `duedAt`     | `DateTime`              | No       | End of the record's due-date range (the due date), ISO 8601.                                                                                              |
-| `color`      | `String`                | No       | Record color as a hex code (see [Color options](#color-options)).                                                                                         |
-| `cover`      | `String`                | No       | Cover image URL for the record.                                                                                                                           |
-| `position`   | `Float`                 | No       | New sort position within its list. Applies only in the record's original workspace.                                                                       |
-| `todoListId` | `String`                | No       | Move the record to this list. To move across workspaces, prefer [Move Record to List](/api/records/move-record-list).                                     |
-| `tags`       | `[CreateTodoTagInput!]` | No       | **Replaces** the record's entire tag set with these tags. Pass `[]` to clear all tags. See [Tags](/api/records/tags) for an add/remove-style alternative. |
+| Parameter     | Type                      | Required | Description                                                                                                                                               |
+| ------------- | ------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `todoId`      | `String!`                 | Yes      | ID of the record to update.                                                                                                                               |
+| `title`       | `String`                  | No       | New record title. Rejected if the workspace has a name formula enabled (see [Errors](#errors)).                                                           |
+| `html`        | `String`                  | No       | New description as sanitized HTML. The matching `text` is derived automatically — you do not need to send both.                                           |
+| `text`        | `String`                  | No       | New description as plain text.                                                                                                                            |
+| `startedAt`   | `DateTime`                | No       | Start of the record's due-date range, ISO 8601.                                                                                                           |
+| `duedAt`      | `DateTime`                | No       | End of the record's due-date range (the due date), ISO 8601.                                                                                              |
+| `timezone`    | `String`                  | No       | IANA timezone used to interpret `startedAt`/`duedAt` (e.g. `America/New_York`). Only affects inference when `granularity` is omitted.                     |
+| `granularity` | `DateGranularity`         | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](#all-day-vs-timed-dates). Omit to infer from the values sent.                                         |
+| `color`       | `String`                  | No       | Record color as a hex code (see [Color options](#color-options)).                                                                                         |
+| `cover`       | `String`                  | No       | Cover image URL for the record.                                                                                                                           |
+| `position`    | `Float`                   | No       | New sort position within its list. Applies only in the record's original workspace.                                                                       |
+| `todoListId`  | `String`                  | No       | Move the record to this list. To move across workspaces, prefer [Move Record to List](/api/records/move-record-list).                                     |
+| `tags`        | `[CreateRecordTagInput!]` | No       | **Replaces** the record's entire tag set with these tags. Pass `[]` to clear all tags. See [Tags](/api/records/tags) for an add/remove-style alternative. |
 
-### CreateTodoTagInput
+### All-day vs. timed dates
+
+A due date is either a floating **all-day** date — the same calendar day for every viewer, RFC 5545 style — or a **timed** instant rendered per viewer using `timezone`. `granularity` picks which one you get:
+
+| Value     | Meaning                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------ |
+| `ALL_DAY` | A calendar date with no time component. Stored and read back as the same day for everyone. |
+| `TIMED`   | A precise instant, rendered in each viewer's timezone.                                     |
+
+```graphql
+mutation SetAllDayDueDate {
+  editRecord(input: { todoId: "todo_123", duedAt: "2026-07-10T00:00:00Z", granularity: ALL_DAY }) {
+    id
+    duedAt
+    dueDateGranularity
+  }
+}
+```
+
+<Callout variant="warning" title="Omitting granularity">
+
+If you don't pass `granularity`, Blue infers it: a `duedAt`/`startedAt` sent as an instant at exactly midnight in the given `timezone` (or UTC, if no `timezone`) is treated as `ALL_DAY`; anything else is `TIMED`. A caller that sends a midnight-UTC instant meaning a precise deadline (e.g. `duedAt: "2026-06-29T00:00:00Z"`) is now read back as `ALL_DAY` unless `granularity: TIMED` is passed explicitly. Existing integrations that don't write midnight-UTC timestamps are unaffected.
+
+</Callout>
+
+### CreateRecordTagInput
 
 Each entry either references an existing tag by `id`, or creates/matches one by `title` (and optional `color`).
 
@@ -84,7 +111,7 @@ Each entry either references an existing tag by `id`, or creates/matches one by 
 ```json
 {
   "data": {
-    "editTodo": {
+    "editRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Finalize Q3 proposal",
       "text": "Send to legal by Friday.",
@@ -96,21 +123,22 @@ Each entry either references an existing tag by `id`, or creates/matches one by 
 
 ### Returns
 
-`editTodo` returns the updated `Todo`. Commonly selected fields:
+`editRecord` returns the updated `Record`. Commonly selected fields:
 
-| Field       | Type       | Description                                          |
-| ----------- | ---------- | ---------------------------------------------------- |
-| `id`        | `ID!`      | Record ID.                                           |
-| `title`     | `String!`  | Record title.                                        |
-| `text`      | `String!`  | Description as plain text.                           |
-| `html`      | `String!`  | Description as HTML.                                 |
-| `position`  | `Float!`   | Sort position within the list.                       |
-| `color`     | `String`   | Record color hex code.                               |
-| `cover`     | `String`   | Cover image URL.                                     |
-| `startedAt` | `DateTime` | Start of the due-date range.                         |
-| `duedAt`    | `DateTime` | Due date (end of the range).                         |
-| `done`      | `Boolean!` | Whether the record is complete.                      |
-| `tags`      | `[Tag!]!`  | The record's tags (each has `id`, `title`, `color`). |
+| Field                | Type              | Description                                                                    |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------ |
+| `id`                 | `ID!`             | Record ID.                                                                     |
+| `title`              | `String!`         | Record title.                                                                  |
+| `text`               | `String!`         | Description as plain text.                                                     |
+| `html`               | `String!`         | Description as HTML.                                                           |
+| `position`           | `Float!`          | Sort position within the list.                                                 |
+| `color`              | `String`          | Record color hex code.                                                         |
+| `cover`              | `String`          | Cover image URL.                                                               |
+| `startedAt`          | `DateTime`        | Start of the due-date range.                                                   |
+| `duedAt`             | `DateTime`        | Due date (end of the range).                                                   |
+| `dueDateGranularity` | `DateGranularity` | `ALL_DAY` or `TIMED` — see [All-day vs. timed dates](#all-day-vs-timed-dates). |
+| `done`               | `Boolean!`        | Whether the record is complete.                                                |
+| `tags`               | `[Tag!]!`         | The record's tags (each has `id`, `title`, `color`).                           |
 
 ## Full example
 
@@ -118,7 +146,7 @@ Replace the tag set, move the record to a new list, set a position, and set a du
 
 ```graphql
 mutation UpdateRecordFull {
-  editTodo(
+  editRecord(
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
@@ -145,43 +173,44 @@ mutation UpdateRecordFull {
 
 ## Update custom fields
 
-Use the `setTodoCustomField` mutation to write one custom field value on a record. Send the field-specific parameter for the field's `CustomFieldType` — passing the wrong parameter is silently ignored, so match the table below. The mutation returns `Boolean!`.
+Use the `setRecordCustomField` mutation to write one custom field value on a record. Send the field-specific parameter for the field's `CustomFieldType` — passing the wrong parameter is silently ignored, so match the table below. The mutation returns `Boolean!`.
 
 ```graphql
 mutation SetCustomFieldValue {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", text: "Acme Corp" })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", text: "Acme Corp" })
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
-| Parameter                     | Type        | Required | Description                                                                                        |
-| ----------------------------- | ----------- | -------- | -------------------------------------------------------------------------------------------------- |
-| `todoId`                      | `String!`   | Yes      | The record to write to.                                                                            |
-| `customFieldId`               | `String!`   | Yes      | The custom field to set.                                                                           |
-| `text`                        | `String`    | No       | Text value (`TEXT_SINGLE`, `TEXT_MULTI`, `URL`, `EMAIL`, `PHONE`).                                 |
-| `number`                      | `Float`     | No       | Numeric value (`NUMBER`, `PERCENT`, `RATING`, `CURRENCY`).                                         |
-| `currency`                    | `String`    | No       | Three-letter currency code for a `CURRENCY` field. Falls back to the field's default when omitted. |
-| `checked`                     | `Boolean`   | No       | Checkbox state (`CHECKBOX`).                                                                       |
-| `regionCode`                  | `String`    | No       | ISO 3166-1 region code paired with `text` for a `PHONE` field.                                     |
-| `countryCodes`                | `[String!]` | No       | ISO 3166-1 alpha-2 codes for a `COUNTRY` field.                                                    |
-| `latitude`                    | `Float`     | No       | Latitude for a `LOCATION` field (with `longitude` and `text`).                                     |
-| `longitude`                   | `Float`     | No       | Longitude for a `LOCATION` field.                                                                  |
-| `startDate`                   | `DateTime`  | No       | Start of a `DATE` field's range, ISO 8601.                                                         |
-| `endDate`                     | `DateTime`  | No       | End of a `DATE` field's range (the date itself for a single date), ISO 8601.                       |
-| `timezone`                    | `String`    | No       | IANA timezone for a `DATE` field (e.g. `America/New_York`).                                        |
-| `customFieldOptionId`         | `String`    | No       | Selected option ID for a `SELECT_SINGLE` field.                                                    |
-| `customFieldOptionIds`        | `[String!]` | No       | Selected option IDs for a `SELECT_MULTI` field.                                                    |
-| `customFieldReferenceTodoIds` | `[String!]` | No       | Linked record IDs for a `REFERENCE` field. Replaces the field's link set.                          |
-| `assigneeUserIds`             | `[String!]` | No       | User IDs for an `ASSIGNEE` field. Replaces the field's assignees.                                  |
+| Parameter                     | Type              | Required | Description                                                                                                                    |
+| ----------------------------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `todoId`                      | `String!`         | Yes      | The record to write to.                                                                                                        |
+| `customFieldId`               | `String!`         | Yes      | The custom field to set.                                                                                                       |
+| `text`                        | `String`          | No       | Text value (`TEXT_SINGLE`, `TEXT_MULTI`, `URL`, `EMAIL`, `PHONE`).                                                             |
+| `number`                      | `Float`           | No       | Numeric value (`NUMBER`, `PERCENT`, `RATING`, `CURRENCY`).                                                                     |
+| `currency`                    | `String`          | No       | Three-letter currency code for a `CURRENCY` field. Falls back to the field's default when omitted.                             |
+| `checked`                     | `Boolean`         | No       | Checkbox state (`CHECKBOX`).                                                                                                   |
+| `regionCode`                  | `String`          | No       | ISO 3166-1 region code paired with `text` for a `PHONE` field.                                                                 |
+| `countryCodes`                | `[String!]`       | No       | ISO 3166-1 alpha-2 codes for a `COUNTRY` field.                                                                                |
+| `latitude`                    | `Float`           | No       | Latitude for a `LOCATION` field (with `longitude` and `text`).                                                                 |
+| `longitude`                   | `Float`           | No       | Longitude for a `LOCATION` field.                                                                                              |
+| `startDate`                   | `DateTime`        | No       | Start of a `DATE` field's range, ISO 8601.                                                                                     |
+| `endDate`                     | `DateTime`        | No       | End of a `DATE` field's range (the date itself for a single date), ISO 8601.                                                   |
+| `timezone`                    | `String`          | No       | IANA timezone for a `DATE` field (e.g. `America/New_York`).                                                                    |
+| `granularity`                 | `DateGranularity` | No       | `ALL_DAY` or `TIMED` for a `DATE` field. Omit to infer from `startDate`/`endDate` (see [Date Field](/api/custom-fields/date)). |
+| `customFieldOptionId`         | `String`          | No       | Selected option ID for a `SELECT_SINGLE` field.                                                                                |
+| `customFieldOptionIds`        | `[String!]`       | No       | Selected option IDs for a `SELECT_MULTI` field.                                                                                |
+| `customFieldReferenceTodoIds` | `[String!]`       | No       | Linked record IDs for a `REFERENCE` field. Replaces the field's link set.                                                      |
+| `assigneeUserIds`             | `[String!]`       | No       | User IDs for an `ASSIGNEE` field. Replaces the field's assignees.                                                              |
 
 <Callout variant="warning" title="Computed fields can't be set">
 
-`FORMULA`, `LOOKUP`, `ROLLUP`, `REFERENCED_BY`, `UNIQUE_ID`, and `CURRENCY_CONVERSION` fields are derived from other data. Calling `setTodoCustomField` on them returns a `BAD_USER_INPUT` error.
+`FORMULA`, `LOOKUP`, `ROLLUP`, `REFERENCED_BY`, `UNIQUE_ID`, and `CURRENCY_CONVERSION` fields are derived from other data. Calling `setRecordCustomField` on them returns a `BAD_USER_INPUT` error.
 
 </Callout>
 
@@ -191,7 +220,7 @@ mutation SetCustomFieldValue {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", text: "hello@acme.com" }
   )
 }
@@ -201,7 +230,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 42 })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 42 })
 }
 ```
 
@@ -209,7 +238,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", number: 1500.50, currency: "USD" }
   )
 }
@@ -219,7 +248,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: true })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: true })
 }
 ```
 
@@ -227,7 +256,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", customFieldOptionId: "option_123" }
   )
 }
@@ -237,7 +266,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -247,11 +276,11 @@ mutation {
 }
 ```
 
-**Date** (`DATE`) — `endDate` is the date; add `startDate` for a range and `timezone` for timezone-aware storage. See [Date Field](/api/custom-fields/date).
+**Date** (`DATE`) — `endDate` is the date; add `startDate` for a range, `timezone` for timezone-aware storage, and `granularity: ALL_DAY` for a floating all-day date. See [Date Field](/api/custom-fields/date).
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -267,7 +296,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -282,7 +311,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", countryCodes: ["AF", "AL", "DZ"] }
   )
 }
@@ -292,7 +321,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -308,7 +337,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -322,7 +351,7 @@ mutation {
 
 ```graphql
 mutation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -334,7 +363,7 @@ mutation {
 
 ## Errors
 
-`editTodo`:
+`editRecord`:
 
 | Code                     | When                                                                                                  |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
@@ -343,7 +372,7 @@ mutation {
 | `TODO_LIST_NOT_FOUND`    | `todoListId` does not resolve to a list the caller can access.                                        |
 | `TITLE_EDIT_NOT_ALLOWED` | `title` was set on a record in a workspace that has a name formula enabled.                           |
 
-`setTodoCustomField`:
+`setRecordCustomField`:
 
 | Code                     | When                                                                                                                                                               |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -363,12 +392,12 @@ mutation {
 | `COMMENT_ONLY` | No                 |
 | `VIEW_ONLY`    | No                 |
 
-`setTodoCustomField` additionally honors per-field role permissions: if a custom field is marked non-editable for the caller's role, the call is rejected with `FORBIDDEN`.
+`setRecordCustomField` additionally honors per-field role permissions: if a custom field is marked non-editable for the caller's role, the call is rejected with `FORBIDDEN`.
 
 ## Related
 
 - [List Records](/api/records/list-records) — read records and custom field values back.
-- [Toggle Record Status](/api/records/toggle-record-status) — mark a record complete (`done` is not an `editTodo` field).
+- [Toggle Record Status](/api/records/toggle-record-status) — mark a record complete (`done` is not an `editRecord` field).
 - [Move Record to List](/api/records/move-record-list) — move a record between lists and workspaces.
 - [Tags](/api/records/tags) — add or remove individual tags instead of replacing the whole set.
-- [Set Custom Field Values](/api/custom-fields/custom-field-values) — the full per-type guide for `setTodoCustomField`.
+- [Set Custom Field Values](/api/custom-fields/custom-field-values) — the full per-type guide for `setRecordCustomField`.

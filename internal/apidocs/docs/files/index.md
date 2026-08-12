@@ -5,7 +5,7 @@ icon: Upload
 order: 1
 ---
 
-Blue stores files as `File` objects scoped to an organization (`Company`) and, usually, a workspace (`Project`). There are two ways to get bytes into storage:
+Blue stores files as `File` objects scoped to an organization (`Organization`) and, usually, a workspace (`Workspace`). There are two ways to get bytes into storage:
 
 - **GraphQL multipart upload** (`uploadFile` / `uploadFiles`) — one request, up to **256 MB** per file. Use this for almost everything.
 - **REST presigned-PUT flow** (`GET /uploads` → `PUT` to storage → `PUT /uploads/{uid}/confirm`) — three requests, up to **4.8 GB** per file. Use this only for files larger than 256 MB, where streaming bytes straight to storage avoids holding the whole file in the API.
@@ -95,7 +95,7 @@ A freshly uploaded file is not placed in a folder, so `folder` is `null` unless 
       "shared": false,
       "status": "CONFIRMED",
       "createdAt": "2026-05-29T12:00:00.000Z",
-      "project": { "id": "project_123", "name": "Acme Onboarding" },
+      "project": { "id": "workspace_123", "name": "Acme Onboarding" },
       "folder": null
     }
   }
@@ -115,7 +115,7 @@ A freshly uploaded file is not placed in a folder, so `folder` is `null` unless 
 | `shared`    | `Boolean!`   | Whether the file is publicly shareable. Defaults to `false`.    |
 | `status`    | `FileStatus` | `CONFIRMED` or `PENDING`. See [File status](#file-status).      |
 | `createdAt` | `DateTime!`  | When the file was created.                                      |
-| `project`   | `Project!`   | The workspace the file belongs to.                              |
+| `project`   | `Workspace!` | The workspace the file belongs to.                              |
 | `folder`    | `Folder`     | The folder the file is in, or `null`.                           |
 
 ### Full example
@@ -126,11 +126,11 @@ The multipart body has three parts: `operations` (the query and variables, with 
 
 ```bash
 curl https://api.blue.app/graphql \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: company_123" \
-  -H "X-Bloo-Project-ID: project_123" \
-  -F 'operations={"query":"mutation UploadFile($input: UploadFileInput!) { uploadFile(input: $input) { id uid name size type extension } }","variables":{"input":{"file":null,"companyId":"company_123","projectId":"project_123"}}}' \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: company_123" \
+  -H "blue-workspace-id: project_123" \
+  -F 'operations={"query":"mutation UploadFile($input: UploadFileInput!) { uploadFile(input: $input) { id uid name size type extension } }","variables":{"input":{"file":null,"companyId":"company_123","projectId":"workspace_123"}}}' \
   -F 'map={"0":["variables.input.file"]}' \
   -F '0=@/path/to/report.pdf'
 ```
@@ -144,10 +144,10 @@ import requests
 
 BASE_URL = "https://api.blue.app"
 HEADERS = {
-    "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-    "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-    "X-Bloo-Company-ID": "company_123",
-    "X-Bloo-Project-ID": "project_123",
+    "blue-token-id": "YOUR_TOKEN_ID",
+    "blue-token-secret": "YOUR_TOKEN_SECRET",
+    "blue-org-id": "company_123",
+    "blue-workspace-id": "workspace_123",
 }
 
 def upload_file(filepath):
@@ -157,7 +157,7 @@ def upload_file(filepath):
       uploadFile(input: $input) { id uid name size type extension status }
     }
     """
-    variables = {"input": {"file": None, "companyId": "company_123", "projectId": "project_123"}}
+    variables = {"input": {"file": None, "companyId": "company_123", "projectId": "workspace_123"}}
     with open(filepath, "rb") as f:
         resp = requests.post(
             f"{BASE_URL}/graphql",
@@ -196,11 +196,11 @@ mutation UploadFiles($input: UploadFilesInput!) {
 
 ```bash
 curl https://api.blue.app/graphql \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: company_123" \
-  -H "X-Bloo-Project-ID: project_123" \
-  -F 'operations={"query":"mutation UploadFiles($input: UploadFilesInput!) { uploadFiles(input: $input) { id uid name } }","variables":{"input":{"files":[null,null],"companyId":"company_123","projectId":"project_123"}}}' \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: company_123" \
+  -H "blue-workspace-id: project_123" \
+  -F 'operations={"query":"mutation UploadFiles($input: UploadFilesInput!) { uploadFiles(input: $input) { id uid name } }","variables":{"input":{"files":[null,null],"companyId":"company_123","projectId":"workspace_123"}}}' \
   -F 'map={"0":["variables.input.files.0"],"1":["variables.input.files.1"]}' \
   -F '0=@/path/to/first.pdf' \
   -F '1=@/path/to/second.pdf'
@@ -257,7 +257,7 @@ If you never confirm, a background verifier reconciles the row against storage s
 
 <Callout variant="warning" title="Both headers are required">
 
-`GET /uploads` requires `X-Bloo-Company-ID` **and** `X-Bloo-Project-ID`. Omitting either returns `400` with `"Company ID and Project ID are required"`.
+`GET /uploads` requires `blue-org-id` **and** `blue-workspace-id`. Omitting either returns `400` with `"Company ID and Project ID are required"`.
 
 </Callout>
 
@@ -303,7 +303,7 @@ Response:
 PUT https://api.blue.app/uploads/cm8qujq3b01p22lrv9xbb2q62/confirm
 ```
 
-Send the same `X-Bloo-*` auth headers. On success the API returns `200` with `{ "message": "File confirmed successfully", "status": "CONFIRMED" }`. If the stored object's size doesn't match the declared `size`, confirm returns `400` and the file stays `PENDING`.
+Send the same `blue-*` auth headers. On success the API returns `200` with `{ "message": "File confirmed successfully", "status": "CONFIRMED" }`. If the stored object's size doesn't match the declared `size`, confirm returns `400` and the file stays `PENDING`.
 
 ### Full example
 
@@ -313,10 +313,10 @@ import requests
 
 BASE_URL = "https://api.blue.app"
 HEADERS = {
-    "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-    "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-    "X-Bloo-Company-ID": "company_123",
-    "X-Bloo-Project-ID": "project_123",
+    "blue-token-id": "YOUR_TOKEN_ID",
+    "blue-token-secret": "YOUR_TOKEN_SECRET",
+    "blue-org-id": "company_123",
+    "blue-workspace-id": "workspace_123",
 }
 
 def upload_large_file(filepath):
@@ -422,7 +422,7 @@ The URL needs both `uid` and `filename` — the `uid` alone returns `404`. Alway
 
 There is no separate "attach file" mutation. To make an uploaded file appear as a clickable attachment inside a comment — exactly as it does in the Blue UI — embed its metadata as an HTML `<div>` in the comment body and set `tiptap: true`.
 
-Comments are created with the `createComment` mutation; records are `Todo` objects, so a record comment uses `category: TODO`.
+Comments are created with the `createComment` mutation; records are `Record` objects, so a record comment uses `category: TODO`.
 
 ### How it works
 
@@ -456,7 +456,7 @@ The `file` attribute is a JSON string built from the upload response:
 | `html`       | `String!`          | Yes      | Comment body as HTML, including any attachment `<div>`s.               |
 | `text`       | `String!`          | Yes      | Plain-text fallback of the comment.                                    |
 | `category`   | `CommentCategory!` | Yes      | `TODO`, `DISCUSSION`, or `STATUS_UPDATE`.                              |
-| `categoryId` | `String!`          | Yes      | ID of the record, discussion, or status update the comment belongs to. |
+| `categoryId` | `String!`          | Yes      | ID of the record, chat, or status update the comment belongs to. |
 | `tiptap`     | `Boolean`          | No       | Set `true` so attachment markup is parsed.                             |
 | `parentId`   | `String`           | No       | ID of the comment this replies to.                                     |
 
@@ -468,10 +468,10 @@ import requests
 
 BASE_URL = "https://api.blue.app"
 HEADERS = {
-    "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-    "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-    "X-Bloo-Company-ID": "company_123",
-    "X-Bloo-Project-ID": "project_123",
+    "blue-token-id": "YOUR_TOKEN_ID",
+    "blue-token-secret": "YOUR_TOKEN_SECRET",
+    "blue-org-id": "company_123",
+    "blue-workspace-id": "workspace_123",
     "Content-Type": "application/json",
 }
 
@@ -531,26 +531,26 @@ comment_with_attachments("todo_123", "Here is the report you requested.", [file]
 
 ## Attaching files to a file custom field
 
-To populate a record's **file** custom field, upload the file, then link it with the `createTodoCustomFieldFile` mutation.
+To populate a record's **file** custom field, upload the file, then link it with the `createRecordCustomFieldFile` mutation.
 
 ```graphql
-mutation CreateTodoCustomFieldFile($input: CreateTodoCustomFieldFileInput!) {
-  createTodoCustomFieldFile(input: $input)
+mutation CreateRecordCustomFieldFile($input: CreateRecordCustomFieldFileInput!) {
+  createRecordCustomFieldFile(input: $input)
 }
 ```
 
-### CreateTodoCustomFieldFileInput
+### CreateRecordCustomFieldFileInput
 
-| Parameter       | Type      | Required | Description                                  |
-| --------------- | --------- | -------- | -------------------------------------------- |
-| `todoId`        | `String!` | Yes      | ID of the record (`Todo`) holding the field. |
+| Parameter       | Type      | Required | Description                                    |
+| --------------- | --------- | -------- | ---------------------------------------------- |
+| `todoId`        | `String!` | Yes      | ID of the record (`Record`) holding the field. |
 | `customFieldId` | `String!` | Yes      | ID of the file custom field.                 |
 | `fileUid`       | `String!` | Yes      | `uid` of the uploaded file.                  |
 
 The mutation returns `Boolean` — `true` on success. Do not request a sub-selection.
 
 ```json
-{ "data": { "createTodoCustomFieldFile": true } }
+{ "data": { "createRecordCustomFieldFile": true } }
 ```
 
 See [File custom field](/api/custom-fields/file) for creating the field itself.

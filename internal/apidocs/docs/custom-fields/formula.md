@@ -7,7 +7,7 @@ order: 26
 
 A Formula field defines an aggregation — `SUM`, `AVERAGE`, `COUNT`, `MIN`, `MAX` — over the values of other custom fields. Formula fields power chart segments and dashboards: they roll values up across the records in a workspace rather than computing a per-record value. Records are `Todo` objects and workspaces are `Project` objects in the API.
 
-Create a Formula field with the `createCustomField` mutation, passing `type: FORMULA`. The field is created in the workspace identified by the `X-Bloo-Project-ID` header.
+Create a Formula field with the `createCustomField` mutation, passing `type: FORMULA`. The field is created in the workspace identified by the `blue-workspace-id` header.
 
 <Callout variant="info" title="Formulas aggregate; they don't compute per record">
 
@@ -48,7 +48,7 @@ mutation CreateFormulaField {
 | `formula`     | `JSON`             | No       | Formula definition. Use the `FormulaInput` shape below. |
 | `description` | `String`           | No       | Help text shown next to the field.                      |
 
-The workspace is taken from the `X-Bloo-Project-ID` header, not from the input. There is no `projectId` field on `CreateCustomFieldInput`.
+The workspace is taken from the `blue-workspace-id` header, not from the input. There is no `projectId` field on `CreateCustomFieldInput`.
 
 ### Formula shape
 

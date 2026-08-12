@@ -1,13 +1,13 @@
 ---
 title: Edit Workspace
-description: Rename a workspace and update its description, color, icon, category, and other settings with the editProject mutation.
+description: Rename a workspace and update its description, color, icon, category, and other settings with the editWorkspace mutation.
 icon: FileEdit
 order: 3
 ---
 
-Use the `editProject` mutation to update an existing workspace. Despite the "rename" framing, this single mutation edits the full workspace surface — name, slug, description, color, icon, category, the record alias, time-tracking display, bulk-action toggles, the name formula, view types, and more. Pass only the fields you want to change; everything else is left untouched.
+Use the `editWorkspace` mutation to update an existing workspace. Despite the "rename" framing, this single mutation edits the full workspace surface — name, slug, description, color, icon, category, the record alias, time-tracking display, bulk-action toggles, the name formula, view types, and more. Pass only the fields you want to change; everything else is left untouched.
 
-Workspaces are `Project` objects in the API.
+Workspaces are `Workspace` objects in the API.
 
 ## Request
 
@@ -15,7 +15,7 @@ The minimal call renames a workspace. Only `projectId` is required.
 
 ```graphql
 mutation RenameWorkspace {
-  editProject(input: { projectId: "project_123", name: "Q2 Marketing Campaign" }) {
+  editWorkspace(input: { projectId: "project_123", name: "Q2 Marketing Campaign" }) {
     id
     name
     slug
@@ -25,7 +25,7 @@ mutation RenameWorkspace {
 
 ## Parameters
 
-### EditProjectInput
+### EditWorkspaceInput
 
 | Parameter                 | Type                      | Required | Description                                                                                                                                    |
 | ------------------------- | ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,7 +85,7 @@ mutation RenameWorkspace {
 ```json
 {
   "data": {
-    "editProject": {
+    "editWorkspace": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "Q2 Marketing Campaign",
       "slug": "q2-marketing-campaign"
@@ -96,7 +96,7 @@ mutation RenameWorkspace {
 
 ### Returns
 
-`editProject` returns the updated `Project` (non-null).
+`editWorkspace` returns the updated `Workspace` (non-null).
 
 | Field                | Type               | Description                         |
 | -------------------- | ------------------ | ----------------------------------- |
@@ -120,7 +120,7 @@ Update several settings at once. Categories and view types use enum values (no q
 
 ```graphql
 mutation EditWorkspace {
-  editProject(
+  editWorkspace(
     input: {
       projectId: "project_123"
       name: "Q2 Marketing Campaign"
@@ -176,7 +176,7 @@ mutation EditWorkspace {
 
 ## Permissions
 
-Editing a workspace requires the **OWNER** or **ADMIN** access level on that workspace. MEMBER, CLIENT, COMMENT_ONLY, and VIEW_ONLY members cannot call `editProject`; the mutation throws `FORBIDDEN`.
+Editing a workspace requires the **OWNER** or **ADMIN** access level on that workspace. MEMBER, CLIENT, COMMENT_ONLY, and VIEW_ONLY members cannot call `editWorkspace`; the mutation throws `FORBIDDEN`.
 
 | Workspace access level | Can edit |
 | ---------------------- | -------- |

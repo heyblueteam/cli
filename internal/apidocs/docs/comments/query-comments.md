@@ -1,13 +1,13 @@
 ---
 title: Query comments
-description: Fetch comments for any record, discussion, or status update with the commentList query — scoped by category, paginated, and ordered.
+description: Fetch comments for any record, chat, or status update with the commentList query — scoped by category, paginated, and ordered.
 icon: ListFilter
 order: 2
 ---
 
 Use the `commentList` query to read comments from any surface in Blue. There is one comment store across the product, so a single query serves all three targets: pass a `category` (`DISCUSSION`, `STATUS_UPDATE`, or `TODO`) plus the `categoryId` of the thing you're reading. The result is a `CommentList` with the page of comments, pagination metadata, and a `totalCount`.
 
-`commentList` is the canonical way to fetch comments. The older `Discussion.comments`, `StatusUpdate.comments`, and `Todo.comments` fields are deprecated in favor of it — see [Comments overview](/api/comments) for the comment model and the `category`/`categoryId` targeting convention.
+`commentList` is the canonical way to fetch comments. The older `Chat.comments`, `StatusUpdate.comments`, and `Todo.comments` fields are deprecated in favor of it — see [Comments overview](/api/comments) for the comment model and the `category`/`categoryId` targeting convention.
 
 ## Request
 
@@ -30,7 +30,7 @@ query RecordComments {
 }
 ```
 
-The same query shape reads a discussion (`category: DISCUSSION`, `categoryId` = the discussion ID) or a status update (`category: STATUS_UPDATE`, `categoryId` = the status-update ID). Only `category` and `categoryId` change.
+The same query shape reads a chat (`category: DISCUSSION`, `categoryId` = the chat ID) or a status update (`category: STATUS_UPDATE`, `categoryId` = the status-update ID). Only `category` and `categoryId` change.
 
 <Callout variant="info" title="Top-level comments only">
 
@@ -45,11 +45,11 @@ The same query shape reads a discussion (`category: DISCUSSION`, `categoryId` = 
 | Argument     | Type                     | Required | Description                                                                                         |
 | ------------ | ------------------------ | -------- | --------------------------------------------------------------------------------------------------- |
 | `category`   | `CommentCategory!`       | Yes      | Which kind of target you're reading. Pairs with `categoryId`.                                       |
-| `categoryId` | `String!`                | Yes      | The ID of the target: a discussion ID, a status-update ID, or a record (`Todo`) ID, per `category`. |
+| `categoryId` | `String!`                | Yes      | The ID of the target: a chat ID, a status-update ID, or a record (`Todo`) ID, per `category`. |
 | `first`      | `Int`                    | No       | Page size — how many comments to return. Omit to return all matching comments (subject to `skip`).  |
 | `skip`       | `Int`                    | No       | Number of comments to skip before the page, for offset pagination. Defaults to `0`.                 |
 | `after`      | `String`                 | No       | Cursor: return comments whose `id` is greater than or equal to this value. Use a comment `id`.      |
-| `orderBy`    | `DiscussionOrderByInput` | No       | Sort order. Defaults to `createdAt_ASC` (oldest first).                                             |
+| `orderBy`    | `ChatOrderByInput` | No       | Sort order. Defaults to `createdAt_ASC` (oldest first).                                             |
 | `before`     | `String`                 | No       | Accepted by the schema but not applied by this query. Paginate with `first` + `skip` (or `after`).  |
 | `last`       | `Int`                    | No       | Accepted by the schema but not applied by this query. Use `first` for the page size.                |
 
@@ -63,13 +63,13 @@ The schema accepts `before` and `last`, but `commentList` ignores them. Page wit
 
 | Value           | `categoryId` is the ID of | Read instead via                                     |
 | --------------- | ------------------------- | ---------------------------------------------------- |
-| `DISCUSSION`    | A discussion thread       | [Query discussions](/api/comments/query-discussions) |
+| `DISCUSSION`    | A chat thread       | [Query chats](/api/comments/query-discussions) |
 | `STATUS_UPDATE` | A status update           | The status update's ID                               |
 | `TODO`          | A record (`Todo`)         | [List records](/api/records/list-records)            |
 
-### DiscussionOrderByInput
+### ChatOrderByInput
 
-`orderBy` takes a single `DiscussionOrderByInput` value (the type is shared with `discussionList`). For comments the meaningful sorts are by timestamp:
+`orderBy` takes a single `ChatOrderByInput` value (the type is shared with `chatList`). For comments the meaningful sorts are by timestamp:
 
 | Value                              | Sorts comments by                          |
 | ---------------------------------- | ------------------------------------------ |
@@ -153,19 +153,19 @@ The fields you'll select most often. The `Comment` type exposes more — these a
 | `isRead`       | `Boolean`           | Read state for the current user.                                                     |
 | `isSeen`       | `Boolean`           | Seen state for the current user.                                                     |
 | `reactions`    | `[ReactionGroup!]!` | Emoji reactions on the comment. See [Reactions](/api/comments/reactions).            |
-| `discussion`   | `Discussion`        | The parent discussion, when `category` is `DISCUSSION`.                              |
+| `chat`   | `Chat`        | The parent chat, when `category` is `DISCUSSION`.                              |
 | `statusUpdate` | `StatusUpdate`      | The parent status update, when `category` is `STATUS_UPDATE`.                        |
 | `todo`         | `Todo`              | The parent record, when `category` is `TODO`.                                        |
 
 ## Full example
 
-Read the second page of a discussion's comments (10 per page, newest first), with reply counts and reactions.
+Read the second page of a chat's comments (10 per page, newest first), with reply counts and reactions.
 
 ```graphql
-query DiscussionComments {
+query ChatComments {
   commentList(
     category: DISCUSSION
-    categoryId: "discussion_123"
+    categoryId: "chat_123"
     first: 10
     skip: 10
     orderBy: createdAt_DESC
@@ -223,5 +223,5 @@ Any authenticated caller can run `commentList`. Visibility is then scoped to the
 - [Comments overview](/api/comments)
 - [Create, edit & delete comments](/api/comments/manage-comments)
 - [Reactions](/api/comments/reactions)
-- [Query discussions](/api/comments/query-discussions)
+- [Query chats](/api/comments/query-discussions)
 - [List records](/api/records/list-records)

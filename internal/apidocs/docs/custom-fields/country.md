@@ -5,12 +5,12 @@ icon: Globe
 order: 21
 ---
 
-A country custom field stores one or more countries on a record as ISO 3166-1 alpha-2 codes (`US`, `GB`, `FR`). It maps to the `COUNTRY` value of the `CustomFieldType` enum. Records are `Todo` objects and custom fields are `CustomField` objects in the API.
+A country custom field stores one or more countries on a record as ISO 3166-1 alpha-2 codes (`US`, `GB`, `FR`). It maps to the `COUNTRY` value of the `CustomFieldType` enum. Records are `Record` objects and custom fields are `CustomField` objects in the API.
 
 The two mutations that write a country value behave differently, and this is the single most important thing to know about this field type:
 
-- **`createTodo`** validates and converts the value — country names become codes, and unrecognized values are rejected.
-- **`setTodoCustomField`** stores whatever you send, with no validation or conversion.
+- **`createRecord`** validates and converts the value — country names become codes, and unrecognized values are rejected.
+- **`setRecordCustomField`** stores whatever you send, with no validation or conversion.
 
 ## Overview
 
@@ -21,7 +21,7 @@ A country field holds two pieces of data:
 
 ## Create
 
-Create the field with `createCustomField`, using `type: COUNTRY`. The field is scoped to the workspace (`Project`) named in the `X-Bloo-Project-ID` header — there is no `projectId` argument on the input.
+Create the field with `createCustomField`, using `type: COUNTRY`. The field is scoped to the workspace (`Workspace`) named in the `X-Bloo-Project-ID` header — there is no `projectId` argument on the input.
 
 ```graphql
 mutation CreateCountryField {
@@ -72,17 +72,17 @@ mutation CreateCountryFieldWithHelp {
 | `type`        | `CustomFieldType!` | Yes      | Must be `COUNTRY`.         |
 | `description` | `String`           | No       | Help text shown to users.  |
 
-The custom field is attached to the workspace from the `X-Bloo-Project-ID` request header, not from an input argument. Company and project headers accept an ID or a slug.
+The custom field is attached to the workspace from the `blue-workspace-id` request header, not from an input argument. Company and project headers accept an ID or a slug.
 
 ## Set a value
 
-Use `setTodoCustomField` to write a country value to a record. Pass `countryCodes` (an array of codes), `text`, or both. This mutation returns `Boolean!` — it does not return the updated value, so read it back with a separate query.
+Use `setRecordCustomField` to write a country value to a record. Pass `countryCodes` (an array of codes), `text`, or both. This mutation returns `Boolean!` — it does not return the updated value, so read it back with a separate query.
 
-`setTodoCustomField` performs **no** validation: the values are stored exactly as provided. Send well-formed ISO alpha-2 codes.
+`setRecordCustomField` performs **no** validation: the values are stored exactly as provided. Send well-formed ISO alpha-2 codes.
 
 ```graphql
 mutation SetCountry {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -96,7 +96,7 @@ mutation SetCountry {
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
@@ -105,7 +105,7 @@ Store multiple countries by passing more codes:
 
 ```graphql
 mutation SetMultipleCountries {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -116,7 +116,7 @@ mutation SetMultipleCountries {
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type        | Required | Description                                            |
 | --------------- | ----------- | -------- | ------------------------------------------------------ |
@@ -129,11 +129,11 @@ mutation SetMultipleCountries {
 
 ### Setting a country when creating a record
 
-`createTodo` is the only mutation that validates and converts country input. Pass the country in `customFields` as a `CreateTodoInputCustomField` (`customFieldId` + a single `value` string). The value may be a country name or an ISO alpha-2 code; the resolver converts the name to a code, stores the code in `countryCodes`, and keeps the original input in `text`. An unrecognized value throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
+`createRecord` is the only mutation that validates and converts country input. Pass the country in `customFields` as a `CreateRecordInputCustomField` (`customFieldId` + a single `value` string). The value may be a country name or an ISO alpha-2 code; the resolver converts the name to a code, stores the code in `countryCodes`, and keeps the original input in `text`. An unrecognized value throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
 
 ```graphql
 mutation CreateRecordWithCountry {
-  createTodo(
+  createRecord(
     input: {
       title: "International Client"
       todoListId: "list_123"
@@ -155,7 +155,7 @@ mutation CreateRecordWithCountry {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "International Client",
       "customFields": [
@@ -171,15 +171,15 @@ mutation CreateRecordWithCountry {
 }
 ```
 
-Only a single value is converted per record at create time. A comma-separated string like `"US, CA"` is treated as one value and fails conversion. To store several countries, create the record first, then call `setTodoCustomField` with a `countryCodes` array.
+Only a single value is converted per record at create time. A comma-separated string like `"US, CA"` is treated as one value and fails conversion. To store several countries, create the record first, then call `setRecordCustomField` with a `countryCodes` array.
 
 ## Read a value
 
-Country values are read on the `customFields` connection of a record via `todoQueries.todos`, which returns `{ items, pageInfo }`. Country data lives directly on each `CustomField` element — there is no wrapper type. Select `text` and `countryCodes` (the codes come back as an array).
+Country values are read on the `customFields` connection of a record via `recordQueries.todos`, which returns `{ items, pageInfo }`. Country data lives directly on each `CustomField` element — there is no wrapper type. Select `text` and `countryCodes` (the codes come back as an array).
 
 ```graphql
 query ReadCountry {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -209,15 +209,15 @@ query ReadCountry {
 ## Notes
 
 - Blue uses **ISO 3166-1 alpha-2** codes (two letters, e.g. `US`, `GB`, `FR`, `DE`, `JP`). For the full list, see the [ISO Online Browsing Platform](https://www.iso.org/obp/ui/#search/code/).
-- `createTodo` accepts either an English country name (`"United States"`) or a code (`"GB"`) and stores the uppercased code. Invalid input throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
-- `setTodoCustomField` does not validate. If you need validation when updating a record, validate in your application before calling it.
+- `createRecord` accepts either an English country name (`"United States"`) or a code (`"GB"`) and stores the uppercased code. Invalid input throws `CUSTOM_FIELD_VALUE_PARSE_ERROR`.
+- `setRecordCustomField` does not validate. If you need validation when updating a record, validate in your application before calling it.
 - Codes are persisted internally as a comma-joined string but are always returned as an array.
 
 ## Errors
 
 | Code                             | When                                                                          |
 | -------------------------------- | ----------------------------------------------------------------------------- |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | `createTodo` receives a country value it cannot match to an ISO alpha-2 code. |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | `createRecord` receives a country value it cannot match to an ISO alpha-2 code. |
 
 ```json
 {

@@ -5,15 +5,15 @@ icon: Settings
 order: 1
 ---
 
-A checklist groups related sub-tasks under a record (records are `Todo` objects in the API). Use the `editChecklist` mutation to rename a checklist or change its order within a record, and the `deleteChecklist` mutation to remove a checklist together with all of its items.
+A checklist groups related sub-tasks under a record (records are `Record` objects in the API). Use the `editChecklist` mutation to rename a checklist or change its order within a record, and the `deleteChecklist` mutation to remove a checklist together with all of its items.
 
 To add a checklist, see [Create a checklist](/api/checklists). To manage the items inside a checklist, see [Checklist items](/api/checklists/checklist-items).
 
 All requests go to `https://api.blue.app/graphql` and must include your authentication headers:
 
-- `X-Bloo-Token-ID`: your token ID
-- `X-Bloo-Token-Secret`: your token secret
-- `X-Bloo-Company-ID`: your organization ID or slug
+- `blue-token-id`: your token ID
+- `blue-token-secret`: your token secret
+- `blue-org-id`: your organization ID or slug
 
 Header names are case-insensitive.
 
@@ -72,7 +72,7 @@ mutation EditChecklist {
 | `position`       | `Float!`            | Sort position within the record.     |
 | `createdAt`      | `DateTime!`         | When the checklist was created.      |
 | `updatedAt`      | `DateTime!`         | When the checklist was last updated. |
-| `todo`           | `Todo!`             | The parent record.                   |
+| `todo`           | `Record!`             | The parent record.                   |
 | `checklistItems` | `[ChecklistItem!]!` | Items within the checklist.          |
 | `createdBy`      | `User!`             | The user who created the checklist.  |
 

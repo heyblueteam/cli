@@ -5,9 +5,9 @@ icon: ListChecks
 order: 8
 ---
 
-A multi-select custom field stores one or more choices from a predefined list of options on a record. Use it for categories, skills, affected products, or any field where several values from a controlled set apply at once. Multi-select fields are `CustomField` objects with `type: SELECT_MULTI`; each choice is a `CustomFieldOption`, and records are `Todo` objects in the API.
+A multi-select custom field stores one or more choices from a predefined list of options on a record. Use it for categories, skills, affected products, or any field where several values from a controlled set apply at once. Multi-select fields are `CustomField` objects with `type: SELECT_MULTI`; each choice is a `CustomFieldOption`, and records are `Record` objects in the API.
 
-Custom fields are scoped to a workspace by the `X-Bloo-Project-ID` header, so you do not pass a project ID in the field input.
+Custom fields are scoped to a workspace by the `blue-workspace-id` header, so you do not pass a project ID in the field input.
 
 ## Overview
 
@@ -110,11 +110,11 @@ Used by `createCustomFieldOption` to add a single option. This input **does** ca
 
 ## Set a value
 
-Set the selected options on a record with `setTodoCustomField`, passing the option IDs in `customFieldOptionIds`. This replaces the record's current selection. Pass an empty array to clear all selections.
+Set the selected options on a record with `setRecordCustomField`, passing the option IDs in `customFieldOptionIds`. This replaces the record's current selection. Pass an empty array to clear all selections.
 
 ```graphql
 mutation SetSkills {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -124,13 +124,13 @@ mutation SetSkills {
 }
 ```
 
-`setTodoCustomField` returns `Boolean!` — it does not return the updated field. Read the value back with a separate `todoQueries { todos }` query (see [Read a value](#read-a-value)).
+`setRecordCustomField` returns `Boolean!` — it does not return the updated field. Read the value back with a separate `recordQueries { todos }` query (see [Read a value](#read-a-value)).
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter              | Type        | Required | Description                                                                         |
 | ---------------------- | ----------- | -------- | ----------------------------------------------------------------------------------- |
@@ -138,11 +138,11 @@ mutation SetSkills {
 | `customFieldId`        | `String!`   | Yes      | The `SELECT_MULTI` field to set.                                                    |
 | `customFieldOptionIds` | `[String!]` | No       | Option IDs to select. Replaces the current selection; pass an empty array to clear. |
 
-You can also set the value at record creation time. In `createTodo`, the `CreateTodoInputCustomField.value` is a **comma-separated string of option IDs** (no spaces required; whitespace is trimmed) — the resolver splits it and matches the IDs against the field's options.
+You can also set the value at record creation time. In `createRecord`, the `CreateRecordInputCustomField.value` is a **comma-separated string of option IDs** (no spaces required; whitespace is trimmed) — the resolver splits it and matches the IDs against the field's options.
 
 ```graphql
 mutation CreateRecordWithSkills {
-  createTodo(
+  createRecord(
     input: {
       title: "Build the new feature"
       todoListId: "list_123"
@@ -166,11 +166,11 @@ mutation CreateRecordWithSkills {
 
 ## Read a value
 
-A record's fields come back as `Todo.customFields`, which is `[CustomField!]!` — there is no wrapper object. For a `SELECT_MULTI` field, read the chosen options from `selectedOptions`.
+A record's fields come back as `Record.customFields`, which is `[CustomField!]!` — there is no wrapper object. For a `SELECT_MULTI` field, read the chosen options from `selectedOptions`.
 
 ```graphql
 query GetRecordSkills {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoListIds: ["list_123"] }) {
       items {
         id
@@ -193,7 +193,7 @@ query GetRecordSkills {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -298,8 +298,8 @@ mutation DeleteOption {
 
 ## Notes
 
-- The `value` in `createTodo` is a comma-separated string of option IDs; `setTodoCustomField` and `bulkSetCustomField` take an array (`customFieldOptionIds`).
-- `setTodoCustomField` replaces the record's full selection on each call — it is not additive. Send the complete set of option IDs you want, or an empty array to clear.
+- The `value` in `createRecord` is a comma-separated string of option IDs; `setRecordCustomField` and `bulkSetCustomField` take an array (`customFieldOptionIds`).
+- `setRecordCustomField` replaces the record's full selection on each call — it is not additive. Send the complete set of option IDs you want, or an empty array to clear.
 - Option IDs must belong to the same field; unknown IDs cause the call to fail.
 - `color` accepts any string (no hex validation).
 

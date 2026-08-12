@@ -5,7 +5,7 @@ icon: Copy
 order: 5
 ---
 
-Use the `copyProject` mutation to duplicate an existing workspace, either within the same organization or into a different one. It is the way to build reusable workspace templates, stand up similar projects quickly, or move work between organizations. Workspaces are `Project` objects in the API.
+Use the `copyWorkspace` mutation to duplicate an existing workspace, either within the same organization or into a different one. It is the way to build reusable workspace templates, stand up similar projects quickly, or move work between organizations. Workspaces are `Workspace` objects in the API.
 
 Copying runs asynchronously: the mutation queues a background job and returns immediately. Track progress with the `copyProjectStatus` query.
 
@@ -15,7 +15,7 @@ The smallest call needs the source workspace `projectId`, a `name` for the copy,
 
 ```graphql
 mutation CopyWorkspace {
-  copyProject(
+  copyWorkspace(
     input: {
       projectId: "project_123"
       name: "New workspace copy"
@@ -29,7 +29,7 @@ The `projectId` and `companyId` arguments accept either an ID or a slug.
 
 ## Parameters
 
-### CopyProjectInput
+### CopyWorkspaceInput
 
 | Parameter     | Type                       | Required | Description                                                                                            |
 | ------------- | -------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
@@ -46,8 +46,8 @@ Every option is an optional `Boolean`; omit one or set it to `false` to skip tha
 
 | Parameter              | Type      | Description                                                      |
 | ---------------------- | --------- | ---------------------------------------------------------------- |
-| `todos`                | `Boolean` | Copy records (the `Todo` objects in each list).                  |
-| `todoLists`            | `Boolean` | Copy lists (the `TodoList` columns/sections).                    |
+| `todos`                | `Boolean` | Copy records (the `Record` objects in each list).                |
+| `todoLists`            | `Boolean` | Copy lists (the `RecordList` columns/sections).                  |
 | `todoActions`          | `Boolean` | Copy record actions.                                             |
 | `todoComments`         | `Boolean` | Copy comments on records.                                        |
 | `checklists`           | `Boolean` | Copy record checklists.                                          |
@@ -61,19 +61,19 @@ Every option is an optional `Boolean`; omit one or set it to `false` to skip tha
 | `files`                | `Boolean` | Copy file attachments.                                           |
 | `forms`                | `Boolean` | Copy workspace forms.                                            |
 | `automations`          | `Boolean` | Copy workspace automations.                                      |
-| `discussions`          | `Boolean` | Copy workspace discussions.                                      |
-| `discussionComments`   | `Boolean` | Copy comments on discussions. Requires `discussions: true`.      |
+| `chats`                | `Boolean` | Copy workspace chats. Legacy spelling: `discussions`.            |
+| `chatComments`         | `Boolean` | Copy comments on chats. Requires `chats: true`. Legacy spelling: `discussionComments`. |
 | `statusUpdates`        | `Boolean` | Copy workspace status updates.                                   |
 | `statusUpdateComments` | `Boolean` | Copy comments on status updates. Requires `statusUpdates: true`. |
 
 ## Response
 
-`copyProject` returns a nullable `Boolean`. It returns `true` once the copy job has been queued.
+`copyWorkspace` returns a nullable `Boolean`. It returns `true` once the copy job has been queued.
 
 ```json
 {
   "data": {
-    "copyProject": true
+    "copyWorkspace": true
   }
 }
 ```
@@ -84,7 +84,7 @@ Copy a workspace into a different organization with a richer set of options.
 
 ```graphql
 mutation CopyWorkspace {
-  copyProject(
+  copyWorkspace(
     input: {
       projectId: "project_123"
       name: "Q2 Marketing Campaign"
@@ -106,8 +106,8 @@ mutation CopyWorkspace {
         files: true
         forms: true
         automations: true
-        discussions: false
-        discussionComments: false
+        chats: false
+        chatComments: false
         statusUpdates: false
         statusUpdateComments: false
       }
@@ -146,16 +146,16 @@ query CheckCopyStatus {
 
 ### CopyProjectStatus fields
 
-| Field            | Type      | Description                                                            |
-| ---------------- | --------- | ---------------------------------------------------------------------- |
-| `queuePosition`  | `Int`     | Position of this copy job in the queue.                                |
-| `totalQueues`    | `Int`     | Total number of copy jobs currently queued.                            |
-| `isActive`       | `Boolean` | Whether the copy is actively running (vs. still waiting in the queue). |
-| `oldProject`     | `Project` | The source workspace being copied.                                     |
-| `newProjectName` | `String`  | Name of the new workspace being created.                               |
-| `isTemplate`     | `Boolean` | Whether the copy is being created as a template.                       |
-| `oldCompany`     | `Company` | Source organization.                                                   |
-| `newCompany`     | `Company` | Target organization.                                                   |
+| Field            | Type           | Description                                                            |
+| ---------------- | -------------- | ---------------------------------------------------------------------- |
+| `queuePosition`  | `Int`          | Position of this copy job in the queue.                                |
+| `totalQueues`    | `Int`          | Total number of copy jobs currently queued.                            |
+| `isActive`       | `Boolean`      | Whether the copy is actively running (vs. still waiting in the queue). |
+| `oldProject`     | `Workspace`    | The source workspace being copied.                                     |
+| `newProjectName` | `String`       | Name of the new workspace being created.                               |
+| `isTemplate`     | `Boolean`      | Whether the copy is being created as a template.                       |
+| `oldCompany`     | `Organization` | Source organization.                                                   |
+| `newCompany`     | `Organization` | Target organization.                                                   |
 
 ```json
 {
@@ -211,7 +211,7 @@ You must hold an `OWNER` or `ADMIN` role in the **source** workspace, and the so
 
 - **One copy at a time.** Each user can have a single copy job in progress. Starting another while one is running fails with `Oops!`.
 - **Size limit.** Workspaces with more than 250,000 records cannot be copied.
-- **Dependent options.** A few options only apply when their parent is also enabled: `assignees` and `projectUserRoles` require `people: true`; `discussionComments` requires `discussions: true`; `statusUpdateComments` requires `statusUpdates: true`.
+- **Dependent options.** A few options only apply when their parent is also enabled: `assignees` and `projectUserRoles` require `people: true`; `chatComments` requires `chats: true`; `statusUpdateComments` requires `statusUpdates: true`.
 - **Name handling.** The new workspace name is trimmed and has any URLs removed before the copy runs.
 - **Status retention.** A copy job's status stays available via `copyProjectStatus` for up to 6 hours.
 

@@ -1,23 +1,23 @@
 ---
 title: Comments overview
-description: How comments and discussions work in Blue - one polymorphic Comment type attaches to records, discussions, and status updates, plus threading, reactions, and live updates.
+description: How comments and chats work in Blue - one polymorphic Comment type attaches to records, chats, and status updates, plus threading, reactions, and live updates.
 icon: MessageSquare
 order: 0
 ---
 
-Comments and discussions are how teams converse inside Blue. A single, polymorphic `Comment` attaches to a record (a `Todo`), a project discussion, or a status update via a `category` + `categoryId` pair — so the same `createComment` / `editComment` / `deleteComment` mutations and the `commentList` query cover every comment surface. Discussions are standalone, project-scoped conversation threads with their own create/update/delete mutations and queries. This section also covers emoji reactions on comments and the real-time subscriptions (new comments, typing indicators, discussion changes) that power live collaboration.
+Comments and chats are how teams converse inside Blue. A single, polymorphic `Comment` attaches to a record (a `Todo`), a project chat, or a status update via a `category` + `categoryId` pair — so the same `createComment` / `editComment` / `deleteComment` mutations and the `commentList` query cover every comment surface. Chats are standalone, project-scoped conversation threads with their own create/update/delete mutations and queries. This section also covers emoji reactions on comments and the real-time subscriptions (new comments, typing indicators, chat changes) that power live collaboration.
 
 ## The polymorphic comment model
 
-There is **one** `Comment` type and **one** set of comment mutations. A comment doesn't have a separate "todo comment" or "discussion comment" type — instead, every comment names its target with two fields:
+There is **one** `Comment` type and **one** set of comment mutations. A comment doesn't have a separate "todo comment" or "chat comment" type — instead, every comment names its target with two fields:
 
 - **`category`** — a `CommentCategory` enum: `TODO`, `DISCUSSION`, or `STATUS_UPDATE`.
-- **`categoryId`** — the ID of the target. Its meaning depends on the category: the record (`Todo`) ID for `TODO`, the `Discussion` ID for `DISCUSSION`, or the `StatusUpdate` ID for `STATUS_UPDATE`.
+- **`categoryId`** — the ID of the target. Its meaning depends on the category: the record (`Todo`) ID for `TODO`, the `Chat` ID for `DISCUSSION`, or the `StatusUpdate` ID for `STATUS_UPDATE`.
 
 Together they answer "what is this comment attached to?". You pass the same pair to write a comment ([createComment](/api/comments/manage-comments)) and to read a target's comments ([commentList](/api/comments/query-comments)). Once you understand this targeting, the rest of the section is just the same operations applied to three surfaces.
 
 ```graphql
-# A comment on a record, a discussion, and a status update —
+# A comment on a record, a chat, and a status update —
 # same mutation, only category + categoryId differ.
 mutation CommentOnRecord {
   createComment(
@@ -28,9 +28,9 @@ mutation CommentOnRecord {
 }
 ```
 
-<Callout variant="info" title="Discussions vs. discussion comments">
+<Callout variant="info" title="Chats vs. chat comments">
 
-A **discussion** is the thread itself — a `Discussion` row with a title, body, and members, created with `createDiscussion`. The **replies** inside it are `Comment` rows with `category: DISCUSSION` and `categoryId` set to that discussion's ID. Creating a discussion does not create its comments; you add those separately with `createComment`.
+A **chat** is the thread itself — a `Chat` row with a title, body, and members, created with `createChat`. The **replies** inside it are `Comment` rows with `category: DISCUSSION` and `categoryId` set to that chat's ID. Creating a chat does not create its comments; you add those separately with `createComment`.
 
 </Callout>
 
@@ -52,7 +52,7 @@ A **discussion** is the thread itself — a `Discussion` row with a title, body,
 | `user`         | `User!`             | The author. Select `id`, `fullName`, `email`.                                                          |
 | `activity`     | `Activity`          | The activity-feed entry this comment generated, if any.                                                |
 | `todo`         | `Todo`              | The parent record, when `category` is `TODO`; otherwise `null`.                                        |
-| `discussion`   | `Discussion`        | The parent discussion, when `category` is `DISCUSSION`; otherwise `null`.                              |
+| `chat`   | `Chat`        | The parent chat, when `category` is `DISCUSSION`; otherwise `null`.                              |
 | `statusUpdate` | `StatusUpdate`      | The parent status update, when `category` is `STATUS_UPDATE`; otherwise `null`.                        |
 | `isRead`       | `Boolean`           | Whether the calling user has read this comment.                                                        |
 | `isSeen`       | `Boolean`           | Whether the calling user has seen this comment in the feed.                                            |
@@ -89,7 +89,7 @@ Comments thread one level deep. A reply is an ordinary comment created with a `p
 | Value           | `categoryId` refers to | Surface                                                                         |
 | --------------- | ---------------------- | ------------------------------------------------------------------------------- |
 | `TODO`          | a `Todo` (record) ID   | A comment on a record. See [Records › Add a comment](/api/records/add-comment). |
-| `DISCUSSION`    | a `Discussion` ID      | A reply inside a project discussion.                                            |
+| `DISCUSSION`    | a `Chat` ID      | A reply inside a project chat.                                            |
 | `STATUS_UPDATE` | a `StatusUpdate` ID    | A comment on a [status update](/api/status-updates).                            |
 
 ## Pages in this section
@@ -97,12 +97,12 @@ Comments thread one level deep. A reply is an ordinary comment created with a `p
 | Page                                                                    | What it covers                                                                                                                           |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | [Create, edit & delete comments](/api/comments/manage-comments)         | `createComment`, `editComment`, and the soft-delete `deleteComment` — the write lifecycle on any surface, with mentions and permissions. |
-| [Query comments](/api/comments/query-comments)                          | The `commentList` query: scope to a record, discussion, or status update with `category` + `categoryId`, paginate, and order results.    |
-| [Create, update & delete discussions](/api/comments/manage-discussions) | `createDiscussion`, `updateDiscussion` (title only), and the hard-delete `deleteDiscussion` for project-scoped threads.                  |
-| [Query discussions](/api/comments/query-discussions)                    | The three read paths: `discussion(id)`, the offset-paginated `discussions`, and the project-scoped cursor list `discussionList`.         |
+| [Query comments](/api/comments/query-comments)                          | The `commentList` query: scope to a record, chat, or status update with `category` + `categoryId`, paginate, and order results.    |
+| [Create, update & delete chats](/api/comments/manage-discussions) | `createChat`, `updateChat` (title only), and the hard-delete `deleteChat` for project-scoped threads.                  |
+| [Query chats](/api/comments/query-discussions)                    | The three read paths: `chat(id)`, the offset-paginated `chats`, and the project-scoped cursor list `chatList`.         |
 | [Reactions](/api/comments/reactions)                                    | `addReaction` / `removeReaction` for emoji reactions on a comment, returning the full `[ReactionGroup!]!` set.                           |
 
-Live updates for comments and discussions — new comments, typing indicators, and discussion changes — are documented with the rest of the real-time API in [Comments, Discussions & Chat subscriptions](/api/realtime/comment-discussion-subscriptions).
+Live updates for comments and chats — new comments, typing indicators, and chat changes — are documented with the rest of the real-time API in [Comments, Chats & Chat subscriptions](/api/realtime/comment-discussion-subscriptions).
 
 ## Product nouns to schema types
 
@@ -111,7 +111,7 @@ Use the UI word in prose and the schema name in code. The mapping for this secti
 | UI / docs word      | Schema type / field              |
 | ------------------- | -------------------------------- |
 | Comment             | `Comment`                        |
-| Discussion          | `Discussion`                     |
+| Chat          | `Chat`                     |
 | Status update       | `StatusUpdate`                   |
 | Record              | `Todo`                           |
 | Workspace / Project | `Project`                        |
@@ -122,7 +122,8 @@ Use the UI word in prose and the schema name in code. The mapping for this secti
 
 - [Create, edit & delete comments](/api/comments/manage-comments)
 - [Query comments](/api/comments/query-comments)
-- [Create, update & delete discussions](/api/comments/manage-discussions)
+- [Create, update & delete chats](/api/comments/manage-discussions)
 - [Reactions](/api/comments/reactions)
 - [Add a comment to a record](/api/records/add-comment)
-- [Comments, Discussions & Chat subscriptions](/api/realtime/comment-discussion-subscriptions)
+- [Comments, Chats & Chat subscriptions](/api/realtime/comment-discussion-subscriptions)
+- [Inbox & Messaging overview](/api/inbox) — the unified feed that surfaces record comments, workspace chats, and direct messages/group chats together.

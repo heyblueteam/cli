@@ -11,11 +11,11 @@ Before you start, create a [Personal Access Token](/api/tokens) and have your To
 
 | Header                | Value                                            |
 | --------------------- | ------------------------------------------------ |
-| `X-Bloo-Token-ID`     | Your token's ID (an unprefixed cuid).            |
-| `X-Bloo-Token-Secret` | Your token's secret (carries the `pat_` prefix). |
-| `X-Bloo-Company-ID`   | The organization to act in — its ID or slug.     |
+| `blue-token-id`     | Your token's ID (an unprefixed cuid).            |
+| `blue-token-secret` | Your token's secret (carries the `pat_` prefix). |
+| `blue-org-id`   | The organization to act in — its ID or slug.     |
 
-Header names are case-insensitive. Add `X-Bloo-Project-ID` only for the operations that require a workspace scope (custom fields, for example). See [Authentication](/api/start-guide/authentication) for the full model. Organizations are `Company` objects, workspaces are `Project` objects, and records are `Todo` objects in the API.
+Header names are case-insensitive. Add `X-Bloo-Project-ID` (also accepted as `X-Bloo-Workspace-ID`) only for the operations that require a workspace scope (custom fields, for example). See [Authentication](/api/start-guide/authentication) for the full model. Organizations are `Organization` objects, workspaces are `Workspace` objects, and records are `Record` objects in the API.
 
 ## Reading data
 
@@ -23,7 +23,7 @@ This query lists the workspaces (projects) you can access in an organization. Pa
 
 ```graphql
 query ProjectList($companyId: String!) {
-  projectList(filter: { companyIds: [$companyId] }) {
+  workspaceList(filter: { companyIds: [$companyId] }) {
     items {
       id
       name
@@ -42,11 +42,11 @@ Send it with the `variables` object alongside the `query`:
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{
-    "query": "query ProjectList($companyId: String!) { projectList(filter: { companyIds: [$companyId] }) { items { id name updatedAt } pageInfo { totalItems hasNextPage } } }",
+    "query": "query ProjectList($companyId: String!) { workspaceList(filter: { companyIds: [$companyId] }) { items { id name updatedAt } pageInfo { totalItems hasNextPage } } }",
     "variables": { "companyId": "company_123" }
   }'
 ```
@@ -58,14 +58,14 @@ url = "https://api.blue.app/graphql"
 
 headers = {
     "Content-Type": "application/json",
-    "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-    "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-    "X-Bloo-Company-ID": "YOUR_COMPANY_ID",
+    "blue-token-id": "YOUR_TOKEN_ID",
+    "blue-token-secret": "YOUR_TOKEN_SECRET",
+    "blue-org-id": "YOUR_ORG_ID",
 }
 
 query = """
 query ProjectList($companyId: String!) {
-  projectList(filter: { companyIds: [$companyId] }) {
+  workspaceList(filter: { companyIds: [$companyId] }) {
     items { id name updatedAt }
     pageInfo { totalItems hasNextPage }
   }
@@ -86,14 +86,14 @@ const url = 'https://api.blue.app/graphql'
 
 const headers = {
   'Content-Type': 'application/json',
-  'X-Bloo-Token-ID': 'YOUR_TOKEN_ID',
-  'X-Bloo-Token-Secret': 'YOUR_TOKEN_SECRET',
-  'X-Bloo-Company-ID': 'YOUR_COMPANY_ID',
+  'blue-token-id': 'YOUR_TOKEN_ID',
+  'blue-token-secret': 'YOUR_TOKEN_SECRET',
+  'blue-org-id': 'YOUR_ORG_ID',
 }
 
 const query = `
   query ProjectList($companyId: String!) {
-    projectList(filter: { companyIds: [$companyId] }) {
+    workspaceList(filter: { companyIds: [$companyId] }) {
       items { id name updatedAt }
       pageInfo { totalItems hasNextPage }
     }
@@ -109,12 +109,12 @@ const response = await fetch(url, {
 console.log(await response.json())
 ```
 
-The API returns standard JSON. `projectList` is paginated, so results come back under `items` with a `pageInfo` block:
+The API returns standard JSON. `workspaceList` is paginated, so results come back under `items` with a `pageInfo` block:
 
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -133,15 +133,15 @@ The API returns standard JSON. `projectList` is paginated, so results come back 
 }
 ```
 
-Select only the fields you need — GraphQL returns exactly what you ask for. `projectList` also accepts `skip` and `take` for paging through larger result sets; see [List workspaces](/api/workspaces/list-workspaces) for the full filter and pagination reference.
+Select only the fields you need — GraphQL returns exactly what you ask for. `workspaceList` also accepts `skip` and `take` for paging through larger result sets; see [List workspaces](/api/workspaces/list-workspaces) for the full filter and pagination reference.
 
 ## Writing data
 
-Use the `createTodo` mutation to create a record. `title` is the only required input; `todoListId` places the record in a specific list and is recommended.
+Use the `createRecord` mutation to create a record. `title` is the only required input; `todoListId` places the record in a specific list and is recommended.
 
 ```graphql
-mutation CreateRecord($input: CreateTodoInput!) {
-  createTodo(input: $input) {
+mutation CreateRecord($input: CreateRecordInput!) {
+  createRecord(input: $input) {
     id
     title
     position
@@ -152,11 +152,11 @@ mutation CreateRecord($input: CreateTodoInput!) {
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{
-    "query": "mutation CreateRecord($input: CreateTodoInput!) { createTodo(input: $input) { id title position } }",
+    "query": "mutation CreateRecord($input: CreateRecordInput!) { createRecord(input: $input) { id title position } }",
     "variables": { "input": { "todoListId": "list_123", "title": "Draft launch plan" } }
   }'
 ```
@@ -168,14 +168,14 @@ url = "https://api.blue.app/graphql"
 
 headers = {
     "Content-Type": "application/json",
-    "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-    "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-    "X-Bloo-Company-ID": "YOUR_COMPANY_ID",
+    "blue-token-id": "YOUR_TOKEN_ID",
+    "blue-token-secret": "YOUR_TOKEN_SECRET",
+    "blue-org-id": "YOUR_ORG_ID",
 }
 
 query = """
-mutation CreateRecord($input: CreateTodoInput!) {
-  createTodo(input: $input) {
+mutation CreateRecord($input: CreateRecordInput!) {
+  createRecord(input: $input) {
     id
     title
     position
@@ -195,14 +195,14 @@ const url = 'https://api.blue.app/graphql'
 
 const headers = {
   'Content-Type': 'application/json',
-  'X-Bloo-Token-ID': 'YOUR_TOKEN_ID',
-  'X-Bloo-Token-Secret': 'YOUR_TOKEN_SECRET',
-  'X-Bloo-Company-ID': 'YOUR_COMPANY_ID',
+  'blue-token-id': 'YOUR_TOKEN_ID',
+  'blue-token-secret': 'YOUR_TOKEN_SECRET',
+  'blue-org-id': 'YOUR_ORG_ID',
 }
 
 const query = `
-  mutation CreateRecord($input: CreateTodoInput!) {
-    createTodo(input: $input) { id title position }
+  mutation CreateRecord($input: CreateRecordInput!) {
+    createRecord(input: $input) { id title position }
   }
 `
 
@@ -217,12 +217,12 @@ const response = await fetch(url, {
 console.log(await response.json())
 ```
 
-`createTodo` returns the new `Todo` directly:
+`createRecord` returns the new `Record` directly:
 
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Draft launch plan",
       "position": 65535
@@ -231,31 +231,31 @@ console.log(await response.json())
 }
 ```
 
-### Useful CreateTodoInput fields
+### Useful CreateRecordInput fields
 
-`CreateTodoInput` accepts more than `title` and `todoListId`. The most useful optional fields:
+`CreateRecordInput` accepts more than `title` and `todoListId`. The most useful optional fields:
 
 | Field          | Type                                 | Description                                                      |
 | -------------- | ------------------------------------ | ---------------------------------------------------------------- |
 | `title`        | `String!`                            | The record title. The only required field.                       |
 | `todoListId`   | `String`                             | List to create the record in. Omit to use the workspace default. |
 | `assigneeIds`  | `[String!]`                          | User IDs to assign to the record.                                |
-| `tags`         | `[CreateTodoTagInput!]`              | Tags to attach on creation.                                      |
-| `customFields` | `[CreateTodoInputCustomField]`       | Custom field values to set on creation.                          |
+| `tags`         | `[CreateRecordTagInput!]`            | Tags to attach on creation.                                      |
+| `customFields` | `[CreateRecordInputCustomField]`     | Custom field values to set on creation.                          |
 | `checklists`   | `[CreateChecklistWithoutTodoInput!]` | Checklists to add to the record.                                 |
 | `startedAt`    | `DateTime`                           | Start date.                                                      |
 | `duedAt`       | `DateTime`                           | Due date.                                                        |
-| `placement`    | `CreateTodoInputPlacement`           | `TOP` or `BOTTOM` of the list.                                   |
+| `placement`    | `CreateRecordInputPlacement`         | `TOP` or `BOTTOM` of the list.                                   |
 
 For the full surface — updating, assigning, tagging, and listing records — see the [Records](/api/records) section.
 
 ### Deleting a record
 
-Use `deleteTodo` to delete a record. It takes a `DeleteTodoInput` with a single `todoId` and returns a `MutationResult`.
+Use `deleteRecord` to delete a record. It takes a `DeleteRecordInput` with a single `todoId` and returns a `MutationResult`.
 
 ```graphql
-mutation DeleteRecord($input: DeleteTodoInput!) {
-  deleteTodo(input: $input) {
+mutation DeleteRecord($input: DeleteRecordInput!) {
+  deleteRecord(input: $input) {
     success
     operationId
   }
@@ -265,21 +265,21 @@ mutation DeleteRecord($input: DeleteTodoInput!) {
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{
-    "query": "mutation DeleteRecord($input: DeleteTodoInput!) { deleteTodo(input: $input) { success operationId } }",
+    "query": "mutation DeleteRecord($input: DeleteRecordInput!) { deleteRecord(input: $input) { success operationId } }",
     "variables": { "input": { "todoId": "todo_123" } }
   }'
 ```
 
-`deleteTodo` returns whether the delete succeeded. `operationId` is an optional handle for the background work the delete kicks off (cleanup of related rows), useful for correlating logs — most clients only read `success`:
+`deleteRecord` returns whether the delete succeeded. `operationId` is an optional handle for the background work the delete kicks off (cleanup of related rows), useful for correlating logs — most clients only read `success`:
 
 ```json
 {
   "data": {
-    "deleteTodo": {
+    "deleteRecord": {
       "success": true,
       "operationId": "clm4n8qwx000208l0e5f6g7h8"
     }
@@ -291,7 +291,7 @@ curl -X POST https://api.blue.app/graphql \
 
 Subscriptions stream real-time updates over a WebSocket — useful for live activity feeds, collaborative editing, or keeping local state in sync. Blue speaks the [`graphql-ws`](https://github.com/enisdenjo/graphql-ws) protocol on the same URL as the HTTP API, at `wss://api.blue.app/graphql`.
 
-Authentication happens once, at connection time, through `connectionParams`. The server reads those params as request headers, so an API client authenticates over WebSocket with **the same `X-Bloo-*` Personal Access Token credentials** it uses over HTTP — not a `Bearer` token.
+Authentication happens once, at connection time, through `connectionParams`. The server reads those params as request headers, so an API client authenticates over WebSocket with **the same `blue-*` Personal Access Token credentials** it uses over HTTP — not a `Bearer` token.
 
 ```javascript
 import { createClient } from 'graphql-ws'
@@ -299,9 +299,9 @@ import { createClient } from 'graphql-ws'
 const client = createClient({
   url: 'wss://api.blue.app/graphql',
   connectionParams: {
-    'x-bloo-token-id': 'YOUR_TOKEN_ID',
-    'x-bloo-token-secret': 'YOUR_TOKEN_SECRET',
-    'x-bloo-company-id': 'YOUR_COMPANY_ID',
+    'blue-token-id': 'YOUR_TOKEN_ID',
+    'blue-token-secret': 'YOUR_TOKEN_SECRET',
+    'blue-org-id': 'YOUR_ORG_ID',
   },
 })
 

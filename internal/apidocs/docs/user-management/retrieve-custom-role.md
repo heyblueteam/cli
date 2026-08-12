@@ -5,16 +5,16 @@ icon: Shield
 order: 4
 ---
 
-Custom roles let you define precise permission sets for members of a workspace, beyond the built-in access levels. A role controls which sections a member sees (records, files, chat, docs, …), what they can do (invite, complete, delete), and—optionally—which records, lists, and fields they can view or edit. Roles are `ProjectUserRole` objects in the API; workspaces are `Project` objects.
+Custom roles let you define precise permission sets for members of a workspace, beyond the built-in access levels. A role controls which sections a member sees (records, files, chat, docs, …), what they can do (invite, complete, delete), and—optionally—which records, lists, and fields they can view or edit. Roles are `ProjectUserRole` objects in the API; workspaces are `Workspace` objects.
 
 You assign a role when you [invite someone](/api/user-management/invite-user) by passing its `roleId` with `accessLevel: MEMBER`. The role must belong to the same workspace as the invite.
 
 This page covers four operations:
 
-- `projectUserRoles` — list the roles in one or more workspaces.
-- `createProjectUserRole` — create a role.
-- `updateProjectUserRole` — change a role.
-- `deleteProjectUserRole` — delete a role.
+- `workspaceUserRoles` — list the roles in one or more workspaces.
+- `createWorkspaceUserRole` — create a role.
+- `updateWorkspaceUserRole` — change a role.
+- `deleteWorkspaceUserRole` — delete a role.
 
 ## Request
 
@@ -22,16 +22,16 @@ Send every request to `https://api.blue.app/graphql` with your authentication he
 
 ```http
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
 ```
 
 List the roles in a workspace. The `filter` argument is required; supply `projectId` for a single workspace.
 
 ```graphql
 query ListProjectRoles {
-  projectUserRoles(filter: { projectId: "project_123" }) {
+  workspaceUserRoles(filter: { projectId: "project_123" }) {
     id
     name
     description
@@ -46,7 +46,7 @@ To query several workspaces at once, pass `projectIds` instead. Either field may
 
 ```graphql
 query ListRolesAcrossWorkspaces {
-  projectUserRoles(filter: { projectIds: ["project_123", "project_456"] }) {
+  workspaceUserRoles(filter: { projectIds: ["project_123", "project_456"] }) {
     id
     name
     project {
@@ -61,7 +61,7 @@ query ListRolesAcrossWorkspaces {
 
 ### ProjectUserRoleFilter
 
-The required `filter` argument for `projectUserRoles`.
+The required `filter` argument for `workspaceUserRoles`.
 
 | Parameter    | Type       | Required | Description                                                               |
 | ------------ | ---------- | -------- | ------------------------------------------------------------------------- |
@@ -70,7 +70,7 @@ The required `filter` argument for `projectUserRoles`.
 
 ### CreateProjectUserRoleInput
 
-The input for `createProjectUserRole`. Only `projectId` and `name` are required; every other field is optional and falls back to the default shown.
+The input for `createWorkspaceUserRole`. Only `projectId` and `name` are required; every other field is optional and falls back to the default shown.
 
 | Parameter                   | Type                                       | Required | Default  | Description                                                         |
 | --------------------------- | ------------------------------------------ | -------- | -------- | ------------------------------------------------------------------- |
@@ -141,7 +141,7 @@ Per-field access for a custom field (`CustomField`).
 
 ### CreateProjectUserRoleTodoListInput
 
-Per-list access for a list (`TodoList`).
+Per-list access for a list (`RecordList`).
 
 | Parameter    | Type       | Required | Description                             |
 | ------------ | ---------- | -------- | --------------------------------------- |
@@ -164,7 +164,7 @@ Per-field access for a built-in record field.
 
 ### UpdateProjectUserRoleInput
 
-The input for `updateProjectUserRole`. Same fields as `CreateProjectUserRoleInput`, with two differences:
+The input for `updateWorkspaceUserRole`. Same fields as `CreateProjectUserRoleInput`, with two differences:
 
 - `roleId: String!` (required) — the role to update.
 - `projectId: String!` (required) — the workspace the role belongs to, unchanged.
@@ -181,12 +181,12 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 
 ## Response
 
-`projectUserRoles` returns an array of `ProjectUserRole` objects.
+`workspaceUserRoles` returns an array of `ProjectUserRole` objects.
 
 ```json
 {
   "data": {
-    "projectUserRoles": [
+    "workspaceUserRoles": [
       {
         "id": "clm4n8qwx000008l0g4oxdqn7",
         "name": "External Contractor",
@@ -200,12 +200,12 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 }
 ```
 
-`createProjectUserRole` and `updateProjectUserRole` both return the `ProjectUserRole`.
+`createWorkspaceUserRole` and `updateWorkspaceUserRole` both return the `ProjectUserRole`.
 
 ```json
 {
   "data": {
-    "createProjectUserRole": {
+    "createWorkspaceUserRole": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "External Contractor"
     }
@@ -213,10 +213,10 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 }
 ```
 
-`deleteProjectUserRole` returns a nullable `Boolean` — `true` on success.
+`deleteWorkspaceUserRole` returns a nullable `Boolean` — `true` on success.
 
 ```json
-{ "data": { "deleteProjectUserRole": true } }
+{ "data": { "deleteWorkspaceUserRole": true } }
 ```
 
 ### Returns — ProjectUserRole
@@ -229,7 +229,7 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 | `description`               | `String`                       | Role description.                                                         |
 | `createdAt`                 | `DateTime!`                    | When the role was created.                                                |
 | `updatedAt`                 | `DateTime`                     | When the role was last updated.                                           |
-| `project`                   | `Project!`                     | The workspace the role belongs to.                                        |
+| `project`                   | `Workspace!`                     | The workspace the role belongs to.                                        |
 | **Action permissions**      |                                |                                                                           |
 | `allowInviteOthers`         | `Boolean`                      | May invite users.                                                         |
 | `allowMarkRecordsAsDone`    | `Boolean`                      | May complete records.                                                     |
@@ -263,7 +263,7 @@ Create a contractor role: enable the records and files sections, allow completin
 
 ```graphql
 mutation CreateContractorRole {
-  createProjectUserRole(
+  createWorkspaceUserRole(
     input: {
       projectId: "project_123"
       name: "External Contractor"
@@ -289,7 +289,7 @@ Restrict a role to records tagged `tag_123` only:
 
 ```graphql
 mutation CreateScopedRole {
-  createProjectUserRole(
+  createWorkspaceUserRole(
     input: {
       projectId: "project_123"
       name: "Client Reviewer"
@@ -307,7 +307,7 @@ Rename an existing role and turn off chat without touching its other settings:
 
 ```graphql
 mutation UpdateRole {
-  updateProjectUserRole(
+  updateWorkspaceUserRole(
     input: {
       roleId: "role_123"
       projectId: "project_123"
@@ -326,7 +326,7 @@ Delete a role:
 
 ```graphql
 mutation DeleteRole {
-  deleteProjectUserRole(input: { roleId: "role_123", projectId: "project_123" })
+  deleteWorkspaceUserRole(input: { roleId: "role_123", projectId: "project_123" })
 }
 ```
 
@@ -379,10 +379,10 @@ The custom-role limit is plan-dependent — roughly 1 on starter plans up to ~50
 
 | Operation               | Required access                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `projectUserRoles`      | Any member of the queried workspace (roles for workspaces you don't belong to are silently excluded). |
-| `createProjectUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
-| `updateProjectUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
-| `deleteProjectUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
+| `workspaceUserRoles`      | Any member of the queried workspace (roles for workspaces you don't belong to are silently excluded). |
+| `createWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
+| `updateWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
+| `deleteWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
 
 ## Related
 

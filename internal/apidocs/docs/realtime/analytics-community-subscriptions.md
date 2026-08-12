@@ -2,7 +2,7 @@
 title: Dashboards, Charts & Community
 description: Live streams for dashboards, charts, form changes, and the community feed — the remaining real-time channels in one place.
 icon: ChartBar
-order: 10
+order: 11
 ---
 
 The remaining real-time channels, grouped because each is low-traffic on its own: live **dashboards** and their **charts** (`subscribeToDashboard`, `subscribeToChart`), **form** changes (`subscribeToForm`), and the public **community** feed (`subscribeToCommunityPost` for a post's replies, `subscribeToCommunityPosts` for the post feed).
@@ -13,7 +13,7 @@ Dashboards (`Dashboard`), charts (`Chart`), and forms (`Form`) use the standard 
 
 ## subscribeToDashboard
 
-Streams dashboard lifecycle changes in one organization — a dashboard being created, renamed, shared, or deleted. Organizations are `Company` objects in the API, so the stream is scoped by `companyId`, with an optional `projectId` to narrow it to one workspace.
+Streams dashboard lifecycle changes in one organization — a dashboard being created, renamed, shared, or deleted. Organizations are `Organization` objects in the API, so the stream is scoped by `companyId`, with an optional `projectId` to narrow it to one workspace.
 
 ### Request
 
@@ -110,10 +110,10 @@ subscription OnChartChanged {
 
 #### SubscribeToChartFilterInput
 
-| Parameter     | Type              | Required | Description                                                                                                     |
-| ------------- | ----------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `dashboardId` | `String!`         | Yes      | Dashboard whose charts to watch.                                                                                |
-| `todoFilter`  | `TodoFilterInput` | No       | The record (todo) filter applied to the chart view. Must match the published event's filter exactly to deliver. |
+| Parameter     | Type              | Required | Description                                                                                              |
+| ------------- | ----------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `dashboardId` | `String!`         | Yes      | Dashboard whose charts to watch.                                                                         |
+| `todoFilter`  | `TodoFilterInput` | No       | The record filter applied to the chart view. Must match the published event's filter exactly to deliver. |
 
 ### Response
 

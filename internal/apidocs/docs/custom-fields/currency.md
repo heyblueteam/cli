@@ -5,7 +5,7 @@ icon: DollarSign
 order: 8
 ---
 
-A currency custom field stores a monetary amount together with a currency code (`1500.50` + `USD`) on a record. It maps to the `CURRENCY` value of the `CustomFieldType` enum. Records are `Todo` objects and custom fields are `CustomField` objects in the API.
+A currency custom field stores a monetary amount together with a currency code (`1500.50` + `USD`) on a record. It maps to the `CURRENCY` value of the `CustomFieldType` enum. Records are `Record` objects and custom fields are `CustomField` objects in the API.
 
 The set of currencies a field offers is stored as `CustomFieldOption` rows on the field — one option per currency (`USD`, `EUR`, `GBP`, …), each identified by its three-letter code in `title`. The field's `currency` property is the default code used when a value omits one.
 
@@ -15,12 +15,12 @@ The set of currencies a field offers is stored as `CustomFieldOption` rows on th
 | ----------------------------- | ---------------------------------------------- |
 | Enum value                    | `CURRENCY`                                     |
 | Value fields on `CustomField` | `number` (the amount), `currency` (the code)   |
-| Set with `setTodoCustomField` | `number`, `currency`                           |
-| Set with `createTodo`         | a single `value` string encoding amount + code |
+| Set with `setRecordCustomField` | `number`, `currency`                           |
+| Set with `createRecord`         | a single `value` string encoding amount + code |
 
 ## Create
 
-Use the `createCustomField` mutation with `type: CURRENCY`. The field is created in the workspace identified by the `X-Bloo-Project-ID` header — there is no `projectId` argument. Set `currency` to the default code and, optionally, `min`/`max` to record an intended range.
+Use the `createCustomField` mutation with `type: CURRENCY`. The field is created in the workspace identified by the `blue-workspace-id` header — there is no `projectId` argument. Set `currency` to the default code and, optionally, `min`/`max` to record an intended range.
 
 ```graphql
 mutation CreateCurrencyField {
@@ -72,21 +72,21 @@ A new currency field offers only its default `currency`. To let records choose a
 
 ## Set a value
 
-Use the `setTodoCustomField` mutation with `number` (the amount) and `currency` (the code). It returns `Boolean!` — there are no subfields to select.
+Use the `setRecordCustomField` mutation with `number` (the amount) and `currency` (the code). It returns `Boolean!` — there are no subfields to select.
 
 ```graphql
 mutation SetDealValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", number: 1500.50, currency: "USD" }
   )
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                                                            |
 | --------------- | --------- | -------- | -------------------------------------------------------------------------------------- |
@@ -97,7 +97,7 @@ mutation SetDealValue {
 
 ### Setting a value while creating a record
 
-`createTodo` takes custom field values as `CreateTodoInputCustomField` entries, each with only `customFieldId` and a single `value` string — there is no separate `currency` key here. For a currency field, encode the amount and code into one string:
+`createRecord` takes custom field values as `CreateRecordInputCustomField` entries, each with only `customFieldId` and a single `value` string — there is no separate `currency` key here. For a currency field, encode the amount and code into one string:
 
 | `value`    | Result                                        |
 | ---------- | --------------------------------------------- |
@@ -109,7 +109,7 @@ The code (when present) is matched against the field's currency `CustomFieldOpti
 
 ```graphql
 mutation CreateDeal {
-  createTodo(
+  createRecord(
     input: {
       title: "Acme renewal"
       todoListId: "list_123"
@@ -131,7 +131,7 @@ mutation CreateDeal {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Acme renewal",
       "customFields": [
@@ -148,7 +148,7 @@ Read currency values from a record's `customFields` connection. Each element is 
 
 ```graphql
 query ReadDealValue {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoListIds: ["list_123"] }) {
       items {
         id
@@ -168,7 +168,7 @@ query ReadDealValue {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -187,7 +187,7 @@ query ReadDealValue {
 
 ## Notes
 
-- **Amount and code are separate columns.** `number` holds the amount, `currency` holds the code. `setTodoCustomField` writes both directly; `createTodo` parses both out of the single `value` string.
+- **Amount and code are separate columns.** `number` holds the amount, `currency` holds the code. `setRecordCustomField` writes both directly; `createRecord` parses both out of the single `value` string.
 - **`min`/`max` are not enforced.** They are stored on the field as a documented range but are not validated when values are set or updated.
 - **Conversion is a separate field type.** A `CURRENCY` field does not convert between currencies. To convert a source amount into other currencies automatically, use a [Currency Conversion field](/api/custom-fields/currency-conversion).
 

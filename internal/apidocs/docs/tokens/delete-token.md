@@ -7,13 +7,13 @@ order: 3
 
 Use the `deletePersonalAccessToken` mutation to permanently revoke a personal access token (a `PersonalAccessToken` object). Revocation is immediate and irreversible: the moment the mutation returns, the token stops authenticating and any request carrying its credentials begins failing.
 
-You identify the token by its **Token ID** — the unprefixed `uid` you also send in the `X-Bloo-Token-ID` header, and the `id` returned by [List Tokens](/api/tokens/query-tokens). It is **not** the `pat_`-prefixed Secret; the Secret is never accepted as an argument and, after creation, is never recoverable.
+You identify the token by its **Token ID** — the unprefixed `uid` you also send in the `blue-token-id` header, and the `id` returned by [List Tokens](/api/tokens/query-tokens). It is **not** the `pat_`-prefixed Secret; the Secret is never accepted as an argument and, after creation, is never recoverable.
 
 You can only revoke your own tokens. The mutation is scoped to the calling user, so an ID belonging to another user is indistinguishable from one that does not exist — both raise `PERSONAL_ACCESS_TOKEN_NOT_FOUND`.
 
 <Callout variant="warning" title="Token management needs a user session">
 
-Like [creating a token](/api/tokens/create-token), revoking one requires an authenticated user session (the Firebase/JWT login the app uses). It **cannot** be performed while authenticating with a token: if the request carries `X-Bloo-Token-ID` headers, the mutation returns `FORBIDDEN`. Revoke tokens from a logged-in browser session, not from an API integration.
+Like [creating a token](/api/tokens/create-token), revoking one requires an authenticated user session (the Firebase/JWT login the app uses). It **cannot** be performed while authenticating with a token: if the request carries `blue-token-id` headers, the mutation returns `FORBIDDEN`. Revoke tokens from a logged-in browser session, not from an API integration.
 
 </Callout>
 
@@ -31,7 +31,7 @@ Authenticate with a user session, not token headers (see the callout above):
 
 ```
 Authorization: Bearer YOUR_SESSION_JWT
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-org-id: YOUR_ORG_ID
 ```
 
 ## Parameters
@@ -63,7 +63,7 @@ X-Bloo-Company-ID: YOUR_COMPANY_ID
 | Code                              | When                                                                                                                                                        |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PERSONAL_ACCESS_TOKEN_NOT_FOUND` | No token owned by the caller matches `id` — the ID is unknown, already revoked, or belongs to another user. Message: `Personal access token was not found.` |
-| `FORBIDDEN`                       | The request authenticated with a token instead of a user session (an `X-Bloo-Token-ID` header was present). Message: `You are not authorized.`              |
+| `FORBIDDEN`                       | The request authenticated with a token instead of a user session (an `blue-token-id` header was present). Message: `You are not authorized.`              |
 
 ```json
 {

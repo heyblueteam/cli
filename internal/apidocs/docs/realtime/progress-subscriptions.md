@@ -1,15 +1,15 @@
 ---
 title: Progress & Long-Running Jobs
-description: Stream progress on async server jobs — imports/exports, lookups, AI tagging, cover generation, automation runs, and OAuth connections.
+description: Stream progress on async server jobs — imports/exports, lookups, cover generation, automation runs, and OAuth connections.
 icon: LoaderCircle
-order: 9
+order: 10
 ---
 
-Some Blue operations run asynchronously on the server — bulk imports and exports, reference-field lookups, AI auto-tagging, cover-image generation, automation executions. These subscriptions push **job status** to your client as the work proceeds, so you can render a progress bar or refresh a view the moment a job finishes instead of polling.
+Some Blue operations run asynchronously on the server — bulk imports and exports, reference-field lookups, cover-image generation, automation executions. These subscriptions push **job status** to your client as the work proceeds, so you can render a progress bar or refresh a view the moment a job finishes instead of polling.
 
 These are streamed over WebSocket using the [graphql-ws](https://github.com/enisdenjo/graphql-ws) protocol at `wss://api.blue.app/graphql` — the same path as the HTTP GraphQL endpoint. Open and authenticate the connection first; see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the handshake and credential forms. The examples below show only the subscription documents.
 
-Unlike the entity change-feeds (records, comments, files, …) these are **job-status channels**, so their payloads vary. Some return a free-form `JSON` blob (`subscribeToImportExportProgress`, `subscribeToLookupProgress`), some a typed progress object (`subscribeToAITagProgress`, `subscribeToCoverGenerationProgress`), and the automation/OAuth streams reuse the standard `{ mutation, node, previousValues }` shape described on the [Real-time overview](/api/realtime). Each section below states which.
+Unlike the entity change-feeds (records, comments, files, …) these are **job-status channels**, so their payloads vary. Some return a free-form `JSON` blob (`subscribeToImportExportProgress`, `subscribeToLookupProgress`), some a typed progress object (`subscribeToCoverGenerationProgress`), and the automation/OAuth streams reuse the standard `{ mutation, node, previousValues }` shape described on the [Real-time overview](/api/realtime). Each section below states which.
 
 ## subscribeToImportExportProgress
 
@@ -100,61 +100,6 @@ This field returns `JSON` — there is no sub-selection. The payload is the prog
 Because the field's type is `JSON`, the server controls the shape and you select no subfields. Read the keys defensively in your client rather than relying on a fixed schema.
 
 </Callout>
-
-## subscribeToAITagProgress
-
-Track AI auto-tagging of records as it runs. When you trigger AI tagging for a workspace, the server processes records in the background and publishes progress to this stream.
-
-### Request
-
-```graphql
-subscription OnAITagProgress {
-  subscribeToAITagProgress(projectId: "project_123") {
-    progress
-    count
-    maxCount
-    operationId
-    error
-    errorCode
-  }
-}
-```
-
-### Parameters
-
-| Parameter   | Type      | Required | Description                                                                                      |
-| ----------- | --------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `projectId` | `String!` | Yes      | Workspace ID the tagging job runs in. Events are delivered only to the user who started the job. |
-
-### Response
-
-`subscribeToAITagProgress` returns an `AITagProgress` object per event.
-
-```json
-{
-  "data": {
-    "subscribeToAITagProgress": {
-      "progress": 0.75,
-      "count": 75,
-      "maxCount": 100,
-      "operationId": "clm4n8qwx000008l0g4oxdqn7",
-      "error": false,
-      "errorCode": null
-    }
-  }
-}
-```
-
-#### AITagProgress
-
-| Field         | Type      | Description                                                                     |
-| ------------- | --------- | ------------------------------------------------------------------------------- |
-| `progress`    | `Float`   | Fractional completion from `0` to `1`.                                          |
-| `count`       | `Float`   | Number of records processed so far.                                             |
-| `maxCount`    | `Float`   | Total number of records in the job.                                             |
-| `operationId` | `String`  | Identifier for this tagging run; correlate it with the operation you triggered. |
-| `error`       | `Boolean` | `true` if the job failed.                                                       |
-| `errorCode`   | `String`  | A machine-readable error code when `error` is `true`; otherwise `null`.         |
 
 ## subscribeToCoverGenerationProgress
 
@@ -466,7 +411,7 @@ subscription OnOAuthConnectionChange {
 | `provider`  | `OAuthProvider!` | The integration provider (see below).               |
 | `expiredAt` | `DateTime`       | When the connection's credentials expire, if known. |
 | `metadata`  | `JSON`           | Provider-specific connection metadata.              |
-| `project`   | `Project!`       | The workspace the connection belongs to.            |
+| `project`   | `Workspace!`     | The workspace the connection belongs to.            |
 | `createdBy` | `User!`          | The user who created the connection.                |
 | `createdAt` | `DateTime!`      | When the connection was created.                    |
 | `updatedAt` | `DateTime!`      | When the connection was last modified.              |
@@ -483,7 +428,6 @@ subscription OnOAuthConnectionChange {
 Authentication is enforced at the WebSocket handshake — an unauthenticated connection is rejected before any subscription runs. Beyond that, delivery is gated **per event**:
 
 - **`subscribeToImportExportProgress`** delivers an event only when the job's `userId` matches the authenticated user. Pass your own user ID as the `userId` argument.
-- **`subscribeToAITagProgress`** delivers an event only to the user who started the tagging job.
 - **`subscribeToAutomation`** and **`subscribeToOAuthConnection`** deliver an event only if you are a member of the workspace the automation or connection belongs to.
 - **`subscribeToLookupProgress`**, **`subscribeToCoverGenerationProgress`**, and **`subscribeToAutomationExecution`** deliver events matched on the `projectId` you supply.
 

@@ -43,7 +43,7 @@ mutation CreateReviewerField {
 | `allowedRoleIds`         | `[String!]`          | No       | Restrict eligible assignees to these custom roles.       |
 | `allowedLevels`          | `[UserAccessLevel!]` | No       | Restrict eligible assignees to these access levels.      |
 
-The field is scoped to the workspace in the `X-Bloo-Project-ID` header — there is no `projectId` input field.
+The field is scoped to the workspace in the `blue-workspace-id` header — there is no `projectId` input field.
 
 ## Set a value
 
@@ -51,14 +51,14 @@ Pass the user IDs to assign in `assigneeUserIds`. The mutation returns `Boolean!
 
 ```graphql
 mutation AssignReviewer {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", assigneeUserIds: ["user_123"] }
   )
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
 If the field is single-user (`assigneeMultiple: false`), passing more than one ID returns a `BAD_USER_INPUT` error. Assigning a user who is not eligible — outside `allowedUserIds`/`allowedRoleIds`/`allowedLevels` — also returns `BAD_USER_INPUT`.
@@ -69,7 +69,7 @@ Read assigned users from `assignedUsers` on the field, and the users who may be 
 
 ```graphql
 query RecordReviewers {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: [], projectIds: ["project_123"] }, limit: 5) {
       items {
         id
@@ -92,7 +92,7 @@ query RecordReviewers {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -121,8 +121,8 @@ query RecordReviewers {
 
 ## Notes
 
-- An assignee field is distinct from the record's built-in assignees (`Todo.users`). Setting one does not change the other.
-- To clear all assignees, call `setTodoCustomField` with an empty `assigneeUserIds: []`.
+- An assignee field is distinct from the record's built-in assignees (`Record.users`). Setting one does not change the other.
+- To clear all assignees, call `setRecordCustomField` with an empty `assigneeUserIds: []`.
 
 ## Related
 

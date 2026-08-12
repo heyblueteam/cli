@@ -1,11 +1,11 @@
 ---
 title: Create an Organization
-description: Create a new organization with the createCompany mutation. The caller becomes the owner and starts a 14-day trial.
+description: Create a new organization with the createOrganization mutation. The caller becomes the owner and starts a 14-day trial.
 icon: Plus
 order: 1
 ---
 
-Use the `createCompany` mutation to create a new organization. Organizations are `Company` objects in the API and are the top-level tenant that contains workspaces, lists, and records.
+Use the `createOrganization` mutation to create a new organization. Organizations are `Organization` objects in the API and are the top-level tenant that contains workspaces, lists, and records.
 
 Creating an organization has two immediate side effects you should plan for:
 
@@ -20,11 +20,11 @@ Each organization is billed separately. Creating organizations from the API can 
 
 ## Request
 
-This mutation takes a single required `input` argument of type `CreateCompanyInput`. The smallest valid call supplies a `name` and a `slug`:
+This mutation takes a single required `input` argument of type `CreateOrganizationInput`. The smallest valid call supplies a `name` and a `slug`:
 
 ```graphql
 mutation CreateOrganization {
-  createCompany(input: { name: "Acme Corporation", slug: "acme-corp" }) {
+  createOrganization(input: { name: "Acme Corporation", slug: "acme-corp" }) {
     id
     name
     slug
@@ -32,18 +32,18 @@ mutation CreateOrganization {
 }
 ```
 
-Authenticate with your personal access token headers — no `X-Bloo-Company-ID` is required, since the organization does not exist yet:
+Authenticate with your personal access token headers — no `blue-org-id` is required, since the organization does not exist yet:
 
 ```
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
 ```
 
 The endpoint is `https://api.blue.app/graphql`. Header names are case-insensitive.
 
 ## Parameters
 
-### CreateCompanyInput
+### CreateOrganizationInput
 
 | Field   | Type         | Required | Description                                                                                                                       |
 | ------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -70,16 +70,16 @@ The `slug` you submit is **not stored verbatim**. The server lowercases it, stri
 - The canonical, guaranteed-unique identifier for an organization is the returned `id` (a CUID), not the slug. Treat `id` as the primary key.
 - Always read the `slug` field back from the response rather than assuming your input persisted unchanged.
 
-To check whether a slug is free before you call `createCompany`, use the [`isCompanySlugAvailable`](/api/organization-management/query-organization) query.
+To check whether a slug is free before you call `createOrganization`, use the [`isOrganizationSlugAvailable`](/api/organization-management/query-organization) query.
 
 ## Response
 
-`createCompany` returns the created `Company`. The selection set above resolves to:
+`createOrganization` returns the created `Organization`. The selection set above resolves to:
 
 ```json
 {
   "data": {
-    "createCompany": {
+    "createOrganization": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "Acme Corporation",
       "slug": "acme-corp"
@@ -90,11 +90,11 @@ To check whether a slug is free before you call `createCompany`, use the [`isCom
 
 ### Returns
 
-`createCompany` returns a `Company!`. Commonly selected fields:
+`createOrganization` returns an `Organization!`. Commonly selected fields:
 
 | Field                | Type               | Description                                                                                  |
 | -------------------- | ------------------ | -------------------------------------------------------------------------------------------- |
-| `id`                 | `ID!`              | Canonical unique identifier (CUID). Use this in subsequent calls and as `X-Bloo-Company-ID`. |
+| `id`                 | `ID!`              | Canonical unique identifier (CUID). Use this in subsequent calls and as `blue-org-id`. |
 | `name`               | `String!`          | Stored display name (after trimming and URL/dot stripping).                                  |
 | `slug`               | `String!`          | Normalized, de-duplicated URL identifier — may differ from your input.                       |
 | `image`              | `Image`            | Logo, if an `image` was supplied.                                                            |
@@ -107,7 +107,7 @@ Create an organization with a logo and read back the trial and ownership fields:
 
 ```graphql
 mutation CreateOrganizationWithLogo {
-  createCompany(
+  createOrganization(
     input: {
       name: "Acme Corporation"
       slug: "acme-corp"
@@ -140,10 +140,10 @@ mutation CreateOrganizationWithLogo {
 | `BAD_USER_INPUT`  | `name` or `slug` is missing, empty after trimming, or exceeds 50 characters.                                                            |
 | `UNAUTHENTICATED` | The request has no valid authentication. Any authenticated user can create an organization; no existing company membership is required. |
 
-A `slug` that contains a URL is rejected during normalization. Note that, unlike renaming an existing organization, `createCompany` does **not** return `COMPANY_URL_ALREADY_EXISTS` for a slug collision — it silently appends a number to make the slug unique. Check availability up front with `isCompanySlugAvailable` if you need a specific slug.
+A `slug` that contains a URL is rejected during normalization. Note that, unlike renaming an existing organization, `createOrganization` does **not** return `COMPANY_URL_ALREADY_EXISTS` for a slug collision — it silently appends a number to make the slug unique. Check availability up front with `isOrganizationSlugAvailable` if you need a specific slug.
 
 ## Related
 
-- [Query an Organization](/api/organization-management/query-organization) — read back the organization you created, and check slug availability with `isCompanySlugAvailable`.
+- [Query an Organization](/api/organization-management/query-organization) — read back the organization you created, and check slug availability with `isOrganizationSlugAvailable`.
 - [Organization Management overview](/api/organization-management)
 - [Upload Files](/api/files) — generate the image URLs for the `image` input.

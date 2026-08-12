@@ -5,9 +5,9 @@ icon: MessageSquare
 order: 8
 ---
 
-Use the `createComment` mutation to post a comment on a record. Comments accept rich HTML content, file attachments, and @mentions, and can be posted as threaded replies to an existing comment. Each comment is added to the record's activity feed and triggers the relevant notifications, subscriptions, and webhooks. Records are `Todo` objects in the API.
+Use the `createComment` mutation to post a comment on a record. Comments accept rich HTML content, file attachments, and @mentions, and can be posted as threaded replies to an existing comment. Each comment is added to the record's activity feed and triggers the relevant notifications, subscriptions, and webhooks. Records are `Record` objects in the API.
 
-The same mutation comments on a record (`category: TODO`), a discussion (`category: DISCUSSION`), or a status update (`category: STATUS_UPDATE`); this page focuses on commenting on records.
+The same mutation comments on a record (`category: TODO`), a chat (`category: DISCUSSION`), or a status update (`category: STATUS_UPDATE`); this page focuses on commenting on records.
 
 ## Request
 
@@ -41,7 +41,7 @@ mutation AddComment {
 | Parameter    | Type               | Required | Description                                                                                                                                  |
 | ------------ | ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `category`   | `CommentCategory!` | Yes      | The kind of entity being commented on. Use `TODO` for records.                                                                               |
-| `categoryId` | `String!`          | Yes      | ID of the entity being commented on. For `TODO`, this is the record (`Todo`) ID.                                                             |
+| `categoryId` | `String!`          | Yes      | ID of the entity being commented on. For `TODO`, this is the record (`Record`) ID.                                                           |
 | `html`       | `String!`          | Yes      | Rendered HTML of the comment. Sanitized on the server before it is stored.                                                                   |
 | `text`       | `String!`          | Yes      | Plain-text version of the comment, used as a fallback and for search.                                                                        |
 | `tiptap`     | `Boolean`          | No       | Enables TipTap-aware sanitization. Set `true` to parse embedded file-attachment `<div>` elements. Without it, attachment markup is stripped. |
@@ -52,7 +52,7 @@ mutation AddComment {
 | Value           | Description                       |
 | --------------- | --------------------------------- |
 | `TODO`          | A comment on a record.            |
-| `DISCUSSION`    | A comment on a discussion thread. |
+| `DISCUSSION`    | A comment on a chat thread. |
 | `STATUS_UPDATE` | A comment on a status update.     |
 
 ## Response
@@ -90,8 +90,8 @@ mutation AddComment {
 | `deletedBy`    | `User`              | The user who deleted the comment, if any.                                                                               |
 | `user`         | `User!`             | The author of the comment. Select `id`, `fullName`, and `image { … }` (there is no `name` or `avatar` field on `User`). |
 | `activity`     | `Activity`          | The activity-feed entry created for this comment.                                                                       |
-| `todo`         | `Todo`              | The record this comment is on, when `category` is `TODO`.                                                               |
-| `discussion`   | `Discussion`        | The discussion, when `category` is `DISCUSSION`.                                                                        |
+| `todo`         | `Record`            | The record this comment is on, when `category` is `TODO`.                                                               |
+| `chat`   | `Chat`        | The chat, when `category` is `DISCUSSION`.                                                                        |
 | `statusUpdate` | `StatusUpdate`      | The status update, when `category` is `STATUS_UPDATE`.                                                                  |
 | `parentId`     | `String`            | ID of the parent comment, or `null` for a top-level comment.                                                            |
 | `parent`       | `Comment`           | The parent comment when this is a threaded reply.                                                                       |

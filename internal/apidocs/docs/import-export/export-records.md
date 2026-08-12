@@ -5,7 +5,7 @@ icon: Download
 order: 1
 ---
 
-Use the `exportTodos` mutation to start an asynchronous CSV export of records from a workspace. The mutation returns immediately with `true` to confirm the job was queued; the finished CSV is **emailed to the requesting user** as a download link. There is no API-returned URL — the emailed link is the only way to fetch the file. Track progress in real time with the `subscribeToImportExportProgress` subscription. (Records are `Todo` objects in the API; a workspace is a `Project`.)
+Use the `exportRecords` mutation to start an asynchronous CSV export of records from a workspace. The mutation returns immediately with `true` to confirm the job was queued; the finished CSV is **emailed to the requesting user** as a download link. There is no API-returned URL — the emailed link is the only way to fetch the file. Track progress in real time with the `subscribeToImportExportProgress` subscription. (Records are `Record` objects in the API; a workspace is a `Workspace`.)
 
 This page also covers two related exports:
 
@@ -14,7 +14,7 @@ This page also covers two related exports:
 
 <Callout variant="warning" title="Exports are rate-limited">
 
-`exportTodos` and `exportReport` are limited to **1 request per 50 seconds** per token (GraphQL Shield rate limiter). A second export call inside that window is rejected with `RATE_LIMITED`. Wait at least 50 seconds between exports.
+`exportRecords` and `exportReport` are limited to **1 request per 50 seconds** per token (GraphQL Shield rate limiter). A second export call inside that window is rejected with `RATE_LIMITED`. Wait at least 50 seconds between exports.
 
 </Callout>
 
@@ -24,7 +24,7 @@ Export all records from a workspace. Only `projectId` is required.
 
 ```graphql
 mutation ExportRecords {
-  exportTodos(input: { projectId: "project_123" })
+  exportRecords(input: { projectId: "project_123" })
 }
 ```
 
@@ -32,7 +32,7 @@ mutation ExportRecords {
 
 ## Parameters
 
-### ExportTodosInput
+### ExportRecordsInput
 
 | Parameter       | Type          | Required | Description                                                                                          |
 | --------------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------- |
@@ -115,17 +115,17 @@ Other valid `type` values are `TIME_IN_LIST`, `RELATIVE_DUEDATE`, and `FIELD`. T
 
 ## Response
 
-`exportTodos` returns a bare boolean — `true` once the job is queued. The CSV is generated in the background and emailed to the requesting user; the API never returns the file or a URL.
+`exportRecords` returns a bare boolean — `true` once the job is queued. The CSV is generated in the background and emailed to the requesting user; the API never returns the file or a URL.
 
 ```json
-{ "data": { "exportTodos": true } }
+{ "data": { "exportRecords": true } }
 ```
 
 ### Returns
 
-| Field         | Type       | Description                                 |
-| ------------- | ---------- | ------------------------------------------- |
-| `exportTodos` | `Boolean!` | `true` when the export job has been queued. |
+| Field           | Type       | Description                                 |
+| --------------- | ---------- | ------------------------------------------- |
+| `exportRecords` | `Boolean!` | `true` when the export job has been queued. |
 
 ## Full example
 
@@ -133,7 +133,7 @@ Export incomplete records assigned to two users, tagged, due in Q1, matching a s
 
 ```graphql
 mutation ExportFilteredRecords {
-  exportTodos(
+  exportRecords(
     input: {
       projectId: "project_123"
       filter: {
@@ -162,7 +162,7 @@ mutation ExportFilteredRecords {
 
 ## Export a report
 
-Use the `exportReport` mutation to export records across every workspace referenced by a report's data sources. The export combines the records from all of those workspaces and applies any report-level filters; like `exportTodos`, it returns `true` and delivers the CSV by email.
+Use the `exportReport` mutation to export records across every workspace referenced by a report's data sources. The export combines the records from all of those workspaces and applies any report-level filters; like `exportRecords`, it returns `true` and delivers the CSV by email.
 
 ```graphql
 mutation ExportReport {
@@ -201,7 +201,7 @@ mutation ExportChart {
 
 ### TodoFilterInput
 
-The chart filter is a **different type** from `TodosFilter` (which `exportTodos` uses). `TodoFilterInput` has no `companyIds`, `todoIds`, `search`, `startedAt`, `duedAt`, `coordinates`, or `excludeArchivedProjects`; instead it uses `colors`, and adds completed-date and last-updated-by axes. Fields shared with `TodosFilter` (`assigneeIds`, `tagIds`, `showCompleted`, `q`, …) behave the same — but a key like `companyIds` is not accepted here.
+The chart filter is a **different type** from `TodosFilter` (which `exportRecords` uses). `TodoFilterInput` has no `companyIds`, `todoIds`, `search`, `startedAt`, `duedAt`, `coordinates`, or `excludeArchivedProjects`; instead it uses `colors`, and adds completed-date and last-updated-by axes. Fields shared with `TodosFilter` (`assigneeIds`, `tagIds`, `showCompleted`, `q`, …) behave the same — but a key like `companyIds` is not accepted here.
 
 | Parameter                                                                                                   | Type                       | Required | Description                                                                         |
 | ----------------------------------------------------------------------------------------------------------- | -------------------------- | -------- | ----------------------------------------------------------------------------------- |
@@ -274,11 +274,11 @@ On failure the event carries `"status": "ERROR"`, `"progress": 0`, and an `error
 
 | Code                      | When                                                                                                                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_NOT_FOUND`       | `exportTodos`: the workspace does not exist, or the requesting user is not a member of it (membership is part of the lookup).                                            |
+| `PROJECT_NOT_FOUND`       | `exportRecords`: the workspace does not exist, or the requesting user is not a member of it (membership is part of the lookup).                                          |
 | `REPORT_NOT_FOUND`        | `exportReport`: the report does not exist or the user has no access to it.                                                                                               |
 | `CHART_NOT_FOUND`         | `exportChartCSV`: the chart does not exist, or the user is not a member of the organization that owns the dashboard.                                                     |
 | `CHART_ALREADY_EXPORTING` | `exportChartCSV`: an export for the same `(chartId, userId)` pair is already in flight.                                                                                  |
-| `RATE_LIMITED`            | `exportTodos` / `exportReport`: more than one export request was made within 50 seconds by the same token.                                                               |
+| `RATE_LIMITED`            | `exportRecords` / `exportReport`: more than one export request was made within 50 seconds by the same token.                                                             |
 | `FORBIDDEN`               | The caller lacks the required role for the operation (see [Permissions](#permissions)), or `exportReport` is called by an organization without the Reports plan feature. |
 
 `exportReport` also throws a generic (untyped) error — `No valid projects found in report data sources` — when the report's data sources resolve to zero accessible workspaces. This surfaces with no `extensions.code`.
@@ -287,13 +287,14 @@ On failure the event carries `"status": "ERROR"`, `"progress": 0`, and an `error
 
 | Operation        | Required access                       | Other requirements                                                                      |
 | ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
-| `exportTodos`    | Project `OWNER`, `ADMIN`, or `MEMBER` | The workspace must be active; rate-limited to 1 request per 50s.                        |
+| `exportRecords`  | Project `OWNER`, `ADMIN`, or `MEMBER` | The workspace must be active; rate-limited to 1 request per 50s.                        |
 | `exportReport`   | Company `OWNER`, `ADMIN`, or `MEMBER` | The organization must have the Reports plan feature; rate-limited to 1 request per 50s. |
 | `exportChartCSV` | Company `OWNER`, `ADMIN`, or `MEMBER` | `VIEW_ONLY` and `COMMENT_ONLY` company members are excluded.                            |
 
 ## Notes
 
 - **Delivery is email-only.** Every export here returns a bare `true`; the CSV is generated in the background and a download link is emailed to the requesting user. There is no programmatic way to fetch the file from the API.
+- **Checklists are included.** The `exportTodos` CSV carries a `Checklists` column (after `Project`, before custom-field columns) holding each record's checklist items, with `[x]` for done items and `[ ]` for open ones — for example `Topics: Acid-Base [x], Blood Product [ ]`. Records with no checklists leave the cell empty. This applies to the CSV export only; the PDF export is unaffected.
 - **Chart export deduplication.** `exportChartCSV` sets a lock keyed by `(chartId, userId)` for 6 hours (21,600 s) on each accepted request. A repeat request for the same chart by the same user inside that window is rejected with `CHART_ALREADY_EXPORTING`. The 6-hour window restarts from the most recently accepted export.
 - **Report exports combine data sources.** `exportReport` resolves every workspace referenced by the report's data sources (with per-user permission checks) and merges their filters before queuing one export.
 

@@ -7,11 +7,11 @@ order: 3
 
 Use the `copyAutomation` mutation to duplicate an existing automation. The copy reproduces the source automation's trigger configuration and every action, then attaches it to the workspace in your current request context. Copies are **always created inactive** — activate them with [`editAutomation`](/api/automations/edit-automation) once you're ready for them to fire.
 
-Automations are `Automation` objects in the API. Workspaces are `Project` objects.
+Automations are `Automation` objects in the API. Workspaces are `Workspace` objects.
 
 <Callout variant="info" title="The copy lands in your current workspace">
 
-`copyAutomation` looks up the source automation by ID without scoping to a workspace, but it always creates the copy in the workspace named by your `X-Bloo-Project-ID` header. If the source belongs to a different workspace, the copy is still created in your current one — so this is a workspace-to-workspace copy whenever the IDs differ.
+`copyAutomation` looks up the source automation by ID without scoping to a workspace, but it always creates the copy in the workspace named by your `blue-workspace-id` header. If the source belongs to a different workspace, the copy is still created in your current one — so this is a workspace-to-workspace copy whenever the IDs differ.
 
 </Callout>
 
@@ -85,7 +85,7 @@ The `Automation` object:
 | `actions`   | `[AutomationAction!]!` | The duplicated actions, in order.                                 |
 | `isActive`  | `Boolean!`             | Always `false` for a fresh copy.                                  |
 | `createdBy` | `User!`                | The user who ran the copy — not the original automation's author. |
-| `project`   | `Project!`             | The workspace the copy was created in (your current context).     |
+| `project`   | `Workspace!`           | The workspace the copy was created in (your current context).     |
 | `createdAt` | `DateTime!`            | When the copy was created.                                        |
 | `updatedAt` | `DateTime!`            | When the copy was last updated.                                   |
 
@@ -190,6 +190,7 @@ mutation CopyAutomationDetailed {
         }
         ... on AutomationActionMetadataCopyTodo {
           copyTodoOptions
+          copyCustomFieldIds
         }
       }
     }
@@ -207,7 +208,7 @@ mutation CopyAutomationDetailed {
 ## What gets copied
 
 - **Trigger** — type, color, condition mode, filter groups, target list, tags, assignees, custom field, and custom-field options.
-- **Actions** — type, due offset (`duedIn`), color, target list, tags, assignees, target workspaces, linked PDF, HTTP request configuration, and all action metadata (email content, checklist templates, copy-record options).
+- **Actions** — type, due offset (`duedIn`), color, target list, tags, assignees, target workspaces, linked PDF, HTTP request configuration, and all action metadata (email content, checklist templates, copy-record options including the selected custom-field IDs).
 - **Assignee fallback** — for `ASSIGNEE_ADDED` and `ASSIGNEE_REMOVED` triggers, if the source has no assignees configured, the user running the copy is added as the default assignee.
 
 What does **not** carry over:
@@ -236,7 +237,7 @@ What does **not** carry over:
 
 ## Permissions
 
-Only OWNER or ADMIN members of an **active** (non-archived) workspace can copy automations. The check runs against your current workspace context (`X-Bloo-Project-ID`), not the source automation's workspace.
+Only OWNER or ADMIN members of an **active** (non-archived) workspace can copy automations. The check runs against your current workspace context (`blue-workspace-id`), not the source automation's workspace.
 
 | Access level | Can copy automations |
 | ------------ | -------------------- |

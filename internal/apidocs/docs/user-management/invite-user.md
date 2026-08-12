@@ -5,20 +5,20 @@ icon: UserPlus
 order: 2
 ---
 
-Use the `inviteUser` mutation to add a person to a workspace or organization by email. If the email already belongs to a registered Blue user who is part of the organization, they are added to the workspace immediately. Otherwise Blue sends them an invitation email; they join once they accept. Workspaces are `Project` objects and organizations are `Company` objects in the API.
+Use the `inviteUser` mutation to add a person to a workspace or organization by email. If the email already belongs to a registered Blue user who is part of the organization, they are added to the workspace immediately. Otherwise Blue sends them an invitation email; they join once they accept. Workspaces are `Workspace` objects and organizations are `Organization` objects in the API.
 
 `inviteUser` returns a bare `Boolean!` — there is no object to select fields from. A successful call resolves to `true`.
 
 ## Request
 
-Send the request to `https://api.blue.app/graphql` with your authentication headers. The `X-Bloo-Project-ID` header (workspace ID or slug) is required for workspace-scoped invites.
+Send the request to `https://api.blue.app/graphql` with your authentication headers. The `blue-workspace-id` header (workspace ID or slug) is required for workspace-scoped invites.
 
 ```http
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
 Invite one person to a single workspace as a member:
@@ -98,7 +98,7 @@ Each listed workspace produces its own invitation, consolidated into a single em
 
 ## Custom roles
 
-To assign a custom role instead of a built-in access level, set `accessLevel: MEMBER` and pass the role's `roleId`. The role must belong to the target workspace, and the invitee inherits the permissions defined on it. Retrieve available roles with the [`projectUserRoles` query](/api/user-management/retrieve-custom-role).
+To assign a custom role instead of a built-in access level, set `accessLevel: MEMBER` and pass the role's `roleId`. The role must belong to the target workspace, and the invitee inherits the permissions defined on it. Retrieve available roles with the [`workspaceUserRoles` query](/api/user-management/retrieve-custom-role).
 
 ```graphql
 mutation InviteUserWithRole {

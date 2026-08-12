@@ -1,11 +1,11 @@
 ---
 title: List Workspaces
-description: Retrieve workspaces in an organization with filtering, sorting, and pagination using the projectList query.
+description: Retrieve workspaces in an organization with filtering, sorting, and pagination using the workspaceList query.
 icon: List
 order: 2
 ---
 
-Use the `projectList` query to retrieve the workspaces in one or more organizations, with filtering, sorting, and pagination. Workspaces are `Project` objects in the API, and an organization is a `Company`. By default `projectList` returns the workspaces the authenticated user is a member of; organization owners can also list workspaces they are _not_ in (see [Permissions](#permissions)).
+Use the `workspaceList` query to retrieve the workspaces in one or more organizations, with filtering, sorting, and pagination. Workspaces are `Workspace` objects in the API, and an organization is an `Organization`. By default `workspaceList` returns the workspaces the authenticated user is a member of; organization owners can also list workspaces they are _not_ in (see [Permissions](#permissions)).
 
 ## Request
 
@@ -13,7 +13,7 @@ The smallest call passes the organizations to search in via the required `compan
 
 ```graphql
 query ListWorkspaces {
-  projectList(filter: { companyIds: ["company_123"] }) {
+  workspaceList(filter: { companyIds: ["company_123"] }) {
     items {
       id
       name
@@ -30,7 +30,7 @@ query ListWorkspaces {
 
 ## Parameters
 
-`projectList` takes a required `filter`, plus optional `sort`, `skip`, and `take`.
+`workspaceList` takes a required `filter`, plus optional `sort`, `skip`, and `take`.
 
 | Argument | Type                 | Default | Description                                     |
 | -------- | -------------------- | ------- | ----------------------------------------------- |
@@ -47,16 +47,16 @@ query ListWorkspaces {
 
 ### ProjectListFilter
 
-| Field        | Type         | Required | Description                                                                                                             |
-| ------------ | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `companyIds` | `[String!]!` | Yes      | Organization IDs or slugs to search within.                                                                             |
-| `ids`        | `[String!]`  | No       | Return only the workspaces with these IDs.                                                                              |
-| `archived`   | `Boolean`    | No       | Filter by archived status.                                                                                              |
-| `isTemplate` | `Boolean`    | No       | Filter by template status.                                                                                              |
-| `search`     | `String`     | No       | Match workspaces whose name contains this substring (case-insensitive).                                                 |
-| `folderId`   | `String`     | No       | Return only workspaces in this folder. Pass `null` for root-level workspaces (those not in any folder).                 |
-| `inProject`  | `Boolean`    | No       | Membership scope. See the note below.                                                                                   |
-| `userIds`    | `[String!]`  | No       | Return only workspaces where every listed user is a member. Also populates `Project.members` with the matching members. |
+| Field        | Type         | Required | Description                                                                                                               |
+| ------------ | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `companyIds` | `[String!]!` | Yes      | Organization IDs or slugs to search within.                                                                               |
+| `ids`        | `[String!]`  | No       | Return only the workspaces with these IDs.                                                                                |
+| `archived`   | `Boolean`    | No       | Filter by archived status.                                                                                                |
+| `isTemplate` | `Boolean`    | No       | Filter by template status.                                                                                                |
+| `search`     | `String`     | No       | Match workspaces whose name contains this substring (case-insensitive).                                                   |
+| `folderId`   | `String`     | No       | Return only workspaces in this folder. Pass `null` for root-level workspaces (those not in any folder).                   |
+| `inProject`  | `Boolean`    | No       | Membership scope. See the note below.                                                                                     |
+| `userIds`    | `[String!]`  | No       | Return only workspaces where every listed user is a member. Also populates `Workspace.members` with the matching members. |
 
 **`inProject` membership scope**
 
@@ -75,12 +75,12 @@ query ListWorkspaces {
 
 ## Response
 
-`projectList` returns a `ProjectPagination`: the matched workspaces in `items`, page metadata in `pageInfo`, and the total match count in `totalCount` (a sibling of `pageInfo`, not a field inside it).
+`workspaceList` returns a `ProjectPagination`: the matched workspaces in `items`, page metadata in `pageInfo`, and the total match count in `totalCount` (a sibling of `pageInfo`, not a field inside it).
 
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -106,11 +106,11 @@ query ListWorkspaces {
 
 ### ProjectPagination
 
-| Field        | Type          | Description                                                       |
-| ------------ | ------------- | ----------------------------------------------------------------- |
-| `items`      | `[Project!]!` | The workspaces on this page.                                      |
-| `pageInfo`   | `PageInfo!`   | Pagination metadata.                                              |
-| `totalCount` | `Int`         | Total number of workspaces matching the filter, across all pages. |
+| Field        | Type            | Description                                                       |
+| ------------ | --------------- | ----------------------------------------------------------------- |
+| `items`      | `[Workspace!]!` | The workspaces on this page.                                      |
+| `pageInfo`   | `PageInfo!`     | Pagination metadata.                                              |
+| `totalCount` | `Int`           | Total number of workspaces matching the filter, across all pages. |
 
 ### PageInfo
 
@@ -125,7 +125,7 @@ query ListWorkspaces {
 
 ### Workspace fields
 
-Each entry in `items` is a `Project`. Commonly requested fields are below; request any combination your integration needs.
+Each entry in `items` is a `Workspace`. Commonly requested fields are below; request any combination your integration needs.
 
 | Field                                 | Type                | Description                                                                      |
 | ------------------------------------- | ------------------- | -------------------------------------------------------------------------------- |
@@ -151,7 +151,7 @@ Each entry in `items` is a `Project`. Commonly requested fields are below; reque
 | `totalFileCount`                      | `Int`               | Number of files in the workspace.                                                |
 | `totalFileSize`                       | `Float`             | Combined size of all files, in bytes.                                            |
 | `todoAlias`                           | `String`            | Custom label used in place of "record" in this workspace.                        |
-| `company`                             | `Company!`          | The organization that owns the workspace.                                        |
+| `organization`                        | `Organization!`     | The organization that owns the workspace.                                        |
 | `folder`                              | `Folder`            | The folder containing the workspace, if any.                                     |
 | `accessLevel(userId: String)`         | `UserAccessLevel`   | The access level of the given user (defaults to the caller) in this workspace.   |
 | `members`                             | `[ProjectMember!]!` | Workspace members. Only populated when the query passed `userIds` in the filter. |
@@ -160,7 +160,7 @@ Each entry in `items` is a `Project`. Commonly requested fields are below; reque
 
 <Callout variant="info" title="Deprecated field">
 
-`Project.unseenActivity` is deprecated. Use `unseenActivityCount` instead. `Project.customFields` on the workspace is also deprecated — read custom fields via the [`customFields` query](/api/custom-fields/list-custom-fields).
+`Workspace.unseenActivity` is deprecated. Use `unseenActivityCount` instead. `Workspace.customFields` on the workspace is also deprecated — read custom fields via the [`customFields` query](/api/custom-fields/list-custom-fields).
 
 </Callout>
 
@@ -170,7 +170,7 @@ This call lists active, non-template workspaces in two organizations whose names
 
 ```graphql
 query FilteredWorkspaces {
-  projectList(
+  workspaceList(
     filter: {
       companyIds: ["company_123", "acme-corp"]
       archived: false
@@ -192,7 +192,7 @@ query FilteredWorkspaces {
       category
       unseenActivityCount
       automationsCount(isActive: true)
-      company {
+      organization {
         id
         name
       }
@@ -224,7 +224,7 @@ query FilteredWorkspaces {
 
 ## Permissions
 
-By default `projectList` returns only workspaces the authenticated user belongs to within the given organizations. Listing workspaces the user is _not_ in (`inProject: false`) requires the user to be an owner of at least one of the organizations in `companyIds`.
+By default `workspaceList` returns only workspaces the authenticated user belongs to within the given organizations. Listing workspaces the user is _not_ in (`inProject: false`) requires the user to be an owner of at least one of the organizations in `companyIds`.
 
 ## Related
 

@@ -5,11 +5,11 @@ icon: Upload
 order: 3
 ---
 
-Use the `importTodos` mutation to bulk-import records into a workspace from a CSV file that has already been uploaded to storage. The file is parsed in streaming chunks and records are created in the background. Records are `Todo` objects and a workspace is a `Project` in the API.
+Use the `importRecords` mutation to bulk-import records into a workspace from a CSV file that has already been uploaded to storage. The file is parsed in streaming chunks and records are created in the background. Records are `Record` objects and a workspace is a `Workspace` in the API.
 
-The import runs asynchronously: the mutation returns `true` once the job is accepted, then you follow its progress with the `subscribeToImportExportProgress` subscription. Use `cancelTodoImport` to stop an import that is still running.
+The import runs asynchronously: the mutation returns `true` once the job is accepted, then you follow its progress with the `subscribeToImportExportProgress` subscription. Use `cancelRecordImport` to stop an import that is still running.
 
-Before calling `importTodos`, upload the CSV and obtain its storage key. See [Uploading Files](/api/files) for both upload paths.
+Before calling `importRecords`, upload the CSV and obtain its storage key. See [Uploading Files](/api/files) for both upload paths.
 
 ## Request
 
@@ -17,7 +17,7 @@ The smallest call needs the storage key of the uploaded file, an ordered array o
 
 ```graphql
 mutation ImportRecords {
-  importTodos(
+  importRecords(
     input: {
       s3Key: "uploads/org_123/project_123/import.csv"
       headers: ["Title", "List", "Done", "Due Date"]
@@ -27,11 +27,11 @@ mutation ImportRecords {
 }
 ```
 
-`projectId` is the workspace CUID (the `id` field of `Project`). The headers map each CSV column, in order, to a record field; see [Recognized headers](#recognized-headers) below.
+`projectId` is the workspace CUID (the `id` field of `Workspace`). The headers map each CSV column, in order, to a record field; see [Recognized headers](#recognized-headers) below.
 
 ## Parameters
 
-### ImportTodosInput
+### ImportRecordsInput
 
 | Parameter       | Type      | Required | Description                                                                                                                                                           |
 | --------------- | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,10 +63,10 @@ To produce a CSV that already lines up with a workspace's columns, download a [C
 
 ## Response
 
-`importTodos` returns `Boolean!` — `true` once the import has been accepted and queued.
+`importRecords` returns `Boolean!` — `true` once the import has been accepted and queued.
 
 ```json
-{ "data": { "importTodos": true } }
+{ "data": { "importRecords": true } }
 ```
 
 A `true` response means the job is enqueued, not finished. Subscribe to [import progress](#track-import-progress) to know when it completes.
@@ -77,7 +77,7 @@ Custom-field columns are imported by adding their exact field name as a header a
 
 ```graphql
 mutation ImportRecordsWithCustomFields {
-  importTodos(
+  importRecords(
     input: {
       s3Key: "uploads/org_123/project_123/import.csv"
       headers: ["Title", "List", "Done", "Due Date", "Assignees", "Tags", "Budget", "Priority"]
@@ -130,50 +130,50 @@ A sample event:
 }
 ```
 
-Note the identifier spaces differ: you pass the workspace **CUID** as `projectId` to `importTodos`, but the payload's `projectId` is the workspace **slug**.
+Note the identifier spaces differ: you pass the workspace **CUID** as `projectId` to `importRecords`, but the payload's `projectId` is the workspace **slug**.
 
 ## Cancel an import
 
-Use `cancelTodoImport` to stop an import that is still running. The worker checks for the cancel flag on each chunk and aborts.
+Use `cancelRecordImport` to stop an import that is still running. The worker checks for the cancel flag on each chunk and aborts.
 
 ```graphql
 mutation CancelImport {
-  cancelTodoImport(projectId: "project_123")
+  cancelRecordImport(projectId: "project_123")
 }
 ```
 
 `projectId` accepts either the workspace `id` (CUID) or its slug. The mutation returns `Boolean!` — `true` once the cancellation has been recorded.
 
 ```json
-{ "data": { "cancelTodoImport": true } }
+{ "data": { "cancelRecordImport": true } }
 ```
 
 ## Errors
 
-| Code                         | When                                                                                                                                                                                                              |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BAD_USER_INPUT`             | `s3Key` is missing or fails validation (contains `..`, starts with `/`, or has disallowed characters). Message: `Invalid s3Key`.                                                                                  |
-| `PROJECT_NOT_FOUND`          | The `projectId` does not resolve to a workspace, or the caller cannot access it. Message: `Project was not found.`                                                                                                |
-| `TODO_IMPORT_LIMIT`          | The CSV exceeds the per-import record limit for free-plan organizations. Message: `This file exceeds the 2,500 record limit. Upgrade to Enterprise for unlimited imports, or split your file into smaller parts.` |
-| `IMPORT_ALREADY_IN_PROGRESS` | An import is already running for this workspace. Message: `An import is already running for this workspace. Please wait for it to finish before starting another.`                                                |
-| `FORBIDDEN`                  | The caller lacks permission for the operation (see [Permissions](#permissions)).                                                                                                                                  |
+| Code                         | When                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BAD_USER_INPUT`             | `s3Key` is missing or fails validation (contains `..`, starts with `/`, or has disallowed characters). Message: `Invalid s3Key`.                                                                                                                                                                                                |
+| `PROJECT_NOT_FOUND`          | The `projectId` does not resolve to a workspace, or the caller cannot access it. Message: `Project was not found.`                                                                                                                                                                                                              |
+| `PLAN_LIMIT_REACHED`         | Importing would push the workspace over its plan's per-workspace record cap. Checked before the import starts (pre-flight), against the exact same `recordsPerWorkspace` limit enforced everywhere else records are counted. See [error codes](/api/start-guide/error-codes#plan_limit_reached) for the structured error shape. |
+| `IMPORT_ALREADY_IN_PROGRESS` | An import is already running for this workspace. Message: `An import is already running for this workspace. Please wait for it to finish before starting another.`                                                                                                                                                              |
+| `FORBIDDEN`                  | The caller lacks permission for the operation (see [Permissions](#permissions)).                                                                                                                                                                                                                                                |
 
 ## Permissions
 
-| Operation          | Requirement                                                                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `importTodos`      | Project-level `OWNER`, `ADMIN`, or `MEMBER` (view-only and comment-only roles are rejected), the workspace must be active, and any custom role must have record creation enabled. |
-| `cancelTodoImport` | Project-level `OWNER` or `ADMIN` on an active workspace. Enforced in the resolver; `projectId` may be an `id` or a slug.                                                          |
+| Operation            | Requirement                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `importRecords`      | Project-level `OWNER`, `ADMIN`, or `MEMBER` (view-only and comment-only roles are rejected), the workspace must be active, and any custom role must have record creation enabled. |
+| `cancelRecordImport` | Project-level `OWNER` or `ADMIN` on an active workspace. Enforced in the resolver; `projectId` may be an `id` or a slug.                                                          |
 
 <Callout variant="info" title="One import at a time">
 
-Only one import can run per workspace. A second `importTodos` call while one is active throws `IMPORT_ALREADY_IN_PROGRESS`. This guard is unconditional — it is enforced by a Redis lock plus a per-workspace BullMQ job ID for every import, with no path that silently succeeds.
+Only one import can run per workspace. A second `importRecords` call while one is active throws `IMPORT_ALREADY_IN_PROGRESS`. This guard is unconditional — it is enforced by a Redis lock plus a per-workspace BullMQ job ID for every import, with no path that silently succeeds.
 
 </Callout>
 
-<Callout variant="warning" title="Record limit applies to free plans only">
+<Callout variant="warning" title="Import limit scales with your plan">
 
-Organizations on a free plan are limited to 2,500 records per import. Any paid plan removes the limit — the gate keys off whether the organization has a plan at all, so it is broader than the error message's "Upgrade to Enterprise" wording implies.
+An import can't push a workspace's record count past your plan's `recordsPerWorkspace` cap — the same limit enforced for every other way of creating records, not a separate import-only number. Upgrading your plan raises the cap for imports along with everything else.
 
 </Callout>
 
@@ -181,7 +181,7 @@ Organizations on a free plan are limited to 2,500 records per import. Any paid p
 
 - **Lists and tags auto-create.** Lists and tags referenced in the CSV that don't already exist in the workspace are created during the import.
 - **Custom fields match by name.** Any header that isn't a built-in name is matched to a custom field of the same name. Add custom-field columns to the `headers` array to import their values.
-- **Upload first.** The CSV must be uploaded to storage before you call `importTodos`. See [Uploading Files](/api/files) to get the `s3Key`.
+- **Upload first.** The CSV must be uploaded to storage before you call `importRecords`. See [Uploading Files](/api/files) to get the `s3Key`.
 
 ## Related
 

@@ -5,17 +5,17 @@ icon: Activity
 order: 9
 ---
 
-Use the `activityList` query to read the activity feed — the chronological audit trail of actions that happened in a workspace or across an organization (records created, comments posted, users invited, lists moved, and so on). Workspaces are `Project` objects and organizations are `Company` objects in the API; activity entries are `Activity` objects.
+Use the `activityList` query to read the activity feed — the chronological audit trail of actions that happened in a workspace or across an organization (records created, comments posted, users invited, lists moved, and so on). Workspaces are `Workspace` objects and organizations are `Organization` objects in the API; activity entries are `Activity` objects.
 
 Activities are generated automatically by the server — there is no mutation to create one. This query is the read side; for a live stream of new activity over WebSocket, use the [`subscribeToActivity` subscription](/api/realtime/activity-notifications).
 
 ## Request
 
-The smallest useful call scopes the feed to one workspace and takes the most recent page. The feed is always scoped to the organization in your `X-Bloo-Company-ID` header — see [Permissions](#permissions).
+The smallest useful call scopes the feed to one workspace and takes the most recent page. The feed is always scoped to the organization in your `blue-org-id` header — see [Permissions](#permissions).
 
 ```graphql
 query WorkspaceActivity {
-  activityList(projectId: "project_123", first: 20) {
+  activityList(projectId: "workspace_123", first: 20) {
     activities {
       id
       category
@@ -39,13 +39,13 @@ query WorkspaceActivity {
 
 ## Parameters
 
-All arguments are optional. With no arguments, `activityList` returns the most recent 20 entries across your accessible workspaces in the organization bound by your `X-Bloo-Company-ID` header.
+All arguments are optional. With no arguments, `activityList` returns the most recent 20 entries across your accessible workspaces in the organization bound by your `blue-org-id` header.
 
 | Parameter    | Type                   | Description                                                                                                                                                                                     |
 | ------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `projectId`  | `String`               | Scope to a single workspace (ID or slug).                                                                                                                                                       |
 | `projectIds` | `[String!]`            | Scope to several workspaces by ID.                                                                                                                                                              |
-| `companyId`  | `String`               | Must equal the organization in your `X-Bloo-Company-ID` header, or the call is rejected with `FORBIDDEN`. The feed is always scoped to the authenticated organization regardless of this value. |
+| `companyId`  | `String`               | Must equal the organization in your `blue-org-id` header, or the call is rejected with `FORBIDDEN`. The feed is always scoped to the authenticated organization regardless of this value. |
 | `userId`     | `String`               | Filter to a single user (created, affected by, assigned to, or @-mentioned in the activity).                                                                                                    |
 | `userIds`    | `[String!]`            | Filter to several users (same matching rules as `userId`).                                                                                                                                      |
 | `tagIds`     | `[String!]`            | Filter to activities whose record carries one of these tags.                                                                                                                                    |
@@ -79,7 +79,7 @@ The category of an activity. The full enum:
 | `CREATE_TODO_LIST`            | A list was created.                         |
 | `REMOVE_TODO_LIST`            | A list was deleted.                         |
 | `CREATE_COMMENT`              | A comment was added.                        |
-| `CREATE_DISCUSSION`           | A discussion was started.                   |
+| `CREATE_DISCUSSION`           | A chat was started.                   |
 | `CREATE_STATUS_UPDATE`        | A status update was posted.                 |
 | `CREATE_CUSTOM_FIELD`         | A custom field was created.                 |
 | `RECEIVE_FORM`                | A form submission was received.             |
@@ -169,12 +169,12 @@ The enum also accepts `id_*`, `uid_*`, `inviteeEmail_*`, `metadata_*`, and `user
 | `createdBy`    | `User!`             | The user who performed the action.                                           |
 | `affectedBy`   | `User`              | The user the action was performed on (e.g. the invited or removed user).     |
 | `inviteeEmail` | `String`            | For invitation activities, the invited email address.                        |
-| `company`      | `Company`           | The organization the activity belongs to.                                    |
-| `project`      | `Project`           | The workspace, when the activity is workspace-scoped.                        |
-| `todo`         | `Todo`              | The record, for record activities.                                           |
-| `todoList`     | `TodoList`          | The list, for list activities.                                               |
+| `company`      | `Organization`      | The organization the activity belongs to.                                    |
+| `project`      | `Workspace`         | The workspace, when the activity is workspace-scoped.                        |
+| `todo`         | `Record`            | The record, for record activities.                                           |
+| `todoList`     | `RecordList`        | The list, for list activities.                                               |
 | `comment`      | `Comment`           | The comment, for `CREATE_COMMENT`.                                           |
-| `discussion`   | `Discussion`        | The discussion, for `CREATE_DISCUSSION`.                                     |
+| `chat`   | `Chat`        | The chat, for `CREATE_DISCUSSION`.                                     |
 | `statusUpdate` | `StatusUpdate`      | The status update, for `CREATE_STATUS_UPDATE`.                               |
 | `metadata`     | `String`            | Extra context for the activity, as a JSON string.                            |
 
@@ -187,7 +187,7 @@ Read every record-creation and completion event in one workspace from a single u
 ```graphql
 query WorkspaceActivityFiltered {
   activityList(
-    projectId: "project_123"
+    projectId: "workspace_123"
     userIds: ["user_123"]
     categories: [CREATE_TODO, MARK_TODO_AS_COMPLETE]
     startDate: "2026-03-01T00:00:00Z"
@@ -233,15 +233,15 @@ To fetch the next page, pass the `id` of the last entry as `after: "<last-id>"` 
 | Code                | When                                                                                                       |
 | ------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `UNAUTHENTICATED`   | The request has no valid token.                                                                            |
-| `COMPANY_NOT_FOUND` | The `X-Bloo-Company-ID` header is missing or invalid, or you are not a member of that organization.        |
-| `FORBIDDEN`         | A `companyId` argument was passed that does not match the organization in your `X-Bloo-Company-ID` header. |
+| `COMPANY_NOT_FOUND` | The `blue-org-id` header is missing or invalid, or you are not a member of that organization.        |
+| `FORBIDDEN`         | A `companyId` argument was passed that does not match the organization in your `blue-org-id` header. |
 | `BAD_USER_INPUT`    | An argument is malformed — for example a `startDate` or `endDate` that is not a valid ISO 8601 timestamp.  |
 
 A workspace you cannot see, an archived workspace, or one with activity tracking disabled does **not** error — those activities are silently excluded from the feed.
 
 ## Permissions
 
-The feed is scoped to the organization in your `X-Bloo-Company-ID` header and to the workspaces you belong to within it; a `companyId` argument cannot widen that scope.
+The feed is scoped to the organization in your `blue-org-id` header and to the workspaces you belong to within it; a `companyId` argument cannot widen that scope.
 
 - You only see activities from workspaces you are a member of and that have activity tracking enabled. Entries from before you joined the organization are excluded.
 - Activities that reference a custom field your role cannot view are filtered out, unless you are an organization `OWNER` or `ADMIN`.

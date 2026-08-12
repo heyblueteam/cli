@@ -25,10 +25,10 @@ The API authenticates with a **personal access token (PAT)** — a Token ID and 
 
 | Header                | Required        | Description                                                    |
 | --------------------- | --------------- | -------------------------------------------------------------- |
-| `X-Bloo-Token-ID`     | Yes             | Your token ID (prefixed `pat_`).                               |
-| `X-Bloo-Token-Secret` | Yes             | Your token secret. Shown once at creation — store it securely. |
-| `X-Bloo-Company-ID`   | Most operations | The organization ID or slug to act in.                         |
-| `X-Bloo-Project-ID`   | Some operations | The workspace ID or slug, when an operation is scoped to one.  |
+| `blue-token-id`     | Yes             | Your token ID (prefixed `pat_`).                               |
+| `blue-token-secret` | Yes             | Your token secret. Shown once at creation — store it securely. |
+| `blue-org-id`   | Most operations | The organization ID or slug to act in.                         |
+| `blue-workspace-id`   | Some operations | The workspace ID or slug, when an operation is scoped to one.  |
 
 Header names are case-insensitive. The secret is hashed with bcrypt on our side, so it can never be recovered after creation — treat it like a password.
 
@@ -42,16 +42,16 @@ See [Authentication](/api/start-guide/authentication) for how to create a token 
 
 ## Quick start
 
-Once you have a token, this query lists the workspaces in an organization. Workspaces are `Project` objects in the API, queried with the [`projectList`](/api/workspaces/list-workspaces) query.
+Once you have a token, this query lists the workspaces in an organization. Workspaces are `Workspace` objects in the API, queried with the [`workspaceList`](/api/workspaces/list-workspaces) query.
 
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{
-    "query": "query MyWorkspaces($filter: ProjectListFilter!) { projectList(filter: $filter) { items { id name updatedAt } } }",
+    "query": "query MyWorkspaces($filter: ProjectListFilter!) { workspaceList(filter: $filter) { items { id name updatedAt } } }",
     "variables": { "filter": { "companyIds": ["company_123"] } }
   }'
 ```
@@ -60,7 +60,7 @@ The same operation as a named GraphQL document:
 
 ```graphql
 query MyWorkspaces {
-  projectList(filter: { companyIds: ["company_123"] }) {
+  workspaceList(filter: { companyIds: ["company_123"] }) {
     items {
       id
       name
@@ -75,7 +75,7 @@ query MyWorkspaces {
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -104,7 +104,7 @@ The rest of this section covers everything you need before working with specific
 
 ## What you can build
 
-- **Sync records both ways.** Create and update records (`Todo` objects) from external systems, and read them back to keep another database, spreadsheet, or warehouse in step.
+- **Sync records both ways.** Create and update records (`Record` objects) from external systems, and read them back to keep another database, spreadsheet, or warehouse in step.
 - **Drive workflows from external events.** Turn inbound forms, webhooks, or emails into records, set custom field values, and move records between lists as work progresses.
 - **Connect Blue to your stack.** Push data from a CRM, ERP, or support tool into the right workspace, and surface Blue data in your own dashboards.
 - **React in real time.** Subscribe over WebSocket to record, comment, and file events to update integrations the moment something changes — see [Realtime](/api/realtime/connect-and-authenticate).

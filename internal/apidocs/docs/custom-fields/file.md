@@ -5,13 +5,13 @@ icon: Paperclip
 order: 22
 ---
 
-A file custom field attaches one or more uploaded files to a record. This is the `FILE` value of the `CustomFieldType` enum. Records are `Todo` objects and workspaces are `Project` objects in the API.
+A file custom field attaches one or more uploaded files to a record. This is the `FILE` value of the `CustomFieldType` enum. Records are `Record` objects and workspaces are `Workspace` objects in the API.
 
-Unlike most field types, file values are not written with `setTodoCustomField`. The flow is three steps: upload the file with `uploadFile` to get a file `uid`, attach that file to the record's field with `createTodoCustomFieldFile`, then read the attached files back from the field's `files` list.
+Unlike most field types, file values are not written with `setRecordCustomField`. The flow is three steps: upload the file with `uploadFile` to get a file `uid`, attach that file to the record's field with `createRecordCustomFieldFile`, then read the attached files back from the field's `files` list.
 
 ## Overview
 
-Create the field with `createCustomField` using `type: FILE`. The field is scoped to the workspace in your `X-Bloo-Project-ID` header — there is no `projectId` parameter on the input. A single file field can hold multiple files; each is attached with its own `createTodoCustomFieldFile` call.
+Create the field with `createCustomField` using `type: FILE`. The field is scoped to the workspace in your `X-Bloo-Project-ID` header — there is no `projectId` parameter on the input. A single file field can hold multiple files; each is attached with its own `createRecordCustomFieldFile` call.
 
 ## Create
 
@@ -33,7 +33,7 @@ mutation CreateFileField {
 | `type`        | `CustomFieldType!` | Yes      | Must be `FILE`.            |
 | `description` | `String`           | No       | Help text shown to users.  |
 
-The field is associated with the workspace in your `X-Bloo-Project-ID` header. `CreateCustomFieldInput` has no `projectId` field.
+The field is associated with the workspace in your `blue-workspace-id` header. `CreateCustomFieldInput` has no `projectId` field.
 
 ```json
 {
@@ -91,17 +91,17 @@ mutation UploadFile($file: Upload!) {
 
 ### Step 2 — Attach the file to the record
 
-Use `createTodoCustomFieldFile` with the record ID, the file field ID, and the `uid` from the upload. It returns `Boolean` (`true` on success) — it does **not** return the created object, so do not add a sub-selection.
+Use `createRecordCustomFieldFile` with the record ID, the file field ID, and the `uid` from the upload. It returns `Boolean` (`true` on success) — it does **not** return the created object, so do not add a sub-selection.
 
 ```graphql
 mutation AttachFile {
-  createTodoCustomFieldFile(
+  createRecordCustomFieldFile(
     input: { todoId: "todo_123", customFieldId: "field_123", fileUid: "clm4n8qwx000108l0a1b2c3d4" }
   )
 }
 ```
 
-#### CreateTodoCustomFieldFileInput
+#### CreateRecordCustomFieldFileInput
 
 | Parameter       | Type      | Required | Description                                   |
 | --------------- | --------- | -------- | --------------------------------------------- |
@@ -110,10 +110,10 @@ mutation AttachFile {
 | `fileUid`       | `String!` | Yes      | `uid` of the uploaded file from `uploadFile`. |
 
 ```json
-{ "data": { "createTodoCustomFieldFile": true } }
+{ "data": { "createRecordCustomFieldFile": true } }
 ```
 
-Attaching an already-attached file is a no-op and still returns `true`. To attach several files, call `createTodoCustomFieldFile` once per file `uid` — there is no bulk-attach mutation.
+Attaching an already-attached file is a no-op and still returns `true`. To attach several files, call `createRecordCustomFieldFile` once per file `uid` — there is no bulk-attach mutation.
 
 ## Read a value
 
@@ -121,7 +121,7 @@ Read attached files from the field's `files` list. Query the record's `customFie
 
 ```graphql
 query RecordFiles {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -148,7 +148,7 @@ query RecordFiles {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -197,20 +197,20 @@ The `files` list returns `File` objects.
 
 ## Remove a file
 
-Detach a file with `deleteTodoCustomFieldFile`, identifying it by the same `fileUid`. It also returns `Boolean`.
+Detach a file with `deleteRecordCustomFieldFile`, identifying it by the same `fileUid`. It also returns `Boolean`.
 
 ```graphql
 mutation DetachFile {
-  deleteTodoCustomFieldFile(
+  deleteRecordCustomFieldFile(
     input: { todoId: "todo_123", customFieldId: "field_123", fileUid: "clm4n8qwx000108l0a1b2c3d4" }
   )
 }
 ```
 
-`DeleteTodoCustomFieldFileInput` has the same shape as the attach input: `todoId`, `customFieldId`, and `fileUid` (all `String!`).
+`DeleteRecordCustomFieldFileInput` has the same shape as the attach input: `todoId`, `customFieldId`, and `fileUid` (all `String!`).
 
 ```json
-{ "data": { "deleteTodoCustomFieldFile": true } }
+{ "data": { "deleteRecordCustomFieldFile": true } }
 ```
 
 ## Notes

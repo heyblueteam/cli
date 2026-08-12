@@ -134,7 +134,7 @@ The test email is built from sample values, not a live invitation: the recipient
 
 ## Fetch a template by type
 
-Use the `emailTemplate` query to read the single template configured for the context organization by `type`. The organization is taken from your `X-Bloo-Company-ID` header. Returns `null` if no override exists for that type. This query requires only organization membership — not the `white_label` feature.
+Use the `emailTemplate` query to read the single template configured for the context organization by `type`. The organization is taken from your `blue-org-id` header. Returns `null` if no override exists for that type. This query requires only organization membership — not the `white_label` feature.
 
 ```graphql
 query InvitationTemplate {

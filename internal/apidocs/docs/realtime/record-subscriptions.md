@@ -1,11 +1,11 @@
 ---
-title: Record & Todo-List Subscriptions
+title: Record & RecordList Subscriptions
 description: Real-time GraphQL subscriptions for records and lists — change feeds, action history, the badge counter, and move/done events.
 icon: ListChecks
 order: 2
 ---
 
-Stream live changes to records and lists over a WebSocket. Records are `Todo` objects in the API and lists are `TodoList` objects; this page covers the seven subscription fields that report on them: the `subscribeToTodo` change feed, the `subscribeToTodoAction` history feed, `subscribeToTodoList`, the scalar `subscribeToMyTodoCount` badge counter, and the imperative `onMoveTodo`, `onMarkTodoListAsDone`, and `onMarkTodoListAsUndone` event streams.
+Stream live changes to records and lists over a WebSocket. Records are `Record` objects in the API and lists are `RecordList` objects; this page covers the seven subscription fields that report on them: the `subscribeToTodo` change feed, the `subscribeToTodoAction` history feed, `subscribeToTodoList`, the scalar `subscribeToMyTodoCount` badge counter, and the imperative `onMoveTodo`, `onMarkTodoListAsDone`, and `onMarkTodoListAsUndone` event streams.
 
 All subscriptions run over the same graphql-ws WebSocket as the rest of the API. Open and authenticate the connection first — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) — then send any of the operations below as a `subscribe` message. Every example here assumes that authenticated socket is already open at `wss://api.blue.app/graphql`.
 
@@ -25,7 +25,7 @@ Scope the stream with the `filter` argument. `companyId` is the floor; add `proj
 
 ```graphql
 subscription OnRecordChange {
-  subscribeToTodo(filter: { companyId: "company_123", projectId: "project_123" }) {
+  subscribeToTodo(filter: { companyId: "company_123", projectId: "workspace_123" }) {
     mutation
     node {
       id
@@ -63,7 +63,7 @@ subscription OnRecordChange {
 | Argument    | Type                    | Required | Description                                                                     |
 | ----------- | ----------------------- | -------- | ------------------------------------------------------------------------------- |
 | `filter`    | `SubscribeToTodoFilter` | No       | Scoping object. Without a matching `companyId`, no events are delivered.        |
-| `id`        | `String`                | No       | Record (`Todo`) ID. Top-level convenience arg.                                  |
+| `id`        | `String`                | No       | Record ID. Top-level convenience arg.                                           |
 | `projectId` | `String`                | No       | Workspace (`Project`) ID. Top-level convenience arg; prefer `filter.projectId`. |
 
 #### SubscribeToTodoFilter
@@ -110,12 +110,12 @@ Each event is a `TodoSubscriptionPayload`. `mutation` tells you what happened; `
 
 | Field            | Type                 | Description                                                                |
 | ---------------- | -------------------- | -------------------------------------------------------------------------- |
-| `mutation`       | `MutationType!`      | One of `CREATED`, `UPDATED`, `DELETED`.                                    |
-| `node`           | `Todo`               | The record after the change. `null` on `DELETED`. Select any `Todo` field. |
-| `updatedFields`  | `[String!]`          | Names of the record fields that changed (`UPDATED` only).                  |
-| `previousValues` | `TodoPreviousValues` | The record's scalar values before the change.                              |
+| `mutation`       | `MutationType!`        | One of `CREATED`, `UPDATED`, `DELETED`.                                      |
+| `node`           | `Record`               | The record after the change. `null` on `DELETED`. Select any `Record` field. |
+| `updatedFields`  | `[String!]`            | Names of the record fields that changed (`UPDATED` only).                    |
+| `previousValues` | `RecordPreviousValues` | The record's scalar values before the change.                                |
 
-#### TodoPreviousValues
+#### RecordPreviousValues
 
 Scalar snapshot — relations are not included.
 
@@ -214,19 +214,19 @@ subscription OnRecordAction {
 | `affectedBy`  | `User`            | The user the action targeted (e.g. the assignee added).      |
 | `customField` | `CustomField`     | The field involved, for `SET_CUSTOM_FIELD` actions.          |
 | `user`        | `User`            | The actor who performed the action.                          |
-| `todo`        | `Todo!`           | The record the action belongs to.                            |
+| `todo`        | `Record!`         | The record the action belongs to.                            |
 
 `TodoActionType` is one of: `ADD_TAG`, `ASSIGN_AN_ASSIGNEE`, `ASSIGN_CHECKLIST_ITEM`, `CHANGE_DUE_DATE`, `CHANGE_TODO_LIST`, `COPY_TODO`, `CREATE_CHECKLIST`, `CREATE_CHECKLIST_ITEM`, `CREATE_DEPENDENCY`, `DELETE_CHECKLIST`, `DELETE_CHECKLIST_ITEM`, `DELETE_DEPENDENCY`, `DELETE_TAG`, `MARK_AS_COMPLETE`, `MARK_AS_INCOMPLETE`, `MARK_CHECKLIST_ITEM_AS_DONE`, `MARK_CHECKLIST_ITEM_AS_UNDONE`, `MOVE_TODO`, `REMOVE_DUE_DATE`, `REMOVE_TAG`, `REPEAT_TODO`, `SET_CHECKLIST_ITEM_DUE_DATE`, `SET_CUSTOM_FIELD`, `SET_DUE_DATE`, `UNASSIGN_AN_ASSIGNEE`, `UNASSIGN_CHECKLIST_ITEM`, `UPDATE_CHECKLIST`, `UPDATE_CHECKLIST_ITEM`, `UPDATE_DEPENDENCY`, `UPDATE_DESCRIPTION`, `UPDATE_TAG`, `UPDATE_TITLE`, `SEND_EMAIL`, `ADD_TO_PROJECT`, `REMOVE_FROM_PROJECT`.
 
 ## subscribeToTodoList
 
-Streams list (`TodoList`) lifecycle changes for a workspace: lists created, renamed, reordered, locked/disabled, or deleted. Returns a `TodoListSubscriptionPayload`. Use it to keep a board's column set in sync. Record-level changes within a list come from [`subscribeToTodo`](#subscribetotodo), not this stream.
+Streams list (`RecordList`) lifecycle changes for a workspace: lists created, renamed, reordered, locked/disabled, or deleted. Returns a `RecordListSubscriptionPayload`. Use it to keep a board's column set in sync. Record-level changes within a list come from [`subscribeToTodo`](#subscribetotodo), not this stream.
 
 ### Request
 
 ```graphql
 subscription OnListChange {
-  subscribeToTodoList(projectId: "project_123") {
+  subscribeToTodoList(projectId: "workspace_123") {
     mutation
     node {
       id
@@ -271,14 +271,14 @@ subscription OnListChange {
 }
 ```
 
-#### TodoListSubscriptionPayload
+#### RecordListSubscriptionPayload
 
-| Field            | Type                     | Description                                                                                  |
-| ---------------- | ------------------------ | -------------------------------------------------------------------------------------------- |
-| `mutation`       | `MutationType!`          | `CREATED`, `UPDATED`, or `DELETED`.                                                          |
-| `node`           | `TodoList`               | The list after the change. `null` on `DELETED`.                                              |
-| `updatedFields`  | `[String!]`              | Changed list fields (`UPDATED` only).                                                        |
-| `previousValues` | `TodoListPreviousValues` | Scalar values before the change: `id`, `uid`, `position`, `title`, `createdAt`, `updatedAt`. |
+| Field            | Type                       | Description                                                                                  |
+| ---------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `mutation`       | `MutationType!`            | `CREATED`, `UPDATED`, or `DELETED`.                                                          |
+| `node`           | `RecordList`               | The list after the change. `null` on `DELETED`.                                              |
+| `updatedFields`  | `[String!]`                | Changed list fields (`UPDATED` only).                                                        |
+| `previousValues` | `RecordListPreviousValues` | Scalar values before the change: `id`, `uid`, `position`, `title`, `createdAt`, `updatedAt`. |
 
 ## subscribeToMyTodoCount
 
@@ -306,13 +306,13 @@ subscription OnMyTodoCount {
 
 ## onMoveTodo
 
-Imperative event stream that fires when a record is moved within a workspace — between lists or repositioned. Returns the moved record as a bare `Todo!` (no payload wrapper, no `mutation` discriminator). Use it when you only care about move events and don't want to filter the full `subscribeToTodo` feed.
+Imperative event stream that fires when a record is moved within a workspace — between lists or repositioned. Returns the moved record as a bare `Record!` (no payload wrapper, no `mutation` discriminator). Use it when you only care about move events and don't want to filter the full `subscribeToTodo` feed.
 
 ### Request
 
 ```graphql
 subscription OnMoveRecord {
-  onMoveTodo(projectId: "project_123") {
+  onMoveTodo(projectId: "workspace_123") {
     id
     title
     position
@@ -347,13 +347,13 @@ subscription OnMoveRecord {
 
 ## onMarkTodoListAsDone / onMarkTodoListAsUndone
 
-Two imperative streams that fire when a whole list is marked done or undone — the bulk complete/uncomplete action on a column. Both return a bare `TodoList!`. They are siblings; subscribe to one or both.
+Two imperative streams that fire when a whole list is marked done or undone — the bulk complete/uncomplete action on a column. Both return a bare `RecordList!`. They are siblings; subscribe to one or both.
 
 ### Request
 
 ```graphql
 subscription OnListDone {
-  onMarkTodoListAsDone(projectId: "project_123") {
+  onMarkTodoListAsDone(projectId: "workspace_123") {
     id
     title
     completed
@@ -363,7 +363,7 @@ subscription OnListDone {
 
 ```graphql
 subscription OnListUndone {
-  onMarkTodoListAsUndone(projectId: "project_123") {
+  onMarkTodoListAsUndone(projectId: "workspace_123") {
     id
     title
     completed
@@ -415,7 +415,7 @@ Filtering happens on the server, per delivered event:
 
 - [Connect & Authenticate](/api/realtime/connect-and-authenticate) — open and authenticate the WebSocket before subscribing.
 - [Real-time (Subscriptions)](/api/realtime) — the shared payload shape and the full subscription catalog.
-- [Project & Workspace Subscriptions](/api/realtime/project-subscriptions) — workspace lifecycle, membership, folders, and the project `on*` events.
-- [Comments, Discussions & Chat](/api/realtime/comment-discussion-subscriptions) — conversational streams on records.
+- [Workspace Subscriptions](/api/realtime/project-subscriptions) — workspace lifecycle, membership, folders, and the workspace `on*` events.
+- [Comments, Chats & Chat](/api/realtime/comment-discussion-subscriptions) — conversational streams on records.
 - [Custom Field Subscriptions](/api/realtime/custom-field-subscriptions) — keep a workspace's field schema in sync.
 - [List Records](/api/records/list-records) — the request/response counterpart for reading records over HTTP.

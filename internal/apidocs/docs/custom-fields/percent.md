@@ -7,7 +7,7 @@ order: 13
 
 A percent field stores a percentage value on a record as a plain number — `75.5` rather than `"75.5%"`. The `%` symbol is a display convention only; Blue strips it on input and the API always returns the raw number. Use percent fields for completion rates, success rates, margins, or any percentage-based metric.
 
-Percent fields are `CustomField` objects with `type: PERCENT`. Records are `Todo` objects. Custom fields are scoped to a workspace (`Project`) by the `X-Bloo-Project-ID` header.
+Percent fields are `CustomField` objects with `type: PERCENT`. Records are `Record` objects. Custom fields are scoped to a workspace (`Workspace`) by the `X-Bloo-Project-ID` header.
 
 ## Create
 
@@ -31,7 +31,7 @@ mutation CreatePercentField {
 | `type`        | `CustomFieldType!` | Yes      | Must be `PERCENT`.         |
 | `description` | `String`           | No       | Help text shown to users.  |
 
-The workspace is taken from the `X-Bloo-Project-ID` header — there is no `projectId` input field. Unlike `NUMBER`, percent fields ignore `min`/`max`: the create resolver never enforces a range, so values above 100 or below 0 are accepted (see [Notes](#notes)).
+The workspace is taken from the `blue-workspace-id` header — there is no `projectId` input field. Unlike `NUMBER`, percent fields ignore `min`/`max`: the create resolver never enforces a range, so values above 100 or below 0 are accepted (see [Notes](#notes)).
 
 ### Response
 
@@ -49,23 +49,23 @@ The workspace is taken from the `X-Bloo-Project-ID` header — there is no `proj
 
 ## Set a value
 
-Use the `setTodoCustomField` mutation with the `number` argument. Pass the percentage as a plain number (`75.5`, not `"75.5%"`). This mutation returns `Boolean!`, so it has no selection set.
+Use the `setRecordCustomField` mutation with the `number` argument. Pass the percentage as a plain number (`75.5`, not `"75.5%"`). This mutation returns `Boolean!`, so it has no selection set.
 
 ```graphql
 mutation SetPercentValue {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 75.5 })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", number: 75.5 })
 }
 ```
 
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                             |
 | --------------- | --------- | -------- | ------------------------------------------------------- |
@@ -73,11 +73,11 @@ mutation SetPercentValue {
 | `customFieldId` | `String!` | Yes      | ID of the percent field.                                |
 | `number`        | `Float`   | No       | The percentage as a raw number (e.g. `75.5` for 75.5%). |
 
-You can also set the value when creating a record with `createTodo`. Here the value is a **string** and may include a `%` symbol — the resolver strips it and `parseFloat`s the rest before storing.
+You can also set the value when creating a record with `createRecord`. Here the value is a **string** and may include a `%` symbol — the resolver strips it and `parseFloat`s the rest before storing.
 
 ```graphql
 mutation CreateRecordWithPercent {
-  createTodo(
+  createRecord(
     input: {
       title: "Marketing Campaign"
       todoListId: "list_123"
@@ -100,7 +100,7 @@ mutation CreateRecordWithPercent {
 
 ## Read a value
 
-`Todo.customFields` returns `[CustomField!]!` directly — select the value fields on each element. For a percent field the value lives on `number`, and the JSON `value` field returns the same bare number (not an object).
+`Record.customFields` returns `[CustomField!]!` directly — select the value fields on each element. For a percent field the value lives on `number`, and the JSON `value` field returns the same bare number (not an object).
 
 ```graphql
 query GetRecordPercent {
@@ -140,7 +140,7 @@ Append the `%` symbol in your own UI — the API never returns it.
 
 ## Notes
 
-- **The `%` is a display convention, not stored.** Input strings may include it (`createTodo`); the resolver strips it. The stored and returned value is always the raw number.
+- **The `%` is a display convention, not stored.** Input strings may include it (`createRecord`); the resolver strips it. The stored and returned value is always the raw number.
 - **No min/max enforcement.** Unlike `NUMBER` and `RATING`, the create resolver does not validate percent values against `min`/`max`, and does not constrain them to 0–100. Negative values and values over 100 are accepted as-is — enforce ranges in your own application if you need them.
 - **Value shape.** `CustomField.number` and `CustomField.value` both return the same bare `Float`. There is no `{ number: … }` wrapper and no `TodoCustomField` wrapper type.
 
@@ -148,7 +148,7 @@ Append the `%` symbol in your own UI — the API never returns it.
 
 | Code                             | When                                                                  |
 | -------------------------------- | --------------------------------------------------------------------- |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | The `value` string passed to `createTodo` does not parse to a number. |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | The `value` string passed to `createRecord` does not parse to a number. |
 | `CUSTOM_FIELD_NOT_FOUND`         | No custom field matches `customFieldId`.                              |
 | `TODO_NOT_FOUND`                 | No record matches `todoId`.                                           |
 
@@ -156,5 +156,5 @@ Append the `%` symbol in your own UI — the API never returns it.
 
 - [Number Field](/api/custom-fields/number) — raw numbers with optional min/max and prefix.
 - [Currency Field](/api/custom-fields/currency) — monetary amounts with a currency code.
-- [Setting Custom Field Values](/api/custom-fields/custom-field-values) — the full `setTodoCustomField` reference.
+- [Setting Custom Field Values](/api/custom-fields/custom-field-values) — the full `setRecordCustomField` reference.
 - [Custom Fields Overview](/api/custom-fields) — all field types and shared concepts.

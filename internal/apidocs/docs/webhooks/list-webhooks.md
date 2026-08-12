@@ -5,7 +5,7 @@ icon: List
 order: 2
 ---
 
-Use the `webhooks` query to retrieve a paginated list of the webhooks you created, and the `webhook` query to fetch a single webhook by its ID. Both are **top-level `Query` fields** — they are not nested under a query group (unlike `todoQueries` or `customFieldQueries` elsewhere in the API).
+Use the `webhooks` query to retrieve a paginated list of the webhooks you created, and the `webhook` query to fetch a single webhook by its ID. Both are **top-level `Query` fields** — they are not nested under a query group (unlike `recordQueries` or `customFieldQueries` elsewhere in the API).
 
 Webhooks are user-scoped: each query returns only the webhooks created by the authenticated token's user.
 

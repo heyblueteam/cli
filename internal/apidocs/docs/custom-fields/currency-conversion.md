@@ -9,7 +9,7 @@ A Currency Conversion field automatically converts the value of a source [Curren
 
 Currency Conversion fields are `CustomField` objects with `type: CURRENCY_CONVERSION`. You create them with the `createCustomField` mutation and define their currency pairs with `createCustomFieldOptions`. Exchange rates come from the [Frankfurter API](https://frankfurter.dev), which blends daily reference rates from the European Central Bank and 50+ other central banks and institutions, with history back to 1999.
 
-All examples call `https://api.blue.app/graphql` and require the standard auth headers (`X-Bloo-Token-ID`, `X-Bloo-Token-Secret`, `X-Bloo-Company-ID`) plus `X-Bloo-Project-ID` — custom fields are scoped to the workspace named in that header. Headers are case-insensitive. See [Authentication](/api/start-guide/authentication) for details.
+All examples call `https://api.blue.app/graphql` and require the standard auth headers (`blue-token-id`, `blue-token-secret`, `blue-org-id`) plus `blue-workspace-id` — custom fields are scoped to the workspace named in that header. Headers are case-insensitive. See [Authentication](/api/start-guide/authentication) for details.
 
 ## Overview
 
@@ -114,7 +114,7 @@ mutation AddFallbackOption {
 
 #### CreateCustomFieldInput (Currency Conversion fields)
 
-Only the fields relevant to `CURRENCY_CONVERSION` are listed. Custom fields are scoped to the workspace in the `X-Bloo-Project-ID` header — there is no `projectId` parameter.
+Only the fields relevant to `CURRENCY_CONVERSION` are listed. Custom fields are scoped to the workspace in the `blue-workspace-id` header — there is no `projectId` parameter.
 
 | Parameter            | Type               | Required             | Description                                                                                                                            |
 | -------------------- | ------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -198,31 +198,31 @@ Same as `CustomFieldOptionInput`, plus:
 
 ## Set a value
 
-You never write the converted amount directly — a Currency Conversion field is read-only. Instead, set the **source `CURRENCY` field** with `setTodoCustomField`, passing `number` and `currency`. Every conversion field that references the source then recomputes automatically.
+You never write the converted amount directly — a Currency Conversion field is read-only. Instead, set the **source `CURRENCY` field** with `setRecordCustomField`, passing `number` and `currency`. Every conversion field that references the source then recomputes automatically.
 
 ```graphql
 mutation SetSourceCurrency {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", number: 1000, currency: "USD" }
   )
 }
 ```
 
-`setTodoCustomField` returns `Boolean!`, so it takes no sub-selection:
+`setRecordCustomField` returns `Boolean!`, so it takes no sub-selection:
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
 After this call, a `USD → EUR` conversion field on the same record holds the EUR equivalent of 1000 USD; a `USD → GBP` field holds the GBP equivalent, and so on.
 
 ## Read a value
 
-The converted amount is read off the conversion `CustomField` in record context — there is no separate value type. Select `number` (the converted amount), `currency` (the target code), and optionally the structured `value` JSON via `Todo.customFields`:
+The converted amount is read off the conversion `CustomField` in record context — there is no separate value type. Select `number` (the converted amount), `currency` (the target code), and optionally the structured `value` JSON via `Record.customFields`:
 
 ```graphql
 query ReadConvertedValue {
-  todoQueries {
+  recordQueries {
     todos(
       filter: { companyIds: ["company_123"], projectIds: ["project_123"], todoIds: ["todo_123"] }
     ) {
@@ -248,7 +248,7 @@ query ReadConvertedValue {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -286,15 +286,15 @@ These codes apply to the create and set operations on this page (each verified a
 
 | Code                     | Operation                                          | When                                                                           |
 | ------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `CUSTOM_FIELD_NOT_FOUND` | `createCustomFieldOption(s)`, `setTodoCustomField` | The `customFieldId` doesn't exist or isn't in a workspace you can access.      |
-| `TODO_NOT_FOUND`         | `setTodoCustomField`                               | The `todoId` doesn't exist or isn't accessible.                                |
+| `CUSTOM_FIELD_NOT_FOUND` | `createCustomFieldOption(s)`, `setRecordCustomField` | The `customFieldId` doesn't exist or isn't in a workspace you can access.      |
+| `TODO_NOT_FOUND`         | `setRecordCustomField`                               | The `todoId` doesn't exist or isn't accessible.                                |
 | `FORBIDDEN`              | `createCustomField`, `createCustomFieldOption`     | The caller isn't an OWNER or ADMIN on the workspace.                           |
-| `BAD_USER_INPUT`         | `setTodoCustomField`                               | The field type can't be set this way, or a referenced option/value is invalid. |
+| `BAD_USER_INPUT`         | `setRecordCustomField`                               | The field type can't be set this way, or a referenced option/value is invalid. |
 | `PLAN_LIMIT_REACHED`     | `createCustomField`                                | The workspace has hit its custom-field limit, or the organization is locked.   |
 
 ## Notes
 
-- **Read-only.** A `CURRENCY_CONVERSION` field is computed from its source Currency field. `setTodoCustomField` on the conversion field itself does nothing — set the source field instead. See [Set Custom Field Values](/api/custom-fields/custom-field-values).
+- **Read-only.** A `CURRENCY_CONVERSION` field is computed from its source Currency field. `setRecordCustomField` on the conversion field itself does nothing — set the source field instead. See [Set Custom Field Values](/api/custom-fields/custom-field-values).
 - **`Any` fallback.** An option with `currencyConversionFrom: "Any"` is used when no option matches the source currency exactly, letting one conversion field handle records denominated in different currencies.
 - **Same-currency shortcut.** When the matched pair has identical `from` and `to` currencies, the amount is copied through without calling the rate API.
 - **On failure, the amount is 0.** If the rate API is unavailable or returns no rate (e.g. an unsupported currency code), the converted `number` is stored as `0` with the target `currency` still set. No error is surfaced to the caller.
@@ -305,6 +305,6 @@ These codes apply to the create and set operations on this page (each verified a
 
 - [Currency Field](/api/custom-fields/currency) — the source field these conversions read from.
 - [Date Field](/api/custom-fields/date) — used by the `fromDateField` conversion date type.
-- [Set Custom Field Values](/api/custom-fields/custom-field-values) — how `setTodoCustomField` works across field types.
+- [Set Custom Field Values](/api/custom-fields/custom-field-values) — how `setRecordCustomField` works across field types.
 - [Create Custom Fields](/api/custom-fields/create-custom-fields) — the full `createCustomField` reference.
 - [Custom Fields Overview](/api/custom-fields) — all field types and concepts.

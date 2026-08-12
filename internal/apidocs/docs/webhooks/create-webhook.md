@@ -27,14 +27,14 @@ mutation CreateWebhook {
 }
 ```
 
-`createWebhook` requires the `X-Bloo-Company-ID` header in addition to your token credentials — the webhook count is enforced per organization. The other webhook operations are user-scoped and do not need it.
+`createWebhook` requires the `blue-org-id` header in addition to your token credentials — the webhook count is enforced per organization. The other webhook operations are user-scoped and do not need it.
 
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{"query": "mutation { createWebhook(input: { url: \"https://example.com/webhooks/blue\" }) { id secret } }"}'
 ```
 
@@ -130,7 +130,7 @@ mutation CreateScopedWebhook($input: CreateWebhookInput!) {
 
 | Code                    | When                                                                                                                                |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `COMPANY_NOT_FOUND`     | The `X-Bloo-Company-ID` header is missing or does not match an organization you belong to.                                          |
+| `COMPANY_NOT_FOUND`     | The `blue-org-id` header is missing or does not match an organization you belong to.                                          |
 | `PLAN_LIMIT_REACHED`    | Your organization is at its plan's enabled-webhook limit. The message reports the count and cap; upgrade to add more.               |
 | `BAD_USER_INPUT`        | `url` is missing or is not a valid URL.                                                                                             |
 | `INTERNAL_SERVER_ERROR` | `url` resolves to a private/internal address (message: `URL resolves to a private/internal address`) or uses a disallowed protocol. |
@@ -138,7 +138,7 @@ mutation CreateScopedWebhook($input: CreateWebhookInput!) {
 
 ## Permissions
 
-You must be authenticated and send `X-Bloo-Company-ID`. You can only scope a webhook to workspaces you currently belong to. The webhook is owned by your user; only you can update or delete it, and only events from workspaces you are a member of are delivered (see [Delivery scoping](/api/webhooks#delivery-and-scoping)).
+You must be authenticated and send `blue-org-id`. You can only scope a webhook to workspaces you currently belong to. The webhook is owned by your user; only you can update or delete it, and only events from workspaces you are a member of are delivered (see [Delivery scoping](/api/webhooks#delivery-and-scoping)).
 
 ## Related
 

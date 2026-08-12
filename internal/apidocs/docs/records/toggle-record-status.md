@@ -5,14 +5,14 @@ icon: ToggleLeft
 order: 3
 ---
 
-Use the `updateTodoDoneStatus` mutation to change a record's completion status. Records are `Todo` objects in the API, and their completion state is the `done: Boolean!` field.
+Use the `updateTodoDoneStatus` mutation to change a record's completion status. Records are `Record` objects in the API, and their completion state is the `done: Boolean!` field.
 
 The mutation works in two modes:
 
 - **Toggle** — omit the `done` argument and the record flips to the opposite of its current state (incomplete → complete, complete → incomplete).
 - **Explicit set** — pass `done: true` or `done: false` to set the state directly, regardless of the current value. This is idempotent: setting `done: true` on an already-complete record leaves it complete.
 
-To change the status of many records at once, use [`updateTodos`](#related) instead.
+To change the status of many records at once, use [`updateRecords`](#related) instead.
 
 ## Request
 
@@ -39,7 +39,7 @@ mutation ToggleRecordStatus {
 
 ## Response
 
-Returns the updated `Todo`. When the record becomes complete, `done` is `true` and `completedAt` carries the completion timestamp; when it becomes incomplete, `done` is `false`.
+Returns the updated `Record`. When the record becomes complete, `done` is `true` and `completedAt` carries the completion timestamp; when it becomes incomplete, `done` is `false`.
 
 ```json
 {
@@ -65,7 +65,7 @@ Returns the updated `Todo`. When the record becomes complete, `done` is `true` a
 | `completedAt` | `DateTime`  | When the record was completed; `null` when the record is incomplete. |
 | `updatedAt`   | `DateTime!` | When the record was last updated.                                    |
 
-The full set of [`Todo` fields](/api/records/list-records) is available in the selection set.
+The full set of [`Record` fields](/api/records/list-records) is available in the selection set.
 
 ## Full example
 
@@ -105,11 +105,11 @@ The record's workspace must be active (not archived). Custom roles can also bloc
 
 ## Related
 
-- [Update a record](/api/records/update-record) — edit title, description, dates, and other fields with `editTodo`, and set custom field values. The `editTodo` mutation does not change completion status; use this mutation for that.
+- [Update a record](/api/records/update-record) — edit title, description, dates, and other fields with `editRecord`, and set custom field values. The `editRecord` mutation does not change completion status; use this mutation for that.
 - [List records](/api/records/list-records) — query and filter records, including by completion state.
 
 <Callout variant="info" title="Bulk and deprecated variants">
 
-To change completion status on many records in one call, use the `updateTodos(input: UpdateTodosInput!)` mutation, which returns `Boolean!`. The older `changeTodoDoneStatus(id: String!)` mutation is deprecated in favor of `updateTodoDoneStatus` — migrate any code still calling it.
+To change completion status on many records in one call, use the `updateRecords(input: UpdateRecordsInput!)` mutation, which returns `Boolean!`. The older `changeTodoDoneStatus(id: String!)` mutation is deprecated in favor of `updateTodoDoneStatus` — migrate any code still calling it.
 
 </Callout>

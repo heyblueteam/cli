@@ -7,7 +7,7 @@ order: 0
 
 White-label customers can serve Blue on their own domains and brand the email Blue sends on their behalf. This section covers three resources: **custom domains** (point your own hostname at a Blue application type and verify it via DNS/CNAME), **SMTP credentials** (route outbound mail through your own mail server), and **email templates** (override the copy and CTAs of Blue's transactional emails, plus send a test).
 
-These resources map to three API types: custom domains are `CustomDomain` objects, mail-routing settings are `SmtpCredential` objects, and transactional-email overrides are `EmailTemplate` objects. Each lives on an organization (`Company`), selected by the `X-Bloo-Company-ID` header.
+These resources map to three API types: custom domains are `CustomDomain` objects, mail-routing settings are `SmtpCredential` objects, and transactional-email overrides are `EmailTemplate` objects. Each lives on an organization (`Company`), selected by the `blue-org-id` header.
 
 ## Pages
 
@@ -22,12 +22,12 @@ These resources map to three API types: custom domains are `CustomDomain` object
 Send every request to `https://api.blue.app/graphql` with your [personal access token headers](/api/start-guide/authentication) and an organization context:
 
 ```
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
 ```
 
-`X-Bloo-Company-ID` accepts an organization ID or its slug. Headers are case-insensitive.
+`blue-org-id` accepts an organization ID or its slug. Headers are case-insensitive.
 
 Access splits in two ways across this section:
 

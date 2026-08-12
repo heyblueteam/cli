@@ -5,12 +5,12 @@ icon: FolderKanban
 order: 3
 ---
 
-Subscribe to changes in your workspaces and their organizing structure. Workspaces are `Project` objects in the API, so every operation on this page is named `subscribeToProject*`, `subscribeToFolder`, `subscribeToTag`, `subscribeToSavedView`, or an imperative `on*` event. They share the GraphQL WebSocket transport (`wss://api.blue.app/graphql`) and the same authenticated handshake as every other subscription — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the `connectionParams` setup.
+Subscribe to changes in your workspaces and their organizing structure. Workspaces are `Workspace` objects in the API, so every operation on this page is named `subscribeToProject*`, `subscribeToFolder`, `subscribeToTag`, `subscribeToSavedView`, or an imperative `on*` event. They share the GraphQL WebSocket transport (`wss://api.blue.app/graphql`) and the same authenticated handshake as every other subscription — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the `connectionParams` setup.
 
 Two payload shapes appear here:
 
 - **Change-feed subscriptions** (`subscribeToProject`, `subscribeToFolder`, `subscribeToTag`, `subscribeToSavedView`, `onSetProjectFolder`) return a `*SubscriptionPayload` with the shared shape `{ mutation, node, previousValues, updatedFields }`. The `mutation` field is a `MutationType` (`CREATED`, `UPDATED`, or `DELETED`). This shape is explained once on the [Real-time overview](/api/realtime).
-- **Bare-entity events** (`onAddedToProject`, `onRemovedFromProject`, `onArchiveProject`, `onUnarchiveProject`, `onConvertToTemplate`, `onRemovedFromTemplate`) resolve directly to a `Project!` — no envelope. `onCopyProjectStarted` / `onCopyProjectFinished` resolve to a `CopyProjectStatus`.
+- **Bare-entity events** (`onAddedToProject`, `onRemovedFromProject`, `onArchiveProject`, `onUnarchiveProject`, `onConvertToTemplate`, `onRemovedFromTemplate`) resolve directly to a `Workspace!` — no envelope. `onConvertFolderToTemplate` / `onRemoveFolderFromTemplates` resolve to a `Folder!` (template bundles). `onCopyProjectStarted` / `onCopyProjectFinished` resolve to a `CopyProjectStatus`.
 
 <Callout variant="info" title="Events are gated per delivery">
 
@@ -81,12 +81,12 @@ Each delivered event is a `ProjectSubscriptionPayload`.
 
 #### ProjectSubscriptionPayload
 
-| Field            | Type                    | Description                                                                                                                                                                                       |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mutation`       | `MutationType!`         | `CREATED`, `UPDATED`, or `DELETED`.                                                                                                                                                               |
-| `node`           | `Project`               | The workspace's current state. `null` on `DELETED`.                                                                                                                                               |
-| `updatedFields`  | `[String!]`             | Names of the workspace fields that changed on `UPDATED`.                                                                                                                                          |
-| `previousValues` | `ProjectPreviousValues` | Prior values for the changed fields. Exposes the scalar subset: `id`, `uid`, `slug`, `name`, `description`, `archived`, `isTemplate`, `isOfficialTemplate`, `category`, `createdAt`, `updatedAt`. |
+| Field            | Type                      | Description                                                                                                                                                                                       |
+| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mutation`       | `MutationType!`           | `CREATED`, `UPDATED`, or `DELETED`.                                                                                                                                                               |
+| `node`           | `Workspace`               | The workspace's current state. `null` on `DELETED`.                                                                                                                                               |
+| `updatedFields`  | `[String!]`               | Names of the workspace fields that changed on `UPDATED`.                                                                                                                                          |
+| `previousValues` | `WorkspacePreviousValues` | Prior values for the changed fields. Exposes the scalar subset: `id`, `uid`, `slug`, `name`, `description`, `archived`, `isTemplate`, `isOfficialTemplate`, `category`, `createdAt`, `updatedAt`. |
 
 ## subscribeToFolder
 
@@ -295,7 +295,7 @@ These channels fire on specific lifecycle actions rather than streaming a generi
 
 ### onAddedToProject
 
-Fires for the current user when they are added to a workspace. Resolves to the `Project!` they joined. Takes no arguments — it is implicitly scoped to the authenticated user.
+Fires for the current user when they are added to a workspace. Resolves to the `Workspace!` they joined. Takes no arguments — it is implicitly scoped to the authenticated user.
 
 ```graphql
 subscription OnJoinedProject {
@@ -324,7 +324,7 @@ subscription OnJoinedProject {
 
 ### onRemovedFromProject
 
-Mirror of `onAddedToProject`: fires for the current user when they are removed from a workspace, resolving to the `Project!` they left. No arguments.
+Mirror of `onAddedToProject`: fires for the current user when they are removed from a workspace, resolving to the `Workspace!` they left. No arguments.
 
 ```graphql
 subscription OnLeftProject {
@@ -337,7 +337,7 @@ subscription OnLeftProject {
 
 ### onArchiveProject
 
-Fires when a workspace in the given organization is archived. Resolves to the archived `Project!`.
+Fires when a workspace in the given organization is archived. Resolves to the archived `Workspace!`.
 
 ```graphql
 subscription OnArchive {
@@ -355,7 +355,7 @@ subscription OnArchive {
 
 ### onUnarchiveProject
 
-Inverse of `onArchiveProject` — fires when a workspace is restored from the archive. Same `companyId` argument, resolves to the restored `Project!`.
+Inverse of `onArchiveProject` — fires when a workspace is restored from the archive. Same `companyId` argument, resolves to the restored `Workspace!`.
 
 ```graphql
 subscription OnUnarchive {
@@ -394,7 +394,7 @@ subscription OnFolderChange {
 
 ### onConvertToTemplate
 
-Fires when a workspace in the organization is converted into a template. Resolves to the affected `Project!` (now `isTemplate: true`).
+Fires when a workspace in the organization is converted into a template. Resolves to the affected `Workspace!` (now `isTemplate: true`).
 
 ```graphql
 subscription OnConvertToTemplate {
@@ -412,13 +412,50 @@ subscription OnConvertToTemplate {
 
 ### onRemovedFromTemplate
 
-Inverse of `onConvertToTemplate` — fires when a workspace is converted back from a template into a regular workspace. Resolves to the affected `Project!`.
+Inverse of `onConvertToTemplate` — fires when a workspace is converted back from a template into a regular workspace. Resolves to the affected `Workspace!`.
 
 ```graphql
 subscription OnRemovedFromTemplate {
   onRemovedFromTemplate(companyId: "company_123") {
     id
     name
+    isTemplate
+  }
+}
+```
+
+| Argument    | Type      | Required | Description                           |
+| ----------- | --------- | -------- | ------------------------------------- |
+| `companyId` | `String!` | Yes      | Organization to watch, by ID or slug. |
+
+### onConvertFolderToTemplate
+
+Fires when a folder in the organization is converted into a [template bundle](/api/workspaces/templates#template-bundles) — a folder of interconnected workspaces saved together. Resolves to the affected `Folder!` (now `isTemplate: true`).
+
+```graphql
+subscription OnConvertFolderToTemplate {
+  onConvertFolderToTemplate(companyId: "company_123") {
+    id
+    title
+    isTemplate
+    isOfficialTemplate
+  }
+}
+```
+
+| Argument    | Type      | Required | Description                           |
+| ----------- | --------- | -------- | ------------------------------------- |
+| `companyId` | `String!` | Yes      | Organization to watch, by ID or slug. |
+
+### onRemoveFolderFromTemplates
+
+Inverse of `onConvertFolderToTemplate` — fires when a bundle folder is reverted back into a regular folder. Resolves to the affected `Folder!`.
+
+```graphql
+subscription OnRemoveFolderFromTemplates {
+  onRemoveFolderFromTemplates(companyId: "company_123") {
+    id
+    title
     isTemplate
   }
 }
@@ -465,18 +502,18 @@ subscription OnCopyProgress {
 
 #### CopyProjectStatus
 
-| Field            | Type      | Description                                |
-| ---------------- | --------- | ------------------------------------------ |
-| `oldCompany`     | `Company` | Source organization.                       |
-| `oldProject`     | `Project` | Source workspace being copied.             |
-| `newCompany`     | `Company` | Destination organization.                  |
-| `newProjectName` | `String`  | Name of the copy being created.            |
-| `isTemplate`     | `Boolean` | Whether the copy is a template.            |
-| `isActive`       | `Boolean` | Whether the copy job is currently running. |
-| `queuePosition`  | `Int`     | Position in the copy queue while waiting.  |
-| `totalQueues`    | `Int`     | Total jobs in the queue.                   |
+| Field            | Type           | Description                                |
+| ---------------- | -------------- | ------------------------------------------ |
+| `oldCompany`     | `Organization` | Source organization.                       |
+| `oldProject`     | `Workspace`    | Source workspace being copied.             |
+| `newCompany`     | `Organization` | Destination organization.                  |
+| `newProjectName` | `String`       | Name of the copy being created.            |
+| `isTemplate`     | `Boolean`      | Whether the copy is a template.            |
+| `isActive`       | `Boolean`      | Whether the copy job is currently running. |
+| `queuePosition`  | `Int`          | Position in the copy queue while waiting.  |
+| `totalQueues`    | `Int`          | Total jobs in the queue.                   |
 
-Pair these with the `copyProject` mutation in [Workspaces](/api/workspaces) to drive a progress UI.
+Pair these with the `copyWorkspace` mutation in [Workspaces](/api/workspaces) to drive a progress UI.
 
 ## Errors
 
@@ -500,6 +537,6 @@ You may open any of these subscriptions, but delivery is filtered per event:
 
 - [Real-time overview](/api/realtime) — the shared `{ mutation, node, previousValues, updatedFields }` payload and the full subscription catalog.
 - [Connect & Authenticate](/api/realtime/connect-and-authenticate) — opening an authenticated WebSocket with `connectionParams`.
-- [Record & Todo-List Subscriptions](/api/realtime/record-subscriptions) — `subscribeToTodo` and the record-level `on*` events.
+- [Record & RecordList Subscriptions](/api/realtime/record-subscriptions) — `subscribeToTodo` and the record-level `on*` events.
 - [Workspaces](/api/workspaces) — create, archive, copy, and template the workspaces these streams report on.
 - [Saved Views](/api/saved-views) — read and write the views from `subscribeToSavedView`.

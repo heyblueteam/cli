@@ -19,7 +19,7 @@ Stream create, update, and delete events for files. A _file_ is a `File` object 
 
 ```graphql
 subscription OnFileChange {
-  subscribeToFile(companyId: "company_123", projectId: "project_123") {
+  subscribeToFile(companyId: "company_123", projectId: "workspace_123") {
     mutation
     node {
       id
@@ -41,7 +41,7 @@ Pass `folderId` to narrow the stream to a single folder — you then only receiv
 
 ```graphql
 subscription OnFolderFileChange {
-  subscribeToFile(companyId: "company_123", projectId: "project_123", folderId: "folder_123") {
+  subscribeToFile(companyId: "company_123", projectId: "workspace_123", folderId: "folder_123") {
     mutation
     node {
       id
@@ -105,7 +105,7 @@ Each event is delivered only if you are a member of the file's workspace. Pass t
 
 #### File
 
-The most useful fields on the `node`. A `File` also exposes its parent objects (`company`, `project`, `folder`, `comment`, `discussion`, `statusUpdate`, `customField`, `document`, `todo`, `user`); select only what you render.
+The most useful fields on the `node`. A `File` also exposes its parent objects (`company`, `project`, `folder`, `comment`, `chat`, `statusUpdate`, `customField`, `document`, `todo`, `user`) — note these are the API field names; select only what you render.
 
 | Field       | Type         | Description                                                                        |
 | ----------- | ------------ | ---------------------------------------------------------------------------------- |
@@ -212,7 +212,7 @@ subscription OnLinkChange {
 | `position`    | `Float!`    | Sort position.                                          |
 | `membersOnly` | `Boolean`   | Whether the link is restricted to organization members. |
 | `createdBy`   | `User!`     | The user who created the link.                          |
-| `company`     | `Company!`  | The organization the link belongs to.                   |
+| `company`     | `Organization!` | The organization the link belongs to.               |
 | `createdAt`   | `DateTime!` | When the link was created.                              |
 | `updatedAt`   | `DateTime!` | When the link was last modified.                        |
 
@@ -238,7 +238,7 @@ Receive a single event whenever a batch of files is deleted in a workspace. Unli
 
 ```graphql
 subscription OnFilesDeleted {
-  onDeleteFiles(projectId: "project_123") {
+  onDeleteFiles(projectId: "workspace_123") {
     id
     name
     folder {

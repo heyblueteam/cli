@@ -5,11 +5,11 @@ icon: Archive
 order: 12
 ---
 
-Archiving a record takes it out of its list without deleting it. The data — title, description, dates, assignees, tags, comments, checklists, and custom-field values — is preserved in full and reappears the moment you restore the record. Use the `archiveTodo` mutation to archive a record and `unarchiveTodo` to restore it. Records are `Todo` objects in the API.
+Archiving a record takes it out of its list without deleting it. The data — title, description, dates, assignees, tags, comments, checklists, and custom-field values — is preserved in full and reappears the moment you restore the record. Use the `archiveRecord` mutation to archive a record and `unarchiveRecord` to restore it. Records are `Record` objects in the API.
 
-Archiving is the reversible alternative to [deleting a record](/api/records#operations), which is permanent. It is also distinct from completion: a [completed](/api/records/toggle-record-status) record (`done: true`) still lives in its list, whereas an archived record is hidden from it.
+Archiving differs from [deleting a record](/api/records#operations): a deleted record is moved to Trash and purged after the organization's retention window, and only a project `OWNER`/`ADMIN` can restore it, whereas any member with edit access can archive and unarchive. It is also distinct from completion: a [completed](/api/records/toggle-record-status) record (`done: true`) still lives in its list, whereas an archived record is hidden from it.
 
-Both mutations take the record `id` and return the updated `Todo`.
+Both mutations take the record `id` and return the updated `Record`.
 
 ## Request
 
@@ -17,7 +17,7 @@ Archive a record by passing its ID:
 
 ```graphql
 mutation ArchiveRecord {
-  archiveTodo(id: "todo_123") {
+  archiveRecord(id: "todo_123") {
     id
     archived
     archivedAt
@@ -25,11 +25,11 @@ mutation ArchiveRecord {
 }
 ```
 
-Restore it later with `unarchiveTodo`:
+Restore it later with `unarchiveRecord`:
 
 ```graphql
 mutation RestoreRecord {
-  unarchiveTodo(id: "todo_123") {
+  unarchiveRecord(id: "todo_123") {
     id
     archived
     todoList {
@@ -42,13 +42,13 @@ mutation RestoreRecord {
 
 ## Parameters
 
-### archiveTodo
+### archiveRecord
 
 | Parameter | Type      | Required | Description                  |
 | --------- | --------- | -------- | ---------------------------- |
 | `id`      | `String!` | Yes      | ID of the record to archive. |
 
-### unarchiveTodo
+### unarchiveRecord
 
 | Parameter | Type      | Required | Description                  |
 | --------- | --------- | -------- | ---------------------------- |
@@ -56,12 +56,12 @@ mutation RestoreRecord {
 
 ## Response
 
-Both mutations return the updated `Todo`. After `archiveTodo`, `archived` is `true` and `archivedAt` carries the archive timestamp; after `unarchiveTodo`, `archived` is `false` and `archivedAt` is `null`.
+Both mutations return the updated `Record`. After `archiveRecord`, `archived` is `true` and `archivedAt` carries the archive timestamp; after `unarchiveRecord`, `archived` is `false` and `archivedAt` is `null`.
 
 ```json
 {
   "data": {
-    "archiveTodo": {
+    "archiveRecord": {
       "id": "todo_123",
       "archived": true,
       "archivedAt": "2026-06-05T14:21:00.000Z"
@@ -72,13 +72,13 @@ Both mutations return the updated `Todo`. After `archiveTodo`, `archived` is `tr
 
 ### Returns
 
-| Field        | Type        | Description                                                                             |
-| ------------ | ----------- | --------------------------------------------------------------------------------------- |
-| `archived`   | `Boolean!`  | `true` after archiving, `false` after restoring.                                        |
-| `archivedAt` | `DateTime`  | When the record was archived. `null` once restored.                                     |
-| `todoList`   | `TodoList!` | The record's list. Unchanged by archiving — a restored record returns to the same list. |
+| Field        | Type          | Description                                                                             |
+| ------------ | ------------- | --------------------------------------------------------------------------------------- |
+| `archived`   | `Boolean!`    | `true` after archiving, `false` after restoring.                                        |
+| `archivedAt` | `DateTime`    | When the record was archived. `null` once restored.                                     |
+| `todoList`   | `RecordList!` | The record's list. Unchanged by archiving — a restored record returns to the same list. |
 
-See [List records](/api/records/list-records#todo) for the full set of selectable `Todo` fields.
+See [List records](/api/records/list-records#todo) for the full set of selectable `Record` fields.
 
 ## What archiving does
 
@@ -88,7 +88,7 @@ When you archive a record, the API:
 2. Notifies connected clients in real time so the card disappears from open sessions.
 3. Excludes the record from charts and reports, whose counts recalculate accordingly.
 
-The record's list and position are left untouched. `unarchiveTodo` clears the archived flag and timestamp, and the record snaps back to exactly the spot it occupied before — there is no need to move or re-position it.
+The record's list and position are left untouched. `unarchiveRecord` clears the archived flag and timestamp, and the record snaps back to exactly the spot it occupied before — there is no need to move or re-position it.
 
 <Callout variant="info" title="Both mutations are idempotent">
 

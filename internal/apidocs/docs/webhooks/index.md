@@ -7,7 +7,7 @@ order: 0
 
 Webhooks deliver real-time HTTP notifications when events occur in your workspaces — a record is created, a comment is posted, a tag is removed, and more. When a subscribed event fires, Blue sends a signed `POST` request to your endpoint with the event type and the entity's before/after state.
 
-Webhooks are `Webhook` objects in the API, owned by the user who created them. Each webhook subscribes to a set of [event types](#webhook-events) and is scoped to a set of workspaces (`Project` objects).
+Webhooks are `Webhook` objects in the API, owned by the user who created them. Each webhook subscribes to a set of [event types](#webhook-events) and is scoped to a set of workspaces (`Workspace` objects).
 
 ## Operations
 
@@ -21,14 +21,14 @@ Webhooks are `Webhook` objects in the API, owned by the user who created them. E
 
 ## Authenticating webhook requests
 
-Manage webhooks with your [personal access token headers](/api/start-guide/authentication). [`createWebhook`](/api/webhooks/create-webhook) additionally requires `X-Bloo-Company-ID` because the webhook count is enforced per organization; the other webhook operations are user-scoped.
+Manage webhooks with your [personal access token headers](/api/start-guide/authentication). [`createWebhook`](/api/webhooks/create-webhook) additionally requires `blue-org-id` because the webhook count is enforced per organization; the other webhook operations are user-scoped.
 
 ```bash
 curl -X POST https://api.blue.app/graphql \
   -H "Content-Type: application/json" \
-  -H "X-Bloo-Token-ID: YOUR_TOKEN_ID" \
-  -H "X-Bloo-Token-Secret: YOUR_TOKEN_SECRET" \
-  -H "X-Bloo-Company-ID: YOUR_COMPANY_ID" \
+  -H "blue-token-id: YOUR_TOKEN_ID" \
+  -H "blue-token-secret: YOUR_TOKEN_SECRET" \
+  -H "blue-org-id: YOUR_ORG_ID" \
   -d '{"query": "query { webhooks { items { id url status enabled } } }"}'
 ```
 

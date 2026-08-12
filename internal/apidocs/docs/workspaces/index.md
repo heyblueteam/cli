@@ -1,31 +1,31 @@
 ---
 title: Workspaces
-description: Workspaces are the top-level container for records, lists, custom fields, and automations. Create, list, and organize them via the projectList and createProject operations.
+description: Workspaces are the top-level container for records, lists, custom fields, and automations. Create, list, and organize them via the workspaceList and createWorkspace operations.
 icon: FolderKanban
 order: 0
 ---
 
-A **workspace** is the top-level container for work in Blue: it holds lists, records, custom fields, tags, automations, and saved views. Every workspace belongs to one **organization**. In the API, a workspace is a `Project` object and an organization is a `Company` — the GraphQL surface uses those type names throughout.
+A **workspace** is the top-level container for work in Blue: it holds lists, records, custom fields, tags, automations, and saved views. Every workspace belongs to one **organization**. In the API, a workspace is a `Workspace` object and an organization is an `Organization` — the GraphQL surface uses those type names throughout.
 
 This section covers creating workspaces, listing and filtering them, renaming, archiving, copying, deleting, and managing the lists inside them.
 
 ## Operations
 
-| Operation                                                | GraphQL                        | Description                                     |
-| -------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| [Create a workspace](/api/workspaces/create-workspace)   | `createProject`                | Create a workspace, optionally from a template. |
-| [List workspaces](/api/workspaces/list-workspaces)       | `projectList`                  | Filter, sort, and paginate workspaces.          |
-| [Rename a workspace](/api/workspaces/rename-workspace)   | `updateProject`                | Change a workspace's name (and slug).           |
-| [Archive a workspace](/api/workspaces/archive-workspace) | `updateProject`                | Archive or unarchive a workspace.               |
-| [Copy a workspace](/api/workspaces/copy-workspace)       | `copyProject`                  | Duplicate an existing workspace.                |
-| [Delete a workspace](/api/workspaces/delete-workspace)   | `deleteProject`                | Permanently delete a workspace.                 |
-| [Lists](/api/workspaces/lists)                           | `todoLists` / `createTodoList` | Manage the lists inside a workspace.            |
-| [Templates](/api/workspaces/templates)                   | `projectList`                  | Work with workspace templates.                  |
-| [Activity](/api/workspaces/workspace-activity)           | `activityList`                 | Read a workspace's activity log.                |
+| Operation                                                | GraphQL                          | Description                                     |
+| -------------------------------------------------------- | -------------------------------- | ----------------------------------------------- |
+| [Create a workspace](/api/workspaces/create-workspace)   | `createWorkspace`                | Create a workspace, optionally from a template. |
+| [List workspaces](/api/workspaces/list-workspaces)       | `workspaceList`                  | Filter, sort, and paginate workspaces.          |
+| [Rename a workspace](/api/workspaces/rename-workspace)   | `editWorkspace`                  | Change a workspace's name (and slug).           |
+| [Archive a workspace](/api/workspaces/archive-workspace) | `archiveWorkspace`               | Archive or unarchive a workspace.               |
+| [Copy a workspace](/api/workspaces/copy-workspace)       | `copyWorkspace`                  | Duplicate an existing workspace.                |
+| [Delete a workspace](/api/workspaces/delete-workspace)   | `deleteWorkspace`                | Permanently delete a workspace.                 |
+| [Lists](/api/workspaces/lists)                           | `todoLists` / `createRecordList` | Manage the lists inside a workspace.            |
+| [Templates](/api/workspaces/templates)                   | `workspaceList`                  | Work with workspace templates.                  |
+| [Activity](/api/workspaces/workspace-activity)           | `activityList`                   | Read a workspace's activity log.                |
 
 <Callout variant="info" title="Workspace, project, record">
 
-"Workspace" and "project" are the same thing — the UI says workspace, the schema says `Project`. Likewise a "record" is a `Todo` and an "organization" is a `Company`. This page uses the product nouns in prose and the schema names in code.
+"Workspace" is a `Workspace` in the schema. Likewise a "record" is a `Record` and an "organization" is an `Organization`. This page uses the product nouns in prose and the schema names in code.
 
 </Callout>
 
@@ -33,13 +33,13 @@ This section covers creating workspaces, listing and filtering them, renaming, a
 
 ### Structure
 
-A workspace (`Project`) belongs to exactly one organization (`Company`). Inside it:
+A workspace (`Workspace`) belongs to exactly one organization (`Organization`). Inside it:
 
-- **Lists** (`TodoList`) group records into columns or stages.
-- **Records** (`Todo`) are the individual items of work, each owned by a list.
+- **Lists** (`RecordList`) group records into columns or stages.
+- **Records** (`Record`) are the individual items of work, each owned by a list.
 - **Custom fields**, **tags**, **automations**, and **saved views** are all scoped to the workspace.
 
-Most workspace-scoped operations require the `X-Bloo-Project-ID` header in addition to the organization headers. Organization (`companyId`) and workspace (`projectId`) arguments accept either an ID or a slug.
+Most workspace-scoped operations require the `blue-workspace-id` header in addition to the organization headers. Organization (`companyId`) and workspace (`projectId`) arguments accept either an ID or a slug.
 
 ### Categories
 
@@ -73,15 +73,15 @@ A user's access to a workspace is one of the `UserAccessLevel` values:
 | `COMMENT_ONLY` | Read content and add comments only.              |
 | `VIEW_ONLY`    | Read-only access.                                |
 
-The user whose token makes a `createProject` request is automatically added to the new workspace as its `OWNER`.
+The user whose token makes a `createWorkspace` request is automatically added to the new workspace as its `OWNER`.
 
 ## Create a workspace
 
-Use the `createProject` mutation to create a workspace. Only `companyId` and `name` are required; pass `templateId` to seed the workspace from a template, or `category` to classify it.
+Use the `createWorkspace` mutation to create a workspace. Only `companyId` and `name` are required; pass `templateId` to seed the workspace from a template, or `category` to classify it.
 
 ```graphql
 mutation CreateWorkspace {
-  createProject(
+  createWorkspace(
     input: { companyId: "company_123", name: "Q1 Marketing Campaign", category: MARKETING }
   ) {
     id
@@ -95,7 +95,7 @@ mutation CreateWorkspace {
 ```json
 {
   "data": {
-    "createProject": {
+    "createWorkspace": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "Q1 Marketing Campaign",
       "slug": "q1-marketing-campaign",
@@ -105,15 +105,15 @@ mutation CreateWorkspace {
 }
 ```
 
-`createProject` returns a nullable `Project`. The workspace `name` is capped at 50 characters. See [Create a workspace](/api/workspaces/create-workspace) for the full input reference, including `folderId`, `description`, `color`, `icon`, and `coverConfig`.
+`createWorkspace` returns a nullable `Workspace`. The workspace `name` is capped at 50 characters. See [Create a workspace](/api/workspaces/create-workspace) for the full input reference, including `folderId`, `description`, `color`, `icon`, and `coverConfig`.
 
 ## List workspaces
 
-Use the `projectList` query to filter, sort, and paginate workspaces. The filter's `companyIds` is required; everything else is optional.
+Use the `workspaceList` query to filter, sort, and paginate workspaces. The filter's `companyIds` is required; everything else is optional.
 
 ```graphql
 query ListWorkspaces {
-  projectList(
+  workspaceList(
     filter: { companyIds: ["company_123"], archived: false }
     sort: [updatedAt_DESC]
     take: 20
@@ -137,7 +137,7 @@ query ListWorkspaces {
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -161,7 +161,7 @@ query ListWorkspaces {
 
 <Callout variant="warning" title="The projects query is deprecated">
 
-An older top-level `projects(companyId:, archived:, …)` query still exists but is `@deprecated`. Use `projectList` for all new integrations.
+An older top-level `projects(companyId:, archived:, …)` query still exists but is `@deprecated`. Use `workspaceList` for all new integrations.
 
 </Callout>
 
@@ -169,11 +169,11 @@ An older top-level `projects(companyId:, archived:, …)` query still exists but
 
 There are two ways to read the lists in a workspace.
 
-For a simple, unpaginated read of every list in one workspace, use the `todoLists(projectId:)` query:
+For a simple, unpaginated read of every list in one workspace, use the `recordLists(projectId:)` query:
 
 ```graphql
 query WorkspaceLists {
-  todoLists(projectId: "project_123") {
+  recordLists(projectId: "project_123") {
     id
     title
     position
@@ -182,11 +182,11 @@ query WorkspaceLists {
 }
 ```
 
-For filtering across workspaces, or for pagination, use `todoListQueries.todoLists` with a `TodoListsFilterInput` (its `companyIds` is required):
+For filtering across workspaces, or for pagination, use `recordListQueries.todoLists` with a `RecordListsFilterInput` (its `companyIds` is required):
 
 ```graphql
 query PaginatedLists {
-  todoListQueries {
+  recordListQueries {
     todoLists(filter: { companyIds: ["company_123"], projectIds: ["project_123"] }, take: 20) {
       items {
         id
@@ -202,11 +202,11 @@ query PaginatedLists {
 }
 ```
 
-To create a list, use the `createTodoList` mutation. All three inputs — `projectId`, `title`, and `position` — are required:
+To create a list, use the `createRecordList` mutation. All three inputs — `projectId`, `title`, and `position` — are required:
 
 ```graphql
 mutation CreateList {
-  createTodoList(input: { projectId: "project_123", title: "To Do", position: 1.0 }) {
+  createRecordList(input: { projectId: "project_123", title: "To Do", position: 1.0 }) {
     id
     title
     position
@@ -224,11 +224,11 @@ A workspace can hold at most 50 lists; creating a 51st fails with `FORBIDDEN`. S
 | `COMPANY_NOT_FOUND`    | The `companyId` does not match an organization you can access.                                          |
 | `PROJECT_NOT_FOUND`    | The referenced workspace does not exist or you cannot access it.                                        |
 | `FORBIDDEN`            | Your access level is too low for the operation, or you have hit the 50-list-per-workspace limit.        |
-| `CREATE_PROJECT_LIMIT` | A template-based `createProject` would exceed the maximum workspace size (250,000 records).             |
+| `CREATE_PROJECT_LIMIT` | A template-based `createWorkspace` would exceed the maximum workspace size (250,000 records).           |
 
 ## Related
 
-- [Records](/api/records) — the records (`Todo`) that live inside a workspace's lists.
+- [Records](/api/records) — the records (`Record`) that live inside a workspace's lists.
 - [Custom fields](/api/custom-fields) — add structured fields to a workspace's records.
 - [Automations](/api/automations) — automate work within a workspace.
 - [User management](/api/user-management) — manage who can access a workspace and at what level.

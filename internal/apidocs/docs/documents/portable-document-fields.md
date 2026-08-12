@@ -210,7 +210,7 @@ mutation PrintRecord {
 
 ## Permissions
 
-`createPortableDocumentField` and `deletePortableDocumentField` require **contribute** permission on the workspace that owns the field's template — the same level needed to edit records there. `updatePortableDocumentField` and `printPortableDocument` require an authenticated caller. All four are scoped by the `X-Bloo-Company-ID` and `X-Bloo-Project-ID` headers (or an ID/slug in the input). Header names are case-insensitive.
+`createPortableDocumentField` and `deletePortableDocumentField` require **contribute** permission on the workspace that owns the field's template — the same level needed to edit records there. `updatePortableDocumentField` and `printPortableDocument` require an authenticated caller. All four are scoped by the `blue-org-id` and `blue-workspace-id` headers (or an ID/slug in the input). Header names are case-insensitive.
 
 ## Related
 

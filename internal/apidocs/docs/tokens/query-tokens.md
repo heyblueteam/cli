@@ -38,7 +38,7 @@ query ListTokens {
 }
 ```
 
-This is a user-session operation — send it with your login session (Firebase/JWT), not with `X-Bloo-Token-*` headers. See [Token management needs a user session](#permissions) below.
+This is a user-session operation — send it with your login session (Firebase/JWT), not with `blue-token-*` headers. See [Token management needs a user session](#permissions) below.
 
 ## Parameters
 
@@ -93,7 +93,7 @@ This is a user-session operation — send it with your login session (Firebase/J
 | Field        | Type        | Description                                                                                                                        |
 | ------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `id`         | `ID!`       | Internal database ID of the token. Pass this to [`deletePersonalAccessToken`](/api/tokens/delete-token) to revoke the token.       |
-| `uid`        | `String!`   | The unprefixed **Token ID**, sent as the `X-Bloo-Token-ID` header when authenticating with this token.                             |
+| `uid`        | `String!`   | The unprefixed **Token ID**, sent as the `blue-token-id` header when authenticating with this token.                             |
 | `name`       | `String!`   | The label you gave the token at creation (max 50 characters).                                                                      |
 | `secret`     | `String`    | Always `null` from this query. The plaintext Secret is returned only on the create response; Blue stores only a bcrypt hash of it. |
 | `scopes`     | `String`    | Reserved. Not currently persisted or enforced — see [Scopes](#scopes). Always `null` in practice.                                  |
@@ -124,7 +124,7 @@ This query returns only the calling user's own tokens; there is no way to list a
 
 <Callout variant="warning" title="Token management needs a user session">
 
-`personalAccessTokens`, like the create and revoke mutations, requires an authenticated user session (the Firebase/JWT login the app uses). It cannot be called while authenticating with a token itself — sending it with `X-Bloo-Token-ID` headers present returns `FORBIDDEN`. Audit and manage tokens from a logged-in session, not from an API integration.
+`personalAccessTokens`, like the create and revoke mutations, requires an authenticated user session (the Firebase/JWT login the app uses). It cannot be called while authenticating with a token itself — sending it with `blue-token-id` headers present returns `FORBIDDEN`. Audit and manage tokens from a logged-in session, not from an API integration.
 
 </Callout>
 
@@ -133,4 +133,4 @@ This query returns only the calling user's own tokens; there is no way to list a
 - [Personal Access Tokens](/api/tokens) — section overview: the Token ID / Secret split and the request headers.
 - [Create a Token](/api/tokens/create-token) — generate a token and capture its Secret (the only time it's returned).
 - [Revoke a Token](/api/tokens/delete-token) — delete a token by `id`; it stops authenticating immediately.
-- [Authentication](/api/start-guide/authentication) — the in-app flow for generating a token and the `X-Bloo-*` request headers.
+- [Authentication](/api/start-guide/authentication) — the in-app flow for generating a token and the `blue-*` request headers.

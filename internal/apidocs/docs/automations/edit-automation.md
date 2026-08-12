@@ -11,7 +11,7 @@ Use the `editAutomation` mutation to update an existing automation's trigger, ac
 
 ## Request
 
-The smallest call deactivates an automation by id. Pass the workspace context in the `X-Bloo-Project-ID` header (ID or slug).
+The smallest call deactivates an automation by id. Pass the workspace context in the `blue-workspace-id` header (ID or slug).
 
 ```graphql
 mutation EditAutomation {
@@ -61,7 +61,7 @@ The mutation returns the updated `Automation`.
 | `actions`   | `[AutomationAction!]!` | The actions after the update, in order.         |
 | `isActive`  | `Boolean!`             | Whether the automation is currently active.     |
 | `createdBy` | `User!`                | The user who originally created the automation. |
-| `project`   | `Project!`             | The workspace the automation belongs to.        |
+| `project`   | `Workspace!`           | The workspace the automation belongs to.        |
 | `createdAt` | `DateTime!`            | When the automation was created.                |
 | `updatedAt` | `DateTime!`            | When the automation was last updated.           |
 

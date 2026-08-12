@@ -91,19 +91,36 @@ query PreviewBarChart {
 | `query`        | `ChartQueryInput`        | No       | What to group by and what to measure.       |
 | `presentation` | `ChartPresentationInput` | No       | How the result is dressed. Never the query. |
 
-#### ChartQueryInput
+#### BarChartMetadataInput
 
-| Parameter    | Type                      | Required | Description                                  |
-| ------------ | ------------------------- | -------- | -------------------------------------------- |
-| `dimensions` | `[ChartDimensionInput!]!` | Yes      | What records are grouped into.               |
-| `metrics`    | `[ChartMetricInput!]!`    | Yes      | What each bucket measures.                   |
-| `breakout`   | `ChartBreakoutInput`      | No       | A second grouping that splits each bucket.   |
-| `filters`    | `TodoFilterInput`         | No       | Restricts all records measured by the chart. |
+| Parameter | Type                  | Required | Description                   |
+| --------- | --------------------- | -------- | ----------------------------- |
+| `xAxis`   | `BarChartXAxisInput!` | Yes      | What the bars are grouped by. |
+| `yAxis`   | `BarChartYAxisInput!` | Yes      | What each bar measures.       |
 
-Dimensions carry `type`, optional `title` and `interval`, plus custom-field metadata when
-`type` is `CUSTOM_FIELD`. Metrics carry a stable `key`, optional title and aggregate function,
-custom-field metadata, a per-metric filter, colour, and left/right axis assignment. See
-[Create and manage charts](/api/charts/manage-charts) for the complete field tables.
+#### BarChartXAxisInput
+
+| Parameter                       | Type                    | Required | Description                                        |
+| ------------------------------- | ----------------------- | -------- | -------------------------------------------------- |
+| `type`                          | `BarChartXAxisType!`    | Yes      | Dimension to group by (see values below).          |
+| `title`                         | `String`                | No       | Axis label.                                        |
+| `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date-based axes (`DAY`…`YEAR`).    |
+| `customFieldName`               | `String`                | No       | Field name when `type` is `CUSTOM_FIELD`.          |
+| `customFieldType`               | `CustomFieldType`       | No       | Field type when `type` is `CUSTOM_FIELD`.          |
+| `customFieldReferenceProjectId` | `String`                | No       | Referenced workspace for a reference custom field. |
+
+#### BarChartYAxisInput
+
+| Parameter                       | Type                         | Required | Description                                        |
+| ------------------------------- | ---------------------------- | -------- | -------------------------------------------------- |
+| `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied per bucket (`COUNT`, `SUM`, …).  |
+| `filter`                        | `TodoFilterInput`            | No       | Restrict the records each bar measures.            |
+| `title`                         | `String`                     | No       | Axis label.                                        |
+| `customFieldName`               | `String`                     | No       | Field name when measuring a custom field.          |
+| `customFieldType`               | `CustomFieldType`            | No       | Field type when measuring a custom field.          |
+| `customFieldReferenceProjectId` | `String`                     | No       | Referenced workspace for a reference custom field. |
+
+`PieChartMetadataInput` is the same shape with `groupBy` (a `PieChartGroupByInput`, no `interval`) and `value` (a `PieChartValueInput`, identical to `BarChartYAxisInput`).
 
 #### BarChartXAxisType
 

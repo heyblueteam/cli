@@ -5,19 +5,19 @@ icon: Settings
 order: 0
 ---
 
-Custom fields add typed, structured data to your records beyond the built-in title, dates, and assignees. A custom field is a `CustomField` object scoped to a single workspace (a `Project` in the API); once created, it appears on every record (`Todo`) in that workspace, and each record holds its own value.
+Custom fields add typed, structured data to your records beyond the built-in title, dates, and assignees. A custom field is a `CustomField` object scoped to a single workspace (a `Workspace` in the API); once created, it appears on every record (`Record`) in that workspace, and each record holds its own value.
 
 This section covers the operations to manage field definitions and write values, the full catalog of field types, and the access model that governs who can see and edit each field.
 
 ```graphql
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123
 ```
 
-The `X-Bloo-Project-ID` header scopes custom field reads and writes to one workspace. Company and project headers accept either an ID or a slug. Header names are case-insensitive.
+The `X-Bloo-Project-ID` header (also accepted as `X-Bloo-Workspace-ID`) scopes custom field reads and writes to one workspace. Company and project headers accept either an ID or a slug. Header names are case-insensitive.
 
 ## Operations
 
@@ -26,7 +26,7 @@ The `X-Bloo-Project-ID` header scopes custom field reads and writes to one works
 | [List custom fields](/api/custom-fields/list-custom-fields)      | `customFields` query          | Retrieve a paginated list of field definitions, filtered by project and type.                                                                                            |
 | [Create a custom field](/api/custom-fields/create-custom-fields) | `createCustomField` mutation  | Add a typed field to a workspace.                                                                                                                                        |
 | Edit a custom field                                              | `editCustomField` mutation    | Change a field's name, configuration, or access rules. Takes `EditCustomFieldInput` (a `customFieldId` plus the fields to change) and returns the updated `CustomField`. |
-| [Set field values](/api/custom-fields/custom-field-values)       | `setTodoCustomField` mutation | Write a value to a field on one record.                                                                                                                                  |
+| [Set field values](/api/custom-fields/custom-field-values)       | `setRecordCustomField` mutation | Write a value to a field on one record.                                                                                                                                  |
 | [Delete a custom field](/api/custom-fields/delete-custom-field)  | `deleteCustomField` mutation  | Remove a field and all of its values.                                                                                                                                    |
 
 ## Field types
@@ -101,19 +101,19 @@ Every custom field has a `type` drawn from the `CustomFieldType` enum. The type 
 
 <Callout variant="info" title="Computed types are read-only">
 
-`FORMULA`, `LOOKUP`, `ROLLUP`, and `REFERENCED_BY` fields are computed by Blue. You read their values like any other field, but `setTodoCustomField` rejects them with a `BAD_USER_INPUT` error — they have no value to set directly.
+`FORMULA`, `LOOKUP`, `ROLLUP`, and `REFERENCED_BY` fields are computed by Blue. You read their values like any other field, but `setRecordCustomField` rejects them with a `BAD_USER_INPUT` error — they have no value to set directly.
 
 </Callout>
 
 ## Reading field values
 
-A record exposes its fields through `Todo.customFields`, which returns `[CustomField!]!` — a flat list of `CustomField` objects, each already carrying the value for that record. Select the value field that matches the type directly on the array element; there is no wrapper object.
+A record exposes its fields through `Record.customFields`, which returns `[CustomField!]!` — a flat list of `CustomField` objects, each already carrying the value for that record. Select the value field that matches the type directly on the array element; there is no wrapper object.
 
-Records are read through `todoQueries`. The `companyIds` filter field is required by the schema but may be an empty array — pass `[]` to fall back to the company in the `X-Bloo-Company-ID` header.
+Records are read through `recordQueries`. The `companyIds` filter field is required by the schema but may be an empty array — pass `[]` to fall back to the company in the `X-Bloo-Company-ID` header.
 
 ```graphql
 query RecordWithCustomFields {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: [], projectIds: ["project_123"] }, limit: 5) {
       items {
         id
@@ -144,7 +144,7 @@ query RecordWithCustomFields {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -190,11 +190,11 @@ The `value` field is a `JSON` scalar that returns the field's value in a type-ap
 
 ## Writing field values
 
-Use `setTodoCustomField` to write a value to one field on one record. It is an upsert and returns `Boolean!` — it has no selection set, so do not query subfields on the result. Read the value back with the `Todo.customFields` query shown above.
+Use `setRecordCustomField` to write a value to one field on one record. It is an upsert and returns `Boolean!` — it has no selection set, so do not query subfields on the result. Read the value back with the `Record.customFields` query shown above.
 
 ```graphql
 mutation SetPriority {
-  setTodoCustomField(
+  setRecordCustomField(
     input: {
       todoId: "todo_123"
       customFieldId: "field_123"
@@ -205,16 +205,16 @@ mutation SetPriority {
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
 The input parameter you send depends on the field type — `text`, `number`, `checked`, `customFieldOptionId`/`customFieldOptionIds`, `startDate`/`endDate`, `countryCodes`, `latitude`/`longitude`, `assigneeUserIds`, or `customFieldReferenceTodoIds`. See [Set field values](/api/custom-fields/custom-field-values) for the full mapping.
 
-To seed values when a record is first created, pass `customFields` to `createTodo`. Each entry is a `CreateTodoInputCustomField` of `{ customFieldId, value }`, where `value` is a string the API parses according to the field's type.
+To seed values when a record is first created, pass `customFields` to `createRecord`. Each entry is a `CreateRecordInputCustomField` of `{ customFieldId, value }`, where `value` is a string the API parses according to the field's type.
 
 ```graphql
 mutation CreateRecordWithFields {
-  createTodo(
+  createRecord(
     input: {
       todoListId: "list_123"
       title: "New deal"
@@ -262,7 +262,7 @@ When creating or editing a field, you can restrict it to specific users, custom 
 | `allowedRoleIds` | `[String!]`          | Restrict the field to these custom project roles. |
 | `allowedLevels`  | `[UserAccessLevel!]` | Restrict the field to these access levels.        |
 
-These rules drive the per-caller booleans on `CustomField`: `viewable` (the caller may read this field) and `editable` (the caller may set values on it). `projectUserRole` returns the custom role resolved for the caller. A field with no rules is governed entirely by the workspace role table above.
+These rules drive the per-caller booleans on `CustomField`: `viewable` (the caller may read this field) and `editable` (the caller may set values on it). `workspaceUserRole` returns the custom role resolved for the caller. A field with no rules is governed entirely by the workspace role table above.
 
 ## Errors
 
@@ -273,7 +273,7 @@ These are the error codes the custom field operations return.
 | `CUSTOM_FIELD_NOT_FOUND`         | The `customFieldId` does not exist or is not in the header's workspace.                     |
 | `PROJECT_NOT_FOUND`              | A referenced project (for `REFERENCE`/`REFERENCED_BY`/`ROLLUP`) does not exist.             |
 | `BAD_USER_INPUT`                 | The value is malformed, or the target field is a computed type that cannot be set directly. |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | A value passed to `createTodo`'s `customFields` cannot be parsed for the field's type.      |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | A value passed to `createRecord`'s `customFields` cannot be parsed for the field's type.      |
 | `FORBIDDEN`                      | The caller's role or the field's access rules forbid the read or write.                     |
 | `CUSTOM_FIELD_LIMIT`             | The workspace has reached its custom field limit (upgrade to add more).                     |
 | `PRO_REQUIRED`                   | The field type requires a Pro subscription (for example, `ROLLUP`).                         |

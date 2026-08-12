@@ -9,10 +9,10 @@ The User Management API covers the full lifecycle of a teammate's access: inviti
 
 Access is granted at two scopes:
 
-- **Workspace** — a user belongs to a single workspace (`Project`) with an access level scoped to that workspace.
-- **Organization** — a user belongs to the organization (`Company`) and, through it, to one or more of its workspaces.
+- **Workspace** — a user belongs to a single workspace (`Workspace`) with an access level scoped to that workspace.
+- **Organization** — a user belongs to the organization (`Organization`) and, through it, to one or more of its workspaces.
 
-In the API, workspaces are `Project` objects and organizations are `Company` objects. Access levels are the `UserAccessLevel` enum; custom roles are `ProjectUserRole` objects scoped to a single workspace.
+In the API, workspaces are `Workspace` objects and organizations are `Organization` objects. Access levels are the `UserAccessLevel` enum; custom roles are `ProjectUserRole` objects scoped to a single workspace.
 
 ## Authentication
 
@@ -20,10 +20,10 @@ All requests go to the GraphQL endpoint with your personal access token in heade
 
 ```
 POST https://api.blue.app/graphql
-X-Bloo-Token-ID: YOUR_TOKEN_ID
-X-Bloo-Token-Secret: YOUR_TOKEN_SECRET
-X-Bloo-Company-ID: YOUR_COMPANY_ID
-X-Bloo-Project-ID: project_123   # required for workspace-scoped operations
+blue-token-id: YOUR_TOKEN_ID
+blue-token-secret: YOUR_TOKEN_SECRET
+blue-org-id: YOUR_ORG_ID
+blue-workspace-id: project_123   # required for workspace-scoped operations
 ```
 
 Headers are case-insensitive. The Company and Project headers accept either an ID or a slug. See [Authentication](/api/start-guide/authentication) for how to create a token.
@@ -34,12 +34,12 @@ Headers are case-insensitive. The Company and Project headers accept either an I
 
 | Operation                                               | Type     | Description                                               |
 | ------------------------------------------------------- | -------- | --------------------------------------------------------- |
-| [`projectUserList`](/api/user-management/list-users)    | Query    | List users in a workspace, with pagination and search.    |
+| [`workspaceUserList`](/api/user-management/list-users)    | Query    | List users in a workspace, with pagination and search.    |
 | [`assignees`](/api/records/assignees)                   | Query    | List users who can be assigned to records in a workspace. |
 | `currentUser`                                           | Query    | Return the authenticated user.                            |
 | [`inviteUser`](/api/user-management/invite-user)        | Mutation | Invite a user to a workspace or organization.             |
 | [`removeProjectUser`](/api/user-management/remove-user) | Mutation | Remove a user from a single workspace.                    |
-| [`removeCompanyUser`](/api/user-management/remove-user) | Mutation | Remove a user from the entire organization.               |
+| [`removeOrganizationUser`](/api/user-management/remove-user) | Mutation | Remove a user from the entire organization.               |
 
 ### Invitations
 
@@ -54,10 +54,10 @@ Headers are case-insensitive. The Company and Project headers accept either an I
 
 | Operation                                                                           | Type     | Description                          |
 | ----------------------------------------------------------------------------------- | -------- | ------------------------------------ |
-| [`createProjectUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Create a custom role in a workspace. |
-| [`updateProjectUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Update a custom role.                |
-| [`deleteProjectUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Delete a custom role.                |
-| [`projectUserRole` / `projectUserRoles`](/api/user-management/retrieve-custom-role) | Query    | Read one or many custom roles.       |
+| [`createWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Create a custom role in a workspace. |
+| [`updateWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Update a custom role.                |
+| [`deleteWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Delete a custom role.                |
+| [`workspaceUserRole` / `workspaceUserRoles`](/api/user-management/retrieve-custom-role) | Query    | Read one or many custom roles.       |
 
 ## Access levels
 
@@ -128,11 +128,11 @@ mutation InviteToOrganization {
 
 ### List users in a workspace
 
-`projectUserList` returns a `ProjectUserList` with `users`, a `pageInfo`, and a `totalCount`.
+`workspaceUserList` returns a `ProjectUserList` with `users`, a `pageInfo`, and a `totalCount`.
 
 ```graphql
 query WorkspaceUsers {
-  projectUserList(projectId: "project_123", first: 25) {
+  workspaceUserList(projectId: "project_123", first: 25) {
     users {
       id
       fullName
@@ -154,7 +154,7 @@ query WorkspaceUsers {
 ```json
 {
   "data": {
-    "projectUserList": {
+    "workspaceUserList": {
       "users": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",
@@ -211,7 +211,7 @@ mutation RevokeInvite {
 
 ### Remove a user
 
-Use `removeProjectUser` to revoke a single workspace, or `removeCompanyUser` to remove the user from the whole organization. `removeProjectUser` returns a `MutationResult` (`success`, `operationId`); `removeCompanyUser` returns a nullable `Boolean`.
+Use `removeProjectUser` to revoke a single workspace, or `removeOrganizationUser` to remove the user from the whole organization. `removeProjectUser` returns a `MutationResult` (`success`, `operationId`); `removeOrganizationUser` returns a nullable `Boolean`.
 
 ```graphql
 mutation RemoveFromWorkspace {
@@ -224,7 +224,7 @@ mutation RemoveFromWorkspace {
 
 ```graphql
 mutation RemoveFromOrganization {
-  removeCompanyUser(input: { companyId: "company_123", userId: "user_123" })
+  removeOrganizationUser(input: { companyId: "company_123", userId: "user_123" })
 }
 ```
 
@@ -232,11 +232,11 @@ You cannot remove a user whose level is `OWNER`; transfer ownership first. See [
 
 ### Create a custom role
 
-`createProjectUserRole` takes flat boolean toggles (no nested `permissions` object) and returns a `ProjectUserRole`. Select only the fields the role exposes.
+`createWorkspaceUserRole` takes flat boolean toggles (no nested `permissions` object) and returns a `ProjectUserRole`. Select only the fields the role exposes.
 
 ```graphql
 mutation CreateRole {
-  createProjectUserRole(
+  createWorkspaceUserRole(
     input: {
       projectId: "project_123"
       name: "Content Reviewer"
@@ -256,7 +256,7 @@ mutation CreateRole {
 ```json
 {
   "data": {
-    "createProjectUserRole": {
+    "createWorkspaceUserRole": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "name": "Content Reviewer",
       "canCreateRecords": false,

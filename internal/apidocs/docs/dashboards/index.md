@@ -111,14 +111,15 @@ query ListDashboards {
 
 ### Dashboard
 
-| Field            | Type               | Description                                                                   |
-| ---------------- | ------------------ | ----------------------------------------------------------------------------- |
-| `id`             | `ID!`              | Unique identifier for the dashboard.                                          |
-| `title`          | `String!`          | Display name of the dashboard.                                                |
-| `createdBy`      | `User!`            | The user who created the dashboard.                                           |
-| `dashboardUsers` | `[DashboardUser!]` | Users the dashboard has been shared with. Null when no sharing records exist. |
-| `createdAt`      | `DateTime!`        | When the dashboard was created.                                               |
-| `updatedAt`      | `DateTime!`        | When the dashboard was last modified.                                         |
+| Field                  | Type               | Description                                                                             |
+| ---------------------- | ------------------ | --------------------------------------------------------------------------------------- |
+| `id`                   | `ID!`              | Unique identifier for the dashboard.                                                    |
+| `title`                | `String!`          | Display name of the dashboard.                                                          |
+| `createdBy`            | `User!`            | The user who created the dashboard.                                                     |
+| `dashboardUsers`       | `[DashboardUser!]` | Users the dashboard has been shared with. Null when no sharing records exist.           |
+| `allowViewerChartData` | `Boolean!`         | Whether viewers may inspect and export records behind chart totals. Editors always can. |
+| `createdAt`            | `DateTime!`        | When the dashboard was created.                                                         |
+| `updatedAt`            | `DateTime!`        | When the dashboard was last modified.                                                   |
 
 ### DashboardUser
 

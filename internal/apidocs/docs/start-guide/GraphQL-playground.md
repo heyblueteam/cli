@@ -11,20 +11,20 @@ To run _authenticated_ operations (anything that reads or writes your data), you
 
 ## Set your headers
 
-Open the **Headers** tab at the bottom of the Explorer and paste your credentials as JSON. The header names are case-insensitive, but the canonical casing is `X-Bloo-*`:
+Open the **Headers** tab at the bottom of the Explorer and paste your credentials as JSON. The header names are case-insensitive; the canonical form is the lowercase `blue-*` names:
 
 ```json
 {
-  "X-Bloo-Token-ID": "YOUR_TOKEN_ID",
-  "X-Bloo-Token-Secret": "YOUR_TOKEN_SECRET",
-  "X-Bloo-Company-ID": "YOUR_COMPANY_ID",
-  "X-Bloo-Project-ID": "YOUR_PROJECT_ID"
+  "blue-token-id": "YOUR_TOKEN_ID",
+  "blue-token-secret": "YOUR_TOKEN_SECRET",
+  "blue-org-id": "YOUR_ORG_ID",
+  "blue-workspace-id": "YOUR_PROJECT_ID"
 }
 ```
 
 - `X-Bloo-Token-ID` and `X-Bloo-Token-Secret` authenticate the request and are required on every authenticated operation. Generate them from your profile's **API** tab — see [Authentication](/api/start-guide/authentication).
 - `X-Bloo-Company-ID` scopes the request to an organization. It accepts the company ID or its slug, and most operations need it.
-- `X-Bloo-Project-ID` scopes the request to a single workspace (the schema type is `Project`). Include it only for operations that require a project context, such as custom-field operations.
+- `X-Bloo-Project-ID` scopes the request to a single workspace (the schema type is `Workspace`). Include it only for operations that require a project context, such as custom-field operations.
 
 <Callout variant="warning" title="Keep your secret safe">
 
@@ -34,11 +34,11 @@ The Token Secret is shown only once at creation and grants full API access to yo
 
 ## Run a sample query
 
-With the headers set, run this query to list the workspaces (`Project` objects) you can access in the company. It needs only the Token ID, Token Secret, and Company ID headers:
+With the headers set, run this query to list the workspaces (`Workspace` objects) you can access in the company. It needs only the Token ID, Token Secret, and Company ID headers:
 
 ```graphql
 query ProjectListQuery {
-  projectList(filter: { companyIds: ["company_123"] }) {
+  workspaceList(filter: { companyIds: ["company_123"] }) {
     items {
       id
       name
@@ -57,7 +57,7 @@ A successful run returns standard GraphQL JSON:
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         {
           "id": "clm4n8qwx000008l0g4oxdqn7",

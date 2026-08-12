@@ -108,7 +108,7 @@ Use `statusUpdateList` to page through every status update in one workspace, opt
 
 ```graphql
 query ListStatusUpdates {
-  statusUpdateList(projectId: "project_123") {
+  statusUpdateList(projectId: "workspace_123") {
     statusUpdates {
       id
       category
@@ -231,7 +231,7 @@ List the `ORANGE` and `RED` updates a single user reported across May 2026, olde
 ```graphql
 query ListStatusUpdatesFiltered {
   statusUpdateList(
-    projectId: "project_123"
+    projectId: "workspace_123"
     userId: "user_123"
     dateFrom: "2026-05-01T00:00:00Z"
     dateTo: "2026-05-31T23:59:59Z"
@@ -279,7 +279,7 @@ Events are scoped to one workspace and delivered only to project members — the
 
 ```graphql
 subscription OnStatusUpdate {
-  subscribeToStatusUpdate(projectId: "project_123") {
+  subscribeToStatusUpdate(projectId: "workspace_123") {
     mutation
     node {
       id
@@ -364,6 +364,6 @@ All three operations require an authenticated caller with access to the workspac
 
 - [Status updates overview](/api/status-updates)
 - [Post and delete status updates](/api/status-updates/manage-status-updates)
-- [Comments and discussions](/api/comments)
+- [Comments and chats](/api/comments)
 - [Workspaces](/api/workspaces)
 - [List records](/api/records/list-records)

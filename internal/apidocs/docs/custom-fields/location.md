@@ -5,7 +5,7 @@ icon: MapPin
 order: 20
 ---
 
-A location custom field stores a geographic point on a record as a latitude/longitude pair. It maps to the `LOCATION` value of the `CustomFieldType` enum. Records are `Todo` objects and custom fields are `CustomField` objects in the API.
+A location custom field stores a geographic point on a record as a latitude/longitude pair. It maps to the `LOCATION` value of the `CustomFieldType` enum. Records are `Record` objects and custom fields are `CustomField` objects in the API.
 
 Location fields store coordinates only. There is no built-in geocoding, reverse geocoding, address validation, or map rendering — convert addresses to coordinates with an external service before writing the value.
 
@@ -18,12 +18,12 @@ A location field holds two numeric values on each record:
 
 Coordinates are stored in decimal degrees. The two mutations that write a value behave differently:
 
-- **`createTodo`** validates the coordinate ranges and rejects out-of-range values.
-- **`setTodoCustomField`** stores whatever `latitude`/`longitude` you send, with no range validation.
+- **`createRecord`** validates the coordinate ranges and rejects out-of-range values.
+- **`setRecordCustomField`** stores whatever `latitude`/`longitude` you send, with no range validation.
 
 ## Create
 
-Create the field with `createCustomField`, using `type: LOCATION`. The field is scoped to the workspace (`Project`) named in the `X-Bloo-Project-ID` header — there is no `projectId` argument on the input.
+Create the field with `createCustomField`, using `type: LOCATION`. The field is scoped to the workspace (`Workspace`) named in the `X-Bloo-Project-ID` header — there is no `projectId` argument on the input.
 
 ```graphql
 mutation CreateLocationField {
@@ -74,17 +74,17 @@ mutation CreateLocationFieldWithHelp {
 | `type`        | `CustomFieldType!` | Yes      | Must be `LOCATION`.        |
 | `description` | `String`           | No       | Help text shown to users.  |
 
-The custom field is attached to the workspace from the `X-Bloo-Project-ID` request header, not from an input argument. Company and project headers accept an ID or a slug.
+The custom field is attached to the workspace from the `blue-workspace-id` request header, not from an input argument. Company and project headers accept an ID or a slug.
 
 ## Set a value
 
-Use `setTodoCustomField` to write a location to a record. Pass `latitude` and `longitude` as floats. This mutation returns `Boolean!` — it does not return the updated value, so read it back with a separate query.
+Use `setRecordCustomField` to write a location to a record. Pass `latitude` and `longitude` as floats. This mutation returns `Boolean!` — it does not return the updated value, so read it back with a separate query.
 
-`setTodoCustomField` performs **no** range validation: the values are stored exactly as provided. Send a valid latitude/longitude pair.
+`setRecordCustomField` performs **no** range validation: the values are stored exactly as provided. Send a valid latitude/longitude pair.
 
 ```graphql
 mutation SetLocation {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", latitude: 40.7128, longitude: -74.006 }
   )
 }
@@ -93,12 +93,12 @@ mutation SetLocation {
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                   |
 | --------------- | --------- | -------- | --------------------------------------------- |
@@ -111,11 +111,11 @@ Both `latitude` and `longitude` are optional in the schema, but a valid point ne
 
 ### Setting a location when creating a record
 
-`createTodo` is the only mutation that validates the coordinate ranges. Pass the location in `customFields` as a `CreateTodoInputCustomField` (`customFieldId` + a single `value` string), with the coordinates comma-separated as `"latitude,longitude"`. The resolver splits on the comma, parses both numbers, and stores them on `latitude`/`longitude`. If either coordinate is non-numeric or out of range, it throws `CUSTOM_FIELD_VALUE_PARSE_ERROR` with the message `Invalid location coordinates.`
+`createRecord` is the only mutation that validates the coordinate ranges. Pass the location in `customFields` as a `CreateRecordInputCustomField` (`customFieldId` + a single `value` string), with the coordinates comma-separated as `"latitude,longitude"`. The resolver splits on the comma, parses both numbers, and stores them on `latitude`/`longitude`. If either coordinate is non-numeric or out of range, it throws `CUSTOM_FIELD_VALUE_PARSE_ERROR` with the message `Invalid location coordinates.`
 
 ```graphql
 mutation CreateRecordWithLocation {
-  createTodo(
+  createRecord(
     input: {
       title: "Site Visit"
       todoListId: "list_123"
@@ -137,7 +137,7 @@ mutation CreateRecordWithLocation {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Site Visit",
       "customFields": [
@@ -155,11 +155,11 @@ mutation CreateRecordWithLocation {
 
 ## Read a value
 
-Location values are read on the `customFields` connection of a record via `todoQueries.todos`, which returns `{ items, pageInfo }`. Coordinate data lives directly on each `CustomField` element — there is no wrapper type. Select `latitude` and `longitude`.
+Location values are read on the `customFields` connection of a record via `recordQueries.todos`, which returns `{ items, pageInfo }`. Coordinate data lives directly on each `CustomField` element — there is no wrapper type. Select `latitude` and `longitude`.
 
 ```graphql
 query ReadLocation {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -189,14 +189,14 @@ query ReadLocation {
 ## Notes
 
 - Coordinates are decimal degrees, not degrees/minutes/seconds. Six decimal places resolve to roughly 10 cm.
-- Only `createTodo` enforces the coordinate ranges (`-90`–`90` latitude, `-180`–`180` longitude). `setTodoCustomField` does not — validate before calling it if you need range checks when updating a record.
-- There is no built-in geocoding. To turn an address into coordinates, use an external service (for example Google Maps Geocoding, Mapbox, or OpenStreetMap Nominatim), then write the resulting latitude/longitude with `setTodoCustomField`.
+- Only `createRecord` enforces the coordinate ranges (`-90`–`90` latitude, `-180`–`180` longitude). `setRecordCustomField` does not — validate before calling it if you need range checks when updating a record.
+- There is no built-in geocoding. To turn an address into coordinates, use an external service (for example Google Maps Geocoding, Mapbox, or OpenStreetMap Nominatim), then write the resulting latitude/longitude with `setRecordCustomField`.
 
 ## Errors
 
 | Code                             | When                                                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------------------- |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | `createTodo` receives a `value` whose latitude or longitude is non-numeric or out of range. |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR` | `createRecord` receives a `value` whose latitude or longitude is non-numeric or out of range. |
 
 ```json
 {

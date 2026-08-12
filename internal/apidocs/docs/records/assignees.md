@@ -5,17 +5,17 @@ icon: Users
 order: 6
 ---
 
-Records can be assigned to one or more users. Use the `setTodoAssignees`, `addTodoAssignees`, and `removeTodoAssignees` mutations to change who is assigned, and the `assignees` query to list the users who are eligible to be assigned in a workspace. Records are `Todo` objects and workspaces are `Project` objects in the API; assignees are `User` objects.
+Records can be assigned to one or more users. Use the `setRecordAssignees`, `addRecordAssignees`, and `removeRecordAssignees` mutations to change who is assigned, and the `assignees` query to list the users who are eligible to be assigned in a workspace. Records are `Record` objects and workspaces are `Workspace` objects in the API; assignees are `User` objects.
 
 Pick the mutation by intent:
 
-- **`setTodoAssignees`** — replace the full assignee list. Computes the diff against the current assignees, then adds and removes only what changed. Passing an empty `assigneeIds` array clears all assignees.
-- **`addTodoAssignees`** — add users without touching existing assignees. Users already assigned are skipped.
-- **`removeTodoAssignees`** — remove specific users, leaving the rest assigned.
+- **`setRecordAssignees`** — replace the full assignee list. Computes the diff against the current assignees, then adds and removes only what changed. Passing an empty `assigneeIds` array clears all assignees.
+- **`addRecordAssignees`** — add users without touching existing assignees. Users already assigned are skipped.
+- **`removeRecordAssignees`** — remove specific users, leaving the rest assigned.
 
 <Callout variant="info" title="Only set triggers full side effects">
 
-`setTodoAssignees` is the only one that records activity-log entries, sends assignment notifications, fires `TODO_ASSIGNEE_ADDED` / `TODO_ASSIGNEE_REMOVED` webhooks, runs assignee automations, and refreshes charts. `addTodoAssignees` and `removeTodoAssignees` only change the assignment rows (remove also publishes a real-time record update). If you need notifications, webhooks, or automations to fire, use `setTodoAssignees`.
+`setRecordAssignees` is the only one that records activity-log entries, sends assignment notifications, fires `TODO_ASSIGNEE_ADDED` / `TODO_ASSIGNEE_REMOVED` webhooks, runs assignee automations, and refreshes charts. `addRecordAssignees` and `removeRecordAssignees` only change the assignment rows (remove also publishes a real-time record update). If you need notifications, webhooks, or automations to fire, use `setRecordAssignees`.
 
 </Callout>
 
@@ -25,7 +25,7 @@ Replace the full assignee list on a record:
 
 ```graphql
 mutation SetRecordAssignees {
-  setTodoAssignees(input: { todoId: "todo_123", assigneeIds: ["user_123", "user_456"] }) {
+  setRecordAssignees(input: { todoId: "todo_123", assigneeIds: ["user_123", "user_456"] }) {
     success
     operationId
   }
@@ -36,7 +36,7 @@ Add assignees without removing the existing ones:
 
 ```graphql
 mutation AddRecordAssignees {
-  addTodoAssignees(input: { todoId: "todo_123", assigneeIds: ["user_789"] }) {
+  addRecordAssignees(input: { todoId: "todo_123", assigneeIds: ["user_789"] }) {
     success
     operationId
   }
@@ -47,7 +47,7 @@ Remove specific assignees:
 
 ```graphql
 mutation RemoveRecordAssignees {
-  removeTodoAssignees(input: { todoId: "todo_123", assigneeIds: ["user_456"] }) {
+  removeRecordAssignees(input: { todoId: "todo_123", assigneeIds: ["user_456"] }) {
     success
     operationId
   }
@@ -58,21 +58,21 @@ mutation RemoveRecordAssignees {
 
 All three mutations take a single `input` object. The three input types are identical in shape.
 
-### SetTodoAssigneesInput
+### SetRecordAssigneesInput
 
 | Parameter     | Type         | Required | Description                                                                                                                      |
 | ------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `todoId`      | `String!`    | Yes      | ID of the record to update.                                                                                                      |
 | `assigneeIds` | `[String!]!` | Yes      | The complete set of user IDs the record should be assigned to. Replaces all current assignees; pass `[]` to clear all assignees. |
 
-### AddTodoAssigneesInput
+### AddRecordAssigneesInput
 
 | Parameter     | Type         | Required | Description                                          |
 | ------------- | ------------ | -------- | ---------------------------------------------------- |
 | `todoId`      | `String!`    | Yes      | ID of the record to update.                          |
 | `assigneeIds` | `[String!]!` | Yes      | User IDs to add. Users already assigned are skipped. |
 
-### RemoveTodoAssigneesInput
+### RemoveRecordAssigneesInput
 
 | Parameter     | Type         | Required | Description                                                          |
 | ------------- | ------------ | -------- | -------------------------------------------------------------------- |
@@ -86,7 +86,7 @@ Each mutation returns a `MutationResult`. `operationId` is `null` for these oper
 ```json
 {
   "data": {
-    "setTodoAssignees": {
+    "setRecordAssignees": {
       "success": true,
       "operationId": null
     }
@@ -141,11 +141,11 @@ query GetAssignees {
 
 ### AssigneesFilterInput
 
-The `filter` argument is optional. When omitted, the query uses the workspace from the `X-Bloo-Project-ID` request header.
+The `filter` argument is optional. When omitted, the query uses the workspace from the `blue-workspace-id` request header.
 
 | Parameter   | Type     | Required | Description                                                                                                                |
 | ----------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `projectId` | `String` | No       | Workspace to list members from. Falls back to the `X-Bloo-Project-ID` header when omitted.                                 |
+| `projectId` | `String` | No       | Workspace to list members from. Falls back to the `blue-workspace-id` header when omitted.                                 |
 | `search`    | `String` | No       | Accepted by the schema but not currently applied server-side — filter the returned list by name or email in your own code. |
 
 ### User fields

@@ -5,13 +5,13 @@ icon: Type
 order: 5
 ---
 
-A single-line text field stores short, single-line text such as names, titles, codes, or reference numbers. It is the `TEXT_SINGLE` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects scoped to a workspace (a `Project` in the API); records are `Todo` objects.
+A single-line text field stores short, single-line text such as names, titles, codes, or reference numbers. It is the `TEXT_SINGLE` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects scoped to a workspace (a `Workspace` in the API); records are `Record` objects.
 
 `TEXT_SINGLE` and [`TEXT_MULTI`](/api/custom-fields/text-multi) store and validate text the same way — the difference is the editor the app renders (a single-line input versus a multi-line textarea). Choose `TEXT_SINGLE` for values meant to stay on one line.
 
 ## Create
 
-Create the field with `createCustomField`. The workspace is taken from the `X-Bloo-Project-ID` header — there is no `projectId` argument.
+Create the field with `createCustomField`. The workspace is taken from the `blue-workspace-id` header — there is no `projectId` argument.
 
 ```graphql
 mutation CreateTextSingleField {
@@ -66,21 +66,21 @@ A successful call returns the created `CustomField`:
 
 ## Set a value
 
-Write text to a record with `setTodoCustomField`, using the `text` argument. The mutation returns `Boolean!` — `true` on success — so it takes no selection set.
+Write text to a record with `setRecordCustomField`, using the `text` argument. The mutation returns `Boolean!` — `true` on success — so it takes no selection set.
 
 ```graphql
 mutation SetTextSingleValue {
-  setTodoCustomField(
+  setRecordCustomField(
     input: { todoId: "todo_123", customFieldId: "field_123", text: "ORD-2024-001" }
   )
 }
 ```
 
 ```json
-{ "data": { "setTodoCustomField": true } }
+{ "data": { "setRecordCustomField": true } }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 | Parameter       | Type      | Required | Description                                 |
 | --------------- | --------- | -------- | ------------------------------------------- |
@@ -88,11 +88,11 @@ mutation SetTextSingleValue {
 | `customFieldId` | `String!` | Yes      | ID of the `TEXT_SINGLE` field.              |
 | `text`          | `String`  | No       | The text to store. Omit to clear the value. |
 
-You can also set the value when creating a record. `CreateTodoInput.customFields` takes `CreateTodoInputCustomField` entries (`{ customFieldId, value }`), where `value` is the text passed as a string:
+You can also set the value when creating a record. `CreateRecordInput.customFields` takes `CreateRecordInputCustomField` entries (`{ customFieldId, value }`), where `value` is the text passed as a string:
 
 ```graphql
 mutation CreateRecordWithSku {
-  createTodo(
+  createRecord(
     input: {
       title: "Process order ORD-2024-001"
       todoListId: "list_123"
@@ -107,11 +107,11 @@ mutation CreateRecordWithSku {
 
 ## Read a value
 
-`Todo.customFields` returns `CustomField` objects directly — there is no junction wrapper type. Read the value on each element. For `TEXT_SINGLE`, the `value` field resolves to the stored string (the same string is also on the `text` field).
+`Record.customFields` returns `CustomField` objects directly — there is no junction wrapper type. Read the value on each element. For `TEXT_SINGLE`, the `value` field resolves to the stored string (the same string is also on the `text` field).
 
 ```graphql
 query GetRecordSku {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoIds: ["todo_123"] }) {
       items {
         id
@@ -131,7 +131,7 @@ query GetRecordSku {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -155,7 +155,7 @@ query GetRecordSku {
 
 ### CustomField (record context)
 
-When a `CustomField` is read through `Todo.customFields`, these fields carry the record's value:
+When a `CustomField` is read through `Record.customFields`, these fields carry the record's value:
 
 | Field   | Type               | Description                                                          |
 | ------- | ------------------ | -------------------------------------------------------------------- |
@@ -167,9 +167,9 @@ When a `CustomField` is read through `Todo.customFields`, these fields carry the
 ## Notes
 
 - Text is stored verbatim through the API: no trimming, no length limit beyond the column's storage capacity, and full Unicode support. Forms applied to the field may trim whitespace and enforce required-ness; the direct API does not.
-- `value` is only populated when the `CustomField` is read in a record context (through `Todo.customFields`). On a bare field definition fetched from the [`customFields`](/api/custom-fields/list-custom-fields) query it is `null`.
+- `value` is only populated when the `CustomField` is read in a record context (through `Record.customFields`). On a bare field definition fetched from the [`customFields`](/api/custom-fields/list-custom-fields) query it is `null`.
 - `TEXT_SINGLE` and `TEXT_MULTI` share storage and validation; the only difference is the editor the app renders. This parity is current behavior, not a guaranteed contract.
-- To find records by text content, filter the [`todoQueries.todos`](/api/records/list-records) query with the `fields` JSON filter rather than a dedicated text argument — there is no top-level text-search parameter on this field type.
+- To find records by text content, filter the [`recordQueries.todos`](/api/records/list-records) query with the `fields` JSON filter rather than a dedicated text argument — there is no top-level text-search parameter on this field type.
 
 ## Errors
 
@@ -186,5 +186,5 @@ When a `CustomField` is read through `Todo.customFields`, these fields carry the
 - [Email Field](/api/custom-fields/email) — email addresses.
 - [URL Field](/api/custom-fields/url) — links.
 - [Unique ID Field](/api/custom-fields/unique-id) — auto-generated identifiers.
-- [Set custom field values](/api/custom-fields/custom-field-values) — the `setTodoCustomField` reference.
+- [Set custom field values](/api/custom-fields/custom-field-values) — the `setRecordCustomField` reference.
 - [Custom Fields overview](/api/custom-fields) — types, access control, and operations.

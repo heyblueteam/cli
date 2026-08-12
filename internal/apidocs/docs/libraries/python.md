@@ -32,10 +32,10 @@ The client authenticates with a Blue personal access token. You can supply crede
 
 | Constructor arg | Environment variable | Required | Request header        | Description                                                          |
 | --------------- | -------------------- | -------- | --------------------- | -------------------------------------------------------------------- |
-| `token_id`      | `BLUE_TOKEN_ID`      | Yes      | `X-Bloo-Token-ID`     | The token ID from your personal access token.                        |
-| `secret_id`     | `BLUE_SECRET_ID`     | Yes      | `X-Bloo-Token-Secret` | The secret half of the token (the value prefixed with `pat_`).       |
-| `company_id`    | `BLUE_COMPANY_ID`    | Yes      | `X-Bloo-Company-ID`   | The organization the token operates within. Accepts an ID or slug.   |
-| `project_id`    | `BLUE_PROJECT_ID`    | No       | `X-Bloo-Project-ID`   | A default workspace for project-scoped calls. Accepts an ID or slug. |
+| `token_id`      | `BLUE_TOKEN_ID`      | Yes      | `blue-token-id`     | The token ID from your personal access token.                        |
+| `secret_id`     | `BLUE_SECRET_ID`     | Yes      | `blue-token-secret` | The secret half of the token (the value prefixed with `pat_`).       |
+| `company_id`    | `BLUE_COMPANY_ID`    | Yes      | `blue-org-id`   | The organization the token operates within. Accepts an ID or slug.   |
+| `project_id`    | `BLUE_PROJECT_ID`    | No       | `blue-workspace-id`   | A default workspace for project-scoped calls. Accepts an ID or slug. |
 
 See [Authentication](/api/start-guide/authentication) for how to create a token ID and secret.
 
@@ -44,7 +44,7 @@ See [Authentication](/api/start-guide/authentication) for how to create a token 
 ```bash
 export BLUE_TOKEN_ID="YOUR_TOKEN_ID"
 export BLUE_SECRET_ID="YOUR_TOKEN_SECRET"
-export BLUE_COMPANY_ID="YOUR_COMPANY_ID"
+export BLUE_COMPANY_ID="YOUR_ORG_ID"
 export BLUE_PROJECT_ID="YOUR_PROJECT_ID"  # optional
 ```
 
@@ -62,7 +62,7 @@ from bluepm import BlueAPIClient
 client = BlueAPIClient(
     token_id="YOUR_TOKEN_ID",
     secret_id="YOUR_TOKEN_SECRET",
-    company_id="YOUR_COMPANY_ID",
+    company_id="YOUR_ORG_ID",
     project_id="YOUR_PROJECT_ID",  # optional
 )
 ```
@@ -77,7 +77,7 @@ The secret half of your token grants full API access to your organization. Load 
 
 ### get_project_list
 
-Lists the workspaces the token can access. Workspaces are `Project` objects in the API, so this calls the [`projectList`](/api/workspaces/list-workspaces) query under the hood.
+Lists the workspaces the token can access. Workspaces are `Project` objects in the API, so this calls the [`workspaceList`](/api/workspaces/list-workspaces) query under the hood.
 
 ```python
 def get_project_list(self, company_ids=None) -> list
@@ -155,7 +155,7 @@ for project in result.project_list.items:
 print("total:", result.project_list.page_info.total_items)
 ```
 
-Field and argument names use Python's `snake_case` — `project_list` maps to the GraphQL `projectList` field, `page_info` to `pageInfo`, `total_items` to `totalItems`. The full set of queryable fields and their arguments is the Blue GraphQL schema; browse the operation reference (for example [List Workspaces](/api/workspaces/list-workspaces)) for what each field returns.
+Field and argument names use Python's `snake_case` — `project_list` maps to the GraphQL `workspaceList` field, `page_info` to `pageInfo`, `total_items` to `totalItems`. The full set of queryable fields and their arguments is the Blue GraphQL schema; browse the operation reference (for example [List Workspaces](/api/workspaces/list-workspaces)) for what each field returns.
 
 Mutations work the same way through `client.mutation()`:
 
@@ -174,7 +174,7 @@ print(result.create_todo.id)
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [
         { "id": "clm4n8qwx000008l0g4oxdqn7", "name": "Product Roadmap" },
         { "id": "clm4n8qwx000008l0g4oxdqn8", "name": "Customer Onboarding" }
@@ -211,5 +211,5 @@ except RuntimeError as e:
 
 - [Authentication](/api/start-guide/authentication) — create a token ID and secret
 - [Making Requests](/api/start-guide/making-requests) — the raw GraphQL endpoint and headers
-- [List Workspaces](/api/workspaces/list-workspaces) — the `projectList` query `get_project_list` wraps
+- [List Workspaces](/api/workspaces/list-workspaces) — the `workspaceList` query `get_project_list` wraps
 - [Lists](/api/workspaces/lists) — the `todoLists` query `get_todo_lists` wraps

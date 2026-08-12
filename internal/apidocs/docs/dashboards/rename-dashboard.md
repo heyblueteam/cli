@@ -33,11 +33,12 @@ mutation EditDashboard {
 
 ### EditDashboardInput
 
-| Parameter        | Type                        | Required | Description                                                                                                                                               |
-| ---------------- | --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | `String!`                   | Yes      | ID of the dashboard to edit.                                                                                                                              |
-| `title`          | `String`                    | No       | New title. Omit to leave the title unchanged. Changing the title requires being the dashboard creator (see [Permissions](#permissions)).                  |
-| `dashboardUsers` | `[EditDashboardUserInput!]` | No       | Full desired access list. Users present are added or updated; existing users omitted from the array are removed. Omit to leave the access list unchanged. |
+| Parameter              | Type                        | Required | Description                                                                                                                                               |
+| ---------------------- | --------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                   | `String!`                   | Yes      | ID of the dashboard to edit.                                                                                                                              |
+| `title`                | `String`                    | No       | New title. Omit to leave the title unchanged. Changing the title requires being the dashboard creator (see [Permissions](#permissions)).                  |
+| `dashboardUsers`       | `[EditDashboardUserInput!]` | No       | Full desired access list. Users present are added or updated; existing users omitted from the array are removed. Omit to leave the access list unchanged. |
+| `allowViewerChartData` | `Boolean`                   | No       | Whether viewers may inspect and export records behind chart totals. Only the dashboard creator may change it.                                             |
 
 ### EditDashboardUserInput
 
@@ -117,7 +118,7 @@ mutation EditDashboardWithUsers {
 | Code                  | When                                                                                                                                                                                                                                         |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DASHBOARD_NOT_FOUND` | No dashboard with the given `id` is modifiable by the caller. The caller must be the creator or a current `EDITOR`. `VIEWER`s and unrelated users get this code — the dashboard is treated as not found. Message: `Dashboard was not found.` |
-| `FORBIDDEN`           | A non-creator tried to change the `title` to a new value. Editors can manage `dashboardUsers` but cannot rename. The error is only raised when `title` differs from the current title. Message: `You are not authorized.`                    |
+| `FORBIDDEN`           | A non-creator tried to rename the dashboard or change `allowViewerChartData`. Message: `You are not authorized.`                                                                                                                             |
 | `USER_NOT_IN_COMPANY` | A `userId` in `dashboardUsers` does not belong to the dashboard's organization. Message: `User is not in the company.`                                                                                                                       |
 
 ## Permissions
@@ -128,6 +129,7 @@ Within that access:
 
 - **Managing `dashboardUsers`** — any caller with modify access (creator or `EDITOR`) can add, update, or remove shared users.
 - **Renaming (`title`)** — only the dashboard **creator** can change the title. An `EDITOR` who passes a different `title` is rejected with `FORBIDDEN`. Passing the current title (or omitting `title`) is always allowed, so an editor can include the unchanged title alongside a `dashboardUsers` update.
+- **Viewer chart data (`allowViewerChartData`)** — only the dashboard **creator** can change whether viewers may inspect or export the records behind chart totals. Editors always retain access to those records.
 
 ## Related
 

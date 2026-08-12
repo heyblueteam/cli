@@ -2,14 +2,14 @@
 title: User Presence
 description: Stream who is online and live organization membership — presence status, company changes, and project invitations over the realtime WebSocket.
 icon: UserRoundCheck
-order: 8
+order: 9
 ---
 
-Know who is online and keep organization membership in sync as it changes. This page covers four subscriptions: `subscribeToUserPresence` (a user coming online or going offline), `subscribeToCompany` (organization record changes), `subscribeToCompanyPeopleList` (the org's member roster), and `subscribeToInvitation` (workspace invitations created or revoked). Organizations are `Company` objects in the API and workspaces are `Project` objects.
+Know who is online and keep organization membership in sync as it changes. This page covers four subscriptions: `subscribeToUserPresence` (a user coming online or going offline), `subscribeToCompany` (organization record changes), `subscribeToCompanyPeopleList` (the org's member roster), and `subscribeToInvitation` (workspace invitations created or revoked). Organizations are `Organization` objects in the API and workspaces are `Workspace` objects.
 
 All four run over the same authenticated WebSocket as every other subscription — see [Connect & Authenticate](/api/realtime/connect-and-authenticate) for the `graphql-ws` handshake and credentials. The endpoint is `wss://api.blue.app/graphql`.
 
-`subscribeToUserPresence` returns a bare `User!` (no payload wrapper), because presence is a status snapshot rather than an entity change-feed. `subscribeToCompany` and `subscribeToInvitation` return the standard payload (`{ mutation, node, previousValues, updatedFields }`) described on the [Real-time overview](/api/realtime), where `mutation` is a `MutationType` (`CREATED`, `UPDATED`, or `DELETED`).
+`subscribeToUserPresence` returns a bare `User!` (no payload wrapper), because presence is a status snapshot rather than an entity change-feed. `subscribeToCompany` and `subscribeToInvitation` return the standard payload (`{ mutation, node, previousValues, updatedFields }`) described on the [Real-time overview](/api/realtime), where `mutation` is a `MutationType` (`CREATED`, `UPDATED`, or `DELETED`). Note: `subscribeToCompany` streams changes to the underlying `Organization` record.
 
 ## subscribeToUserPresence
 
@@ -88,7 +88,7 @@ Each event is a `User`. `isOnline` reflects the transition that triggered the ev
 
 ## subscribeToCompany
 
-Streams changes to the organization record itself — for example a rename, a plan or settings change, or other `Company` field edits. Returns the standard entity payload.
+Streams changes to the organization record itself — for example a rename, a plan or settings change, or other `Organization` field edits. Returns the standard entity payload.
 
 ### Request
 
@@ -152,12 +152,12 @@ Each event is a `CompanySubscriptionPayload`.
 
 #### CompanySubscriptionPayload
 
-| Field            | Type                    | Description                                                              |
-| ---------------- | ----------------------- | ------------------------------------------------------------------------ |
-| `mutation`       | `MutationType!`         | `CREATED`, `UPDATED`, or `DELETED`.                                      |
-| `node`           | `Company`               | The organization in its current state. `null` on `DELETED`.              |
-| `updatedFields`  | `[String!]`             | Names of the organization properties that changed on an `UPDATED` event. |
-| `previousValues` | `CompanyPreviousValues` | Snapshot of the organization before the change.                          |
+| Field            | Type                         | Description                                                              |
+| ---------------- | ---------------------------- | ------------------------------------------------------------------------ |
+| `mutation`       | `MutationType!`              | `CREATED`, `UPDATED`, or `DELETED`.                                      |
+| `node`           | `Organization`               | The organization in its current state. `null` on `DELETED`.              |
+| `updatedFields`  | `[String!]`                  | Names of the organization properties that changed on an `UPDATED` event. |
+| `previousValues` | `OrganizationPreviousValues` | Snapshot of the organization before the change.                          |
 
 ## subscribeToCompanyPeopleList
 
@@ -283,7 +283,7 @@ Each event is an `InvitationSubscriptionPayload`. On a `CREATED` event `node` ca
 | `email`       | `String!`         | The invited person's email address.            |
 | `accessLevel` | `UserAccessLevel` | The role the invitee will receive.             |
 | `invitedBy`   | `User!`           | The user who sent the invitation.              |
-| `project`     | `Project!`        | The workspace the invitation grants access to. |
+| `project`     | `Workspace!`      | The workspace the invitation grants access to. |
 | `expiredAt`   | `DateTime!`       | When the invitation expires.                   |
 | `metadata`    | `JSON`            | Arbitrary invitation metadata.                 |
 | `createdAt`   | `DateTime!`       | When the invitation was created.               |

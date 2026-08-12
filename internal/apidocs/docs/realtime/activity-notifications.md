@@ -17,7 +17,7 @@ Use `subscribeToMyMention` for the signed-in user's mentions. The older `subscri
 
 ## subscribeToActivity
 
-Streams the activity feed for an organization or a workspace — every action that produces an activity entry (a record created, a comment posted, a user added to a workspace, an invitation accepted, and so on). Organizations are `Company` objects and workspaces are `Project` objects in the API, so the feed is scoped by `companyId`, `projectId`, or both.
+Streams the activity feed for an organization or a workspace — every action that produces an activity entry (a record created, a comment posted, a user added to a workspace, an invitation accepted, and so on). Organizations are `Organization` objects and workspaces are `Workspace` objects in the API, so the feed is scoped by `companyId`, `projectId`, or both.
 
 This is an entity change-feed: each event is an `ActivitySubscriptionPayload` with the standard `{ mutation, node, previousValues, updatedFields }` shape described on the [Real-time overview](/api/realtime).
 
@@ -27,7 +27,7 @@ Scope the feed to a single workspace:
 
 ```graphql
 subscription OnActivity {
-  subscribeToActivity(projectId: "project_123") {
+  subscribeToActivity(projectId: "workspace_123") {
     mutation
     node {
       id
@@ -105,12 +105,12 @@ Each delivered event is an `ActivitySubscriptionPayload`. The example below show
 | `createdAt`    | `DateTime!`         | When the action happened.                                                   |
 | `createdBy`    | `User!`             | The user who performed the action. Select `id`, `fullName`, `email`.        |
 | `affectedBy`   | `User`              | The user the action was performed on, when applicable.                      |
-| `company`      | `Company`           | The organization the entry belongs to.                                      |
-| `project`      | `Project`           | The workspace the entry belongs to, when scoped to one.                     |
-| `todo`         | `Todo`              | The record the entry references, when applicable.                           |
-| `todoList`     | `TodoList`          | The list the entry references, when applicable.                             |
+| `company`      | `Organization`      | The organization the entry belongs to.                                      |
+| `project`      | `Workspace`         | The workspace the entry belongs to, when scoped to one.                     |
+| `todo`         | `Record`            | The record the entry references, when applicable.                           |
+| `todoList`     | `RecordList`        | The list the entry references, when applicable.                             |
 | `comment`      | `Comment`           | The comment the entry references, for comment activity.                     |
-| `discussion`   | `Discussion`        | The discussion the entry references.                                        |
+| `chat`   | `Chat`        | The chat the entry references.                                        |
 | `statusUpdate` | `StatusUpdate`      | The status update the entry references.                                     |
 | `inviteeEmail` | `String`            | The invited address, for invitation activity.                               |
 | `metadata`     | `String`            | Extra context for the entry, as a JSON string.                              |
@@ -150,7 +150,7 @@ enum ActivityCategory {
 
 ## subscribeToMyMention
 
-Streams the `@`-mentions addressed to the **signed-in user** — fired when someone mentions you in a comment, discussion, or status update, and when one of your mentions is updated or removed. There are no arguments: the stream is implicitly scoped to whoever owns the WebSocket connection's credentials. This is what drives the mentions inbox and the mention count badge.
+Streams the `@`-mentions addressed to the **signed-in user** — fired when someone mentions you in a comment, chat, or status update, and when one of your mentions is updated or removed. There are no arguments: the stream is implicitly scoped to whoever owns the WebSocket connection's credentials. This is what drives the mentions inbox and the mention count badge.
 
 ### Request
 
@@ -166,12 +166,12 @@ subscription OnMyMention {
         id
         fullName
       }
-      ref {
+      target {
         ... on Comment {
           id
           text
         }
-        ... on Discussion {
+        ... on Chat {
           id
           title
         }
@@ -240,10 +240,11 @@ Each event is a `MentionSubscriptionPayload`. Unlike the activity feed, this pay
 | `isRead`          | `Boolean`    | Whether the mention has been read.                                                                         |
 | `mentioner`       | `User`       | The user who wrote the mention. Select `id`, `fullName`, `email`.                                          |
 | `mentionee`       | `User`       | The mentioned user — always the signed-in user on this stream.                                             |
-| `ref`             | `MentionRef` | What the mention points at: a `Comment`, `Discussion`, or `StatusUpdate` (a union — use inline fragments). |
-| `targetWorkspace` | `Project`    | The workspace to open when the user clicks the mention. `null` only when the reference is gone.            |
+| `target`          | `MentionTarget` | What the mention points at: a `Comment`, `Chat`, or `StatusUpdate` (a union — use inline fragments). |
+| `ref`             | `MentionRef` | Deprecated legacy spelling of `target`. Same members, but the chat member is the legacy `Discussion` type. |
+| `targetWorkspace` | `Workspace`  | The workspace to open when the user clicks the mention. `null` only when the reference is gone.            |
 
-`ref` is the `MentionRef` union (`Comment | Discussion | StatusUpdate`), so select its fields with inline fragments as shown in the request above.
+`target` is the `MentionTarget` union (`Comment | Chat | StatusUpdate`), so select its fields with inline fragments as shown in the request above. The deprecated `ref` field returns the legacy `MentionRef` union, whose chat member is `Discussion` rather than `Chat`.
 
 ## onMarkAllMentionsAsRead
 
@@ -337,5 +338,6 @@ Events are filtered per delivered event, not just at connection time. Subscribin
 
 - [Real-time (Subscriptions)](/api/realtime) — the shared payload shape and the full subscription catalog.
 - [Connect & Authenticate](/api/realtime/connect-and-authenticate) — open an authenticated WebSocket.
-- [Comments, Discussions & Chat](/api/realtime/comment-discussion-subscriptions) — the streams that generate most mention and activity events.
-- [Record & Todo-List Subscriptions](/api/realtime/record-subscriptions) — record-level change feeds that pair with the activity feed.
+- [Comments, Chats & Chat](/api/realtime/comment-discussion-subscriptions) — the streams that generate most mention and activity events.
+- [Record & RecordList Subscriptions](/api/realtime/record-subscriptions) — record-level change feeds that pair with the activity feed.
+- [Inbox subscriptions](/api/realtime/inbox-subscriptions) — the separate unified-Inbox stream (`subscribeToMyInboxActivity`); this page's mentions/activity feeds are not the same system.

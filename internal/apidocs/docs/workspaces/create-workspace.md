@@ -1,13 +1,13 @@
 ---
 title: Create a Workspace
-description: Create a new workspace in an organization, optionally seeded from a template, with the createProject mutation.
+description: Create a new workspace in an organization, optionally seeded from a template, with the createWorkspace mutation.
 icon: Plus
 order: 1
 ---
 
-Use the `createProject` mutation to create a new workspace. Workspaces are `Project` objects in the API, and live inside an organization (`Company`). The user whose token makes the request is automatically added to the new workspace as its `OWNER`.
+Use the `createWorkspace` mutation to create a new workspace. Workspaces are `Workspace` objects in the API, and live inside an organization (`Organization`). The user whose token makes the request is automatically added to the new workspace as its `OWNER`.
 
-Creating a workspace from scratch returns the new `Project` synchronously. Creating one from a template is queued and runs in the background — the mutation returns `null`, and you poll `copyProjectStatus` to track progress.
+Creating a workspace from scratch returns the new `Workspace` synchronously. Creating one from a template is queued and runs in the background — the mutation returns `null`, and you poll `copyProjectStatus` to track progress.
 
 ## Request
 
@@ -15,7 +15,7 @@ The smallest call provides an organization and a name.
 
 ```graphql
 mutation CreateWorkspace {
-  createProject(input: { companyId: "company_123", name: "Q1 Marketing Campaign" }) {
+  createWorkspace(input: { companyId: "company_123", name: "Q1 Marketing Campaign" }) {
     id
     slug
     name
@@ -25,15 +25,15 @@ mutation CreateWorkspace {
 
 Include your authentication headers (header names are case-insensitive):
 
-- `X-Bloo-Token-ID` — your API token ID
-- `X-Bloo-Token-Secret` — your API token secret
-- `X-Bloo-Company-ID` — your organization ID or slug
+- `blue-token-id` — your API token ID
+- `blue-token-secret` — your API token secret
+- `blue-org-id` — your organization ID or slug
 
 `companyId` accepts either the organization's ID or its slug.
 
 ## Parameters
 
-### CreateProjectInput
+### CreateWorkspaceInput
 
 | Parameter     | Type                   | Required | Description                                                                                                                                 |
 | ------------- | ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -66,12 +66,12 @@ Include your authentication headers (header names are case-insensitive):
 
 ## Response
 
-The mutation returns the newly created `Project`. (The return type is nullable — see [Create from a template](#create-from-a-template) for the case where it returns `null`.)
+The mutation returns the newly created `Workspace`. (The return type is nullable — see [Create from a template](#create-from-a-template) for the case where it returns `null`.)
 
 ```json
 {
   "data": {
-    "createProject": {
+    "createWorkspace": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "slug": "q1-marketing-campaign",
       "name": "Q1 Marketing Campaign"
@@ -82,25 +82,25 @@ The mutation returns the newly created `Project`. (The return type is nullable �
 
 ### Returns
 
-`createProject` returns a `Project`. Common fields:
+`createWorkspace` returns a `Workspace`. Common fields:
 
-| Field         | Type               | Description                                                                            |
-| ------------- | ------------------ | -------------------------------------------------------------------------------------- |
-| `id`          | `ID!`              | Unique identifier for the workspace.                                                   |
-| `slug`        | `String!`          | URL-friendly workspace identifier, derived from the name.                              |
-| `name`        | `String!`          | Workspace name.                                                                        |
-| `description` | `String`           | Workspace description.                                                                 |
-| `color`       | `String`           | Workspace color in hex format.                                                         |
-| `icon`        | `String`           | Icon identifier.                                                                       |
-| `category`    | `ProjectCategory!` | Workspace category.                                                                    |
-| `company`     | `Company!`         | The organization that owns the workspace. Select subfields such as `{ id slug name }`. |
-| `folder`      | `Folder`           | The folder the workspace belongs to, if any.                                           |
-| `archived`    | `Boolean`          | Whether the workspace is archived.                                                     |
-| `isTemplate`  | `Boolean!`         | Whether this workspace is a template.                                                  |
-| `createdAt`   | `DateTime!`        | Creation timestamp.                                                                    |
-| `updatedAt`   | `DateTime!`        | Last-update timestamp.                                                                 |
+| Field          | Type               | Description                                                                            |
+| -------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| `id`           | `ID!`              | Unique identifier for the workspace.                                                   |
+| `slug`         | `String!`          | URL-friendly workspace identifier, derived from the name.                              |
+| `name`         | `String!`          | Workspace name.                                                                        |
+| `description`  | `String`           | Workspace description.                                                                 |
+| `color`        | `String`           | Workspace color in hex format.                                                         |
+| `icon`         | `String`           | Icon identifier.                                                                       |
+| `category`     | `ProjectCategory!` | Workspace category.                                                                    |
+| `organization` | `Organization!`    | The organization that owns the workspace. Select subfields such as `{ id slug name }`. |
+| `folder`       | `Folder`           | The folder the workspace belongs to, if any.                                           |
+| `archived`     | `Boolean`          | Whether the workspace is archived.                                                     |
+| `isTemplate`   | `Boolean!`         | Whether this workspace is a template.                                                  |
+| `createdAt`    | `DateTime!`        | Creation timestamp.                                                                    |
+| `updatedAt`    | `DateTime!`        | Last-update timestamp.                                                                 |
 
-There is no `companyId` scalar on `Project` — the organization is exposed as the `company` relation. Select `company { id slug name }` when you need its identifiers.
+There is no `companyId` scalar on `Workspace` — the organization is exposed as the `organization` relation. Select `organization { id slug name }` when you need its identifiers.
 
 ## Create from a template
 
@@ -108,7 +108,7 @@ Pass a `templateId` to seed the new workspace from an existing template. This co
 
 ```graphql
 mutation CreateFromTemplate {
-  createProject(
+  createWorkspace(
     input: { companyId: "company_123", name: "Q1 Marketing Campaign", templateId: "project_123" }
   ) {
     id
@@ -168,7 +168,7 @@ The `coverConfig` input controls how record cover images are chosen in the new w
 
 ```graphql
 mutation CreateWithCoverConfig {
-  createProject(
+  createWorkspace(
     input: {
       companyId: "company_123"
       name: "Q1 Marketing Campaign"

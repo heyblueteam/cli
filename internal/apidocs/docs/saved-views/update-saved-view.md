@@ -7,7 +7,7 @@ order: 2
 
 Use the `editSavedView` mutation to change a saved view's name, icon, sharing status, or configuration. This page also covers the three related mutations that operate on existing views: `updateSavedViewPosition` (reorder), `setWorkspaceDefaultView` (set the workspace-wide default), and `setUserDefaultView` (set your personal default). Saved views are `SavedView` objects scoped to a workspace (`Project`).
 
-All examples are sent to `https://api.blue.app/graphql` with your authentication headers (`X-Bloo-Token-ID`, `X-Bloo-Token-Secret`, `X-Bloo-Company-ID`). Header names are case-insensitive.
+All examples are sent to `https://api.blue.app/graphql` with your authentication headers (`blue-token-id`, `blue-token-secret`, `blue-org-id`). Header names are case-insensitive.
 
 <Callout variant="info" title="viewType is immutable">
 

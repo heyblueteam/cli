@@ -7,23 +7,23 @@ order: 3
 
 The Blue API is a single GraphQL endpoint that exposes the same data and actions you use in the app: workspaces, records, custom fields, comments, files, and more. Every capability below is reachable from one endpoint — `https://api.blue.app/graphql` for queries and mutations, and `wss://api.blue.app/graphql` for real-time subscriptions.
 
-Records are `Todo` objects in the API and workspaces are `Project` objects; the table maps each capability to a concrete operation and a page that covers it in depth.
+Records are `Record` objects in the API and workspaces are `Workspace` objects; the table maps each capability to a concrete operation and a page that covers it in depth.
 
 | Capability | What it does                                        | Example operation                   | Deep dive                                          |
 | ---------- | --------------------------------------------------- | ----------------------------------- | -------------------------------------------------- |
-| Read       | Fetch exactly the fields you ask for in one request | `todoQueries { todos }`             | [List records](/api/records/list-records)          |
-| Paginate   | Page through large result sets with `skip`/`take`   | `projectList` → `ProjectPagination` | [List workspaces](/api/workspaces/list-workspaces) |
-| Write      | Create, update, and delete data with mutations      | `createTodo`                        | [Records](/api/records)                            |
+| Read       | Fetch exactly the fields you ask for in one request | `recordQueries { todos }`           | [List records](/api/records/list-records)          |
+| Paginate   | Page through large result sets with `skip`/`take`   | `workspaceList` → `ProjectPagination` | [List workspaces](/api/workspaces/list-workspaces) |
+| Write      | Create, update, and delete data with mutations      | `createRecord`                      | [Records](/api/records)                            |
 | Subscribe  | Stream changes in real time over a WebSocket        | `onMoveTodo`                        | [Real-time overview](/api/realtime)                |
 | Introspect | Discover the schema programmatically                | `__schema`                          | —                                                  |
 
 ## Read
 
-Queries fetch only the fields you select, so a single request can return a precise slice of data instead of a fixed payload. Records are read through `todoQueries { todos(filter: TodosFilter!) }` — the `filter` requires `companyIds`, and you narrow further with optional fields like `projectIds` or `done`.
+Queries fetch only the fields you select, so a single request can return a precise slice of data instead of a fixed payload. Records are read through `recordQueries { todos(filter: TodosFilter!) }` — the `filter` requires `companyIds`, and you narrow further with optional fields like `projectIds` or `done`.
 
 ```graphql
 query ListRecords {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], projectIds: ["project_123"] }) {
       items {
         id
@@ -39,7 +39,7 @@ query ListRecords {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -61,7 +61,7 @@ List queries return a paginated result, not a bare array. Each paginated type ex
 
 ```graphql
 query ListWorkspaces {
-  projectList(filter: { companyIds: ["company_123"] }, skip: 0, take: 20) {
+  workspaceList(filter: { companyIds: ["company_123"] }, skip: 0, take: 20) {
     items {
       id
       name
@@ -80,7 +80,7 @@ query ListWorkspaces {
 ```json
 {
   "data": {
-    "projectList": {
+    "workspaceList": {
       "items": [{ "id": "clm4n8qwx000008l0g4oxdqn7", "name": "Marketing" }],
       "pageInfo": {
         "totalItems": 42,
@@ -102,11 +102,11 @@ query ListWorkspaces {
 
 ## Write
 
-Mutations create, update, and delete data. The example below creates a record with `createTodo`; `title` is the only required input field, and the call returns the new `Todo` so you can read fields back in the same request.
+Mutations create, update, and delete data. The example below creates a record with `createRecord`; `title` is the only required input field, and the call returns the new `Record` so you can read fields back in the same request.
 
 ```graphql
 mutation CreateRecord {
-  createTodo(input: { todoListId: "list_123", title: "Draft launch plan" }) {
+  createRecord(input: { todoListId: "list_123", title: "Draft launch plan" }) {
     id
     title
     done
@@ -117,7 +117,7 @@ mutation CreateRecord {
 ```json
 {
   "data": {
-    "createTodo": {
+    "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Draft launch plan",
       "done": false
@@ -130,7 +130,7 @@ There is no generic "bulk write" endpoint, but several mutations operate on mult
 
 ## Subscribe
 
-Subscriptions stream changes in real time so you never have to poll. They run over a WebSocket at `wss://api.blue.app/graphql` using the [`graphql-ws`](https://github.com/enisdenjo/graphql-ws) protocol — the same URL as the HTTP API, with credentials passed once in `connectionParams` at connection time. The example below pushes a `Todo` every time a record moves within a workspace.
+Subscriptions stream changes in real time so you never have to poll. They run over a WebSocket at `wss://api.blue.app/graphql` using the [`graphql-ws`](https://github.com/enisdenjo/graphql-ws) protocol — the same URL as the HTTP API, with credentials passed once in `connectionParams` at connection time. The example below pushes a `Record` every time a record moves within a workspace.
 
 ```graphql
 subscription OnRecordMoved {

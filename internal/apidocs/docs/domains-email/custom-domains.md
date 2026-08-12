@@ -221,7 +221,7 @@ mutation DeleteCustomDomain {
 
 Use the `customDomains` query to page through an organization's domains. It returns a `CustomDomainPagination` object — `items` plus a [`pageInfo`](#pageinfo). Unlike the mutations, this query requires only organization membership, not the `white_label` feature.
 
-Pass `filter.companyId` to target a specific organization — useful when your token belongs to multiple organizations. Omit it and the query falls back to the organization in your `X-Bloo-Company-ID` header.
+Pass `filter.companyId` to target a specific organization — useful when your token belongs to multiple organizations. Omit it and the query falls back to the organization in your `blue-org-id` header.
 
 ### Request
 
@@ -259,7 +259,7 @@ query CustomDomains {
 
 | Field       | Type     | Required | Description                                                                                                                 |
 | ----------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `companyId` | `String` | No       | Organization to list domains for. Accepts an ID or slug. If omitted, falls back to the organization in `X-Bloo-Company-ID`. |
+| `companyId` | `String` | No       | Organization to list domains for. Accepts an ID or slug. If omitted, falls back to the organization in `blue-org-id`. |
 
 ### Response
 
@@ -311,7 +311,7 @@ query CustomDomains {
 
 | Code                | When                                                                     |
 | ------------------- | ------------------------------------------------------------------------ |
-| `COMPANY_NOT_FOUND` | No `filter.companyId` and no `X-Bloo-Company-ID` header to fall back to. |
+| `COMPANY_NOT_FOUND` | No `filter.companyId` and no `blue-org-id` header to fall back to. |
 | `FORBIDDEN`         | You are not a member of the target organization.                         |
 
 ## Setting up a custom domain end to end

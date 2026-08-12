@@ -5,17 +5,17 @@ icon: CheckSquare
 order: 9
 ---
 
-A checkbox custom field stores a single boolean value on a record — checked, unchecked, or unset. Use it for binary flags such as approvals, sign-offs, and confirmations. Checkbox fields are the `CHECKBOX` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects; records are `Todo` objects.
+A checkbox custom field stores a single boolean value on a record — checked, unchecked, or unset. Use it for binary flags such as approvals, sign-offs, and confirmations. Checkbox fields are the `CHECKBOX` value of the `CustomFieldType` enum. Custom fields are `CustomField` objects; records are `Record` objects.
 
 ## Overview
 
 A checkbox field holds one of three states per record: `true` (checked), `false` (unchecked), or `null` (never set). The value lives on the record, so the same field can be checked on one record and unset on another.
 
-Checkbox fields are scoped to a single workspace by the `X-Bloo-Project-ID` request header — there is no `projectId` argument on the create input.
+Checkbox fields are scoped to a single workspace by the `blue-workspace-id` request header — there is no `projectId` argument on the create input.
 
 ## Create
 
-Use the `createCustomField` mutation with `type: CHECKBOX`. Set the workspace with the `X-Bloo-Project-ID` header.
+Use the `createCustomField` mutation with `type: CHECKBOX`. Set the workspace with the `blue-workspace-id` header.
 
 ```graphql
 mutation CreateCheckboxField {
@@ -70,11 +70,11 @@ mutation CreateCheckboxFieldWithHelp {
 
 ## Set a value
 
-Use the `setTodoCustomField` mutation with the `checked` argument. The mutation returns `Boolean!` (`true` on success) — it does not return the updated record, so do not select subfields on it.
+Use the `setRecordCustomField` mutation with the `checked` argument. The mutation returns `Boolean!` (`true` on success) — it does not return the updated record, so do not select subfields on it.
 
 ```graphql
 mutation CheckTheBox {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: true })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: true })
 }
 ```
 
@@ -82,11 +82,11 @@ Pass `checked: false` to uncheck:
 
 ```graphql
 mutation UncheckTheBox {
-  setTodoCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: false })
+  setRecordCustomField(input: { todoId: "todo_123", customFieldId: "field_123", checked: false })
 }
 ```
 
-### SetTodoCustomFieldInput
+### SetRecordCustomFieldInput
 
 Only the fields relevant to a checkbox are shown; the input is shared across all field types.
 
@@ -101,7 +101,7 @@ Only the fields relevant to a checkbox are shown; the input is shared across all
 ```json
 {
   "data": {
-    "setTodoCustomField": true
+    "setRecordCustomField": true
   }
 }
 ```
@@ -110,11 +110,11 @@ To read the value back after setting it, query the record (see [Read a value](#r
 
 ## Set a value at record creation
 
-Use the `createTodo` mutation to set a checkbox while creating the record. Inside `customFields`, the value is passed as a **string** (`value: "true"`) — `createTodo` takes a single `value` string per field, not the typed `checked` boolean used by `setTodoCustomField`.
+Use the `createRecord` mutation to set a checkbox while creating the record. Inside `customFields`, the value is passed as a **string** (`value: "true"`) — `createRecord` takes a single `value` string per field, not the typed `checked` boolean used by `setRecordCustomField`.
 
 ```graphql
 mutation CreateRecordWithCheckbox {
-  createTodo(
+  createRecord(
     input: {
       title: "Review contract"
       todoListId: "list_123"
@@ -132,7 +132,7 @@ mutation CreateRecordWithCheckbox {
 }
 ```
 
-The elements of `Todo.customFields` are `CustomField` objects, not a junction type. Select the type-specific value field (`checked`) directly on the element.
+The elements of `Record.customFields` are `CustomField` objects, not a junction type. Select the type-specific value field (`checked`) directly on the element.
 
 ### Accepted string values
 
@@ -147,17 +147,17 @@ At record creation the value string is matched **exactly and case-sensitively**:
 
 <Callout variant="info" title="String matching is exact only at creation">
 
-The case-sensitive `"true"` / `"1"` / `"checked"` parsing applies only to the `value` string on `createTodo`. The `setTodoCustomField` mutation takes a real `Boolean` (`checked`), so there is no string parsing to worry about there.
+The case-sensitive `"true"` / `"1"` / `"checked"` parsing applies only to the `value` string on `createRecord`. The `setRecordCustomField` mutation takes a real `Boolean` (`checked`), so there is no string parsing to worry about there.
 
 </Callout>
 
 ## Read a value
 
-`Todo.customFields` returns `[CustomField!]!` — a list of `CustomField` objects, one per field set on the record. There is no `TodoCustomField` wrapper. Select the `CustomField` fields you need on each element; for a checkbox, `checked` is the typed boolean read.
+`Record.customFields` returns `[CustomField!]!` — a list of `CustomField` objects, one per field set on the record. There is no `RecordCustomField` wrapper. Select the `CustomField` fields you need on each element; for a checkbox, `checked` is the typed boolean read.
 
 ```graphql
 query RecordCheckboxValues {
-  todoQueries {
+  recordQueries {
     todos(filter: { companyIds: ["company_123"], todoListIds: ["list_123"] }) {
       items {
         id
@@ -177,7 +177,7 @@ query RecordCheckboxValues {
 ```json
 {
   "data": {
-    "todoQueries": {
+    "recordQueries": {
       "todos": {
         "items": [
           {
@@ -230,7 +230,7 @@ query RecordCheckboxValues {
 
 ## Related
 
-- [Set custom field values](/api/custom-fields/custom-field-values) — the shared `setTodoCustomField` reference across all field types.
+- [Set custom field values](/api/custom-fields/custom-field-values) — the shared `setRecordCustomField` reference across all field types.
 - [Create a custom field](/api/custom-fields/create-custom-fields) — the full `createCustomField` reference.
 - [Single-select field](/api/custom-fields/select-single) — for more than two mutually exclusive options.
 - [Custom Fields overview](/api/custom-fields) — all field types and concepts.
