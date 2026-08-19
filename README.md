@@ -10,13 +10,27 @@ brew install heyblueteam/tap/blue-cli
 
 ## Setup
 
+The quickest way — sign in with your browser:
+
+```bash
+blue login
+```
+
+This opens a browser to the Blue consent screen and stores the session in
+`~/.config/blue/config.env`. The connection appears under
+Account → Security → Connected apps as "Blue CLI"; `blue logout` (or revoking
+it there) ends it.
+
+For scripts, CI, and agents without a browser, use a personal access token
+(get it from Account Settings > API > Generate Token):
+
 ```bash
 blue init
 ```
 
-This prompts for your API credentials (get them from Account Settings > API > Generate Token) and saves them to `~/.config/blue/config.env`.
+This prompts for your API credentials and saves them to `~/.config/blue/config.env`.
 
-For scripts and agents, pass all three credentials to skip every prompt:
+To skip every prompt:
 
 ```bash
 blue init --client-id <id> --auth-token <secret> --company-id acme
@@ -48,6 +62,16 @@ AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
 DEFAULT_WORKSPACE_ID=your_default_workspace_id_or_slug
+```
+
+After `blue login`, the config additionally holds a browser session under its
+own keys (PAT fields, if present, are untouched); the access token refreshes
+automatically:
+
+```env
+OAUTH_CLIENT_ID=registered_client_id
+OAUTH_ACCESS_TOKEN=oauth_access_token
+OAUTH_REFRESH_TOKEN=oauth_refresh_token
 ```
 
 **Getting Your Credentials:**
@@ -565,6 +589,8 @@ cli/
 │   │   └── main.go      # Entry point
 │   ├── root.go          # Root command, global config
 │   ├── init.go          # blue init
+│   ├── login.go         # blue login (browser OAuth)
+│   ├── logout.go        # blue logout
 │   ├── activity/        # blue activity *
 │   ├── api/             # blue api *
 │   ├── bootstrap/       # blue bootstrap *

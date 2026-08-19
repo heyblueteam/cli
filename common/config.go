@@ -31,13 +31,21 @@ func LoadDefaultWorkspace() string {
 	return strings.TrimSpace(os.Getenv("DEFAULT_WORKSPACE_ID"))
 }
 
-// WriteConfigFile writes a map back to config.env
+// WriteConfigFile writes a map back to config.env. Mode 0600 — the file holds
+// credentials (AUTH_TOKEN / REFRESH_TOKEN).
 func WriteConfigFile(values map[string]string) error {
 	path := ConfigPath()
 	if path == "" {
 		return fmt.Errorf("could not determine config path")
 	}
-	return godotenv.Write(values, path)
+	content, err := godotenv.Marshal(values)
+	if err != nil {
+		return fmt.Errorf("could not serialize config: %w", err)
+	}
+	if err := os.MkdirAll(ConfigDir(), 0700); err != nil {
+		return fmt.Errorf("could not create config directory: %w", err)
+	}
+	return os.WriteFile(path, []byte(content), 0600)
 }
 
 // GetCompanies returns the list of known company slugs from config

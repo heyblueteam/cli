@@ -39,7 +39,9 @@ If `--workspace` is not passed and `DEFAULT_WORKSPACE_ID` is set (via
 ### Setup and context
 
 ```bash
-blue init                       # Interactive credential setup -> ~/.config/blue/config.env
+blue login                      # Browser sign-in (OAuth) -> ~/.config/blue/config.env
+blue logout                     # Revoke the browser session server-side + clear locally
+blue init                       # Interactive PAT setup -> ~/.config/blue/config.env
 blue init --client-id <ID> --auth-token <SECRET> --company-id acme   # Non-interactive
 blue init --client-id <ID> --auth-token <SECRET> --company-id acme --api-url <URL>
 blue whoami                     # Current user, company, API URL, default workspace, config path
@@ -608,6 +610,8 @@ cli/
 │   │   └── main.go      # Entry point — calls cmd.Execute()
 │   ├── root.go          # Root command, --company flag, default-workspace fill-in
 │   ├── init.go          # blue init
+│   ├── login.go         # blue login (browser OAuth, loopback callback)
+│   ├── logout.go        # blue logout (revoke + clear)
 │   ├── activity/        # blue activity *
 │   ├── api/             # blue api *
 │   ├── bootstrap/       # blue bootstrap *
@@ -654,6 +658,10 @@ cli/
 
 ### Authentication (`common/auth.go`)
 - `Client` struct with GraphQL request method
+- Two credential shapes: PAT (`CLIENT_ID` + `AUTH_TOKEN` sent as `X-Bloo-Token-*`
+  headers) or OAuth from `blue login` (`OAUTH_ACCESS_TOKEN` sent as
+  `Authorization: Bearer`, refreshed transparently and retried once on 401 —
+  `common/oauth.go`)
 - Environment variables from `.env` file
 - Workspace context via `X-Bloo-Project-Id` header (API still uses project terminology)
 - 30-second timeout for requests
@@ -668,15 +676,26 @@ order, highest first:
 process environment  >  ./.env  >  ~/.config/blue/config.env
 ```
 
-`blue init`, `blue company use`, and `blue context set-workspace` all write to
-the global config file.
+`blue init`, `blue login`, `blue company use`, and `blue context set-workspace`
+all write to the global config file.
 
 ### Required Environment Variables
+
+Either a PAT (`blue init`):
 ```
 API_URL=https://api.blue.app/graphql
 AUTH_TOKEN=your_personal_access_token
 CLIENT_ID=your_client_id
 COMPANY_ID=your_company_slug
+```
+
+or a browser session (`blue login`; company is optional — `--company` selects
+per command):
+```
+API_URL=https://api.blue.app/graphql
+OAUTH_CLIENT_ID=registered_client_id
+OAUTH_ACCESS_TOKEN=oauth_access_token
+OAUTH_REFRESH_TOKEN=oauth_refresh_token
 ```
 
 ### Optional Environment Variables
