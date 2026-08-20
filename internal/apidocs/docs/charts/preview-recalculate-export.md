@@ -216,15 +216,27 @@ mutation RecalculateCharts {
 }
 ```
 
-`recalculateCharts` returns a nullable `Boolean` (`true` on success), so it takes no sub-selection.
+`recalculateCharts` keeps its established `Boolean` response for compatibility. It takes no sub-selection.
 
 ### Parameters
 
 #### RecalculateChartsInput
 
-| Parameter  | Type         | Required | Description                                                                                |
-| ---------- | ------------ | -------- | ------------------------------------------------------------------------------------------ |
-| `chartIds` | `[String!]!` | Yes      | IDs of saved charts to recalculate. You must have view access to **every** id in the list. |
+| Parameter  | Type         | Required | Description                                                                                                                                                            |
+| ---------- | ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chartIds` | `[String!]!` | Yes      | IDs of saved charts to recalculate. You must have view access to **every** id in the list.                                                                             |
+| `auto`     | `Boolean`    | No       | Set to `true` for an automatic background refresh. The server skips charts that are not stale or are still inside their cooldown, so the returned list can be shorter. |
+
+For automatic refresh coordination, call `scheduleChartRecalculations` with the same input. It returns `ScheduleChartRecalculationsResult!`, containing the chart IDs that the server scheduled and the configured retry delay. It also skips charts whose last computation exceeded the cost limit.
+
+```graphql
+mutation ScheduleChartRecalculations {
+  scheduleChartRecalculations(input: { chartIds: ["chart_123", "chart_456"], auto: true }) {
+    scheduledChartIds
+    retryAfterSeconds
+  }
+}
+```
 
 ### Response
 
@@ -236,7 +248,7 @@ mutation RecalculateCharts {
 }
 ```
 
-Each recalculated chart is republished over [`subscribeToChart`](/api/charts/query-charts) as a `ChartSubscriptionPayload` with `mutation: UPDATED`, carrying the recomputed `isCalculating`/`needCalculation`/`formulaResult` values on `node`. The mutation itself returns only the boolean — read the new numbers from the subscription or by re-querying [`chart`/`charts`](/api/charts/query-charts).
+Each recalculated chart is republished over [`subscribeToChart`](/api/charts/query-charts) as a `ChartSubscriptionPayload` with `mutation: UPDATED`, carrying the recomputed `isCalculating`/`needCalculation`/`formulaResult` values on `node`. Read the new numbers from the subscription or by re-querying [`chart`/`charts`](/api/charts/query-charts). `scheduleChartRecalculations` is the automatic-refresh variant; it returns the IDs that passed the stale, cost, and cooldown guards.
 
 ### Errors
 

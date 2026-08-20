@@ -16,12 +16,18 @@ To pull specific data _out_ of linked records (their tags, assignees, or a singl
 | Property          | Value                                                                      |
 | ----------------- | -------------------------------------------------------------------------- |
 | `CustomFieldType` | `REFERENCE`                                                                |
-| Set with          | `setRecordCustomField` → `customFieldReferenceTodoIds: [String!]`            |
-| Read with         | `selectedTodos: [Record!]` (always an array) — or the raw `value` JSON       |
+| Set with          | `setRecordCustomField` → `customFieldReferenceTodoIds: [String!]`          |
+| Read with         | `selectedTodos: [Record!]` (always an array) — or the raw `value` JSON     |
 | Target workspace  | Required: `referenceProjectId`                                             |
 | Cardinality       | `referenceMultiple` — UI selection only; the wire shape is always an array |
 
 `referenceMultiple` controls how many records a user can pick in the app (one vs. many). It does **not** change the API shape: you always set values with the `customFieldReferenceTodoIds` array and read them back from the `selectedTodos` array.
+
+### Creating records from the picker
+
+`referenceAllowCreate` (default `false`) lets people create a record in the target workspace directly from the field's picker in the app, instead of only linking records that already exist.
+
+Read `canCreateReferenceRecords: Boolean` on `CustomField` to know whether the **calling user** gets that affordance. It is `true` only when `referenceAllowCreate` is on **and** the caller could already create a record in `referenceProjectId`. Both are UI signals — `createTodo` in the target workspace remains the enforcement point, so a client that ignores them gains nothing.
 
 ## Create
 
@@ -74,14 +80,15 @@ mutation CreateFilteredReferenceField {
 
 ### CreateCustomFieldInput (Reference fields)
 
-| Parameter            | Type               | Required | Description                                                                                                                              |
-| -------------------- | ------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`               | `String!`          | Yes      | Display name of the field.                                                                                                               |
-| `type`               | `CustomFieldType!` | Yes      | Must be `REFERENCE`.                                                                                                                     |
-| `referenceProjectId` | `String`           | Yes      | ID of the workspace whose records can be linked. Schema-optional, but required for `REFERENCE` — omitting it returns `BAD_USER_INPUT`.   |
-| `referenceMultiple`  | `Boolean`          | No       | Allow linking more than one record. Defaults to single-select. UI cardinality only.                                                      |
-| `referenceFilter`    | `TodoFilterInput`  | No       | Narrows which records appear in the picker. Common fields: `tagIds`, `assigneeIds`, `todoListIds`, `showCompleted`, `dueStart`/`dueEnd`. |
-| `description`        | `String`           | No       | Help text shown with the field.                                                                                                          |
+| Parameter              | Type               | Required | Description                                                                                                                              |
+| ---------------------- | ------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                 | `String!`          | Yes      | Display name of the field.                                                                                                               |
+| `type`                 | `CustomFieldType!` | Yes      | Must be `REFERENCE`.                                                                                                                     |
+| `referenceProjectId`   | `String`           | Yes      | ID of the workspace whose records can be linked. Schema-optional, but required for `REFERENCE` — omitting it returns `BAD_USER_INPUT`.   |
+| `referenceMultiple`    | `Boolean`          | No       | Allow linking more than one record. Defaults to single-select. UI cardinality only.                                                      |
+| `referenceAllowCreate` | `Boolean`          | No       | Let people create a record in the target workspace from the field's picker. Defaults to `false`.                                         |
+| `referenceFilter`      | `TodoFilterInput`  | No       | Narrows which records appear in the picker. Common fields: `tagIds`, `assigneeIds`, `todoListIds`, `showCompleted`, `dueStart`/`dueEnd`. |
+| `description`          | `String`           | No       | Help text shown with the field.                                                                                                          |
 
 `referenceFilter` accepts the same `TodoFilterInput` used by record queries — see [List records](/api/records/list-records) for the full field set. The filter shapes the picker only; it is **not** enforced when you set a value through the API.
 
@@ -262,13 +269,13 @@ mutation CreateRecordWithReference {
 
 ## Errors
 
-| Code                     | When                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------- |
-| `BAD_USER_INPUT`         | `referenceProjectId` is missing on a `REFERENCE` field at create time.                              |
-| `PROJECT_NOT_FOUND`      | `referenceProjectId` does not resolve to a workspace you can access.                                |
+| Code                     | When                                                                                                  |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `BAD_USER_INPUT`         | `referenceProjectId` is missing on a `REFERENCE` field at create time.                                |
+| `PROJECT_NOT_FOUND`      | `referenceProjectId` does not resolve to a workspace you can access.                                  |
 | `CUSTOM_FIELD_NOT_FOUND` | `customFieldId` does not resolve to a field in a workspace you belong to (on `setRecordCustomField`). |
 | `TODO_NOT_FOUND`         | `todoId` does not resolve to a record you can edit.                                                   |
-| `FORBIDDEN`              | You lack permission to manage custom fields in this workspace, or your role cannot edit this field. |
+| `FORBIDDEN`              | You lack permission to manage custom fields in this workspace, or your role cannot edit this field.   |
 
 ## Related
 

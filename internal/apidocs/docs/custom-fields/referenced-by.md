@@ -111,9 +111,17 @@ query RecordReferencedBy {
 
 - The relationship is driven entirely by the source reference field. Adding or removing a reference on a source record updates this field automatically.
 - Use `filters` to scope the incoming records — for example, only source records that are not done.
+- `referencedByResult` is capped at 200 records, ordered newest first.
+
+## Reading values from the source records
+
+Point a [Lookup](/api/custom-fields/lookup) field's `referenceId` at this field to read one value from each record that references this one. That Lookup's `lookupResult` is **positional** over this field's `referencedByResult`: one entry per source record, in the same order, `null` where a source record has no value. Match the two arrays by index only when their lengths agree.
+
+These Lookups are always read-only — write-through editing (`allowEdits`) is rejected for a `REFERENCED_BY` source, because the value belongs to the source record in its own workspace.
 
 ## Related
 
 - [Reference field](/api/custom-fields/reference)
+- [Lookup field](/api/custom-fields/lookup)
 - [Rollup field](/api/custom-fields/rollup)
 - [Custom fields overview](/api/custom-fields)

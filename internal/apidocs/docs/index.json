@@ -294,6 +294,7 @@
         "ChartType",
         "FormulaDisplayInput",
         "ChartMetadataInput",
+        "Bucket order and limit",
         "Stacked bar charts",
         "Response",
         "Returns",
@@ -1324,6 +1325,7 @@
       "order": 25,
       "headings": [
         "Overview",
+        "Creating records from the picker",
         "Create",
         "Multi-select with a filter",
         "CreateCustomFieldInput (Reference fields)",
@@ -1427,6 +1429,9 @@
         "CustomField (Lookup fields)",
         "CustomFieldLookupOption",
         "Response",
+        "Write through to the source record",
+        "Editable targets",
+        "Who may edit",
         "Notes",
         "Errors",
         "Related"
@@ -1448,6 +1453,7 @@
         "Set a value",
         "Read a value",
         "Notes",
+        "Reading values from the source records",
         "Related"
       ]
     },
@@ -3051,6 +3057,7 @@
         "RepeatingTodoEndInput",
         "RepeatingTodoRepeatType",
         "RepeatingTodoAllowedField",
+        "RepeatingTodoDueDateMode",
         "RepeatingTodoIntervalType",
         "RepeatingTodoMonthType",
         "RepeatingTodoEndType",
@@ -3163,6 +3170,7 @@
         "`report` arguments",
         "`reports` arguments",
         "ReportFilter",
+        "Listing every report in an organization",
         "Response",
         "ReportPagination",
         "Report",
@@ -3404,6 +3412,7 @@
         "Find your Company and Project IDs",
         "Expiration",
         "Revoke a token",
+        "Connector authorization (OAuth 2.1)",
         "Authentication errors",
         "Authenticating subscriptions",
         "Related"

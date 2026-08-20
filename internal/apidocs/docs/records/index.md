@@ -248,7 +248,7 @@ mutation CreateRecordAdvanced {
 
 ## Behavior
 
-- **Position.** When `position` is set it wins. Otherwise `placement` decides: the default (no placement) and `TOP` insert above the current first record; `BOTTOM` inserts after the last. The gap constant `65535` is only used directly when the list is empty.
+- **Placement.** Send `previousId`/`nextId` to insert a record directly between two existing records (the recommended input). Otherwise `placement` decides: the default (no placement) and `TOP` insert above the current first record; `BOTTOM` inserts after the last. `position` is deprecated and ignored — it no longer selects anything.
 - **Dates.** Passing only `duedAt` sets `startedAt` to the start of that day; passing only `startedAt` sets `duedAt` to the same point in time. Pass both to control each independently.
 - **Tags.** A `CreateRecordTagInput` with a `title` reuses an existing tag of the same title and color, or creates a new one (default color `#4a9fff`). A `title` with no match creates the tag.
 - **Custom fields.** Each value is parsed by the field's type; computed fields ignore supplied values. If the record's workspace uses a name-formula field, the returned `title` reflects the computed name rather than the literal input.

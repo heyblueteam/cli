@@ -33,7 +33,7 @@ mutation UpdateRecord {
 
 <Callout variant="info" title="Set the workspace header">
 
-`editRecord` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; the header determines which one the move/position change applies to.
+`editRecord` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; the header determines which one the move applies to.
 
 </Callout>
 
@@ -53,7 +53,7 @@ mutation UpdateRecord {
 | `granularity` | `DateGranularity`         | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](#all-day-vs-timed-dates). Omit to infer from the values sent.                                         |
 | `color`       | `String`                  | No       | Record color as a hex code (see [Color options](#color-options)).                                                                                         |
 | `cover`       | `String`                  | No       | Cover image URL for the record.                                                                                                                           |
-| `position`    | `Float`                   | No       | New sort position within its list. Applies only in the record's original workspace.                                                                       |
+| `position`    | `Float`                   | No       | Deprecated and ignored since the position freeze — it selects nothing.                                                                       |
 | `todoListId`  | `String`                  | No       | Move the record to this list. To move across workspaces, prefer [Move Record to List](/api/records/move-record-list).                                     |
 | `tags`        | `[CreateRecordTagInput!]` | No       | **Replaces** the record's entire tag set with these tags. Pass `[]` to clear all tags. See [Tags](/api/records/tags) for an add/remove-style alternative. |
 
@@ -131,7 +131,7 @@ Each entry either references an existing tag by `id`, or creates/matches one by 
 | `title`              | `String!`         | Record title.                                                                  |
 | `text`               | `String!`         | Description as plain text.                                                     |
 | `html`               | `String!`         | Description as HTML.                                                           |
-| `position`           | `Float!`          | Sort position within the list.                                                 |
+| `position`           | `Float!`          | Deprecated — frozen legacy value; order records by `rank`.                    |
 | `color`              | `String`          | Record color hex code.                                                         |
 | `cover`              | `String`          | Cover image URL.                                                               |
 | `startedAt`          | `DateTime`        | Start of the due-date range.                                                   |
@@ -142,7 +142,7 @@ Each entry either references an existing tag by `id`, or creates/matches one by 
 
 ## Full example
 
-Replace the tag set, move the record to a new list, set a position, and set a due-date range in one call.
+Replace the tag set, move the record to a new list, reorder it with `previousId`/`nextId`, and set a due-date range in one call.
 
 ```graphql
 mutation UpdateRecordFull {
@@ -150,7 +150,8 @@ mutation UpdateRecordFull {
     input: {
       todoId: "todo_123"
       todoListId: "list_123"
-      position: 65535
+      previousId: "todo_456"
+      nextId: "todo_789"
       color: "#91cfff"
       startedAt: "2026-06-01T09:00:00Z"
       duedAt: "2026-06-05T17:00:00Z"

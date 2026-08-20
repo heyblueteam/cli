@@ -92,7 +92,6 @@ The input for `createWorkspaceUserRole`. Only `projectId` and `name` are require
 | `isDocsEnabled`             | `Boolean`                                  | No       | `false`  | Access to docs.                                                     |
 | `isFilesEnabled`            | `Boolean`                                  | No       | `false`  | Access to files.                                                    |
 | `isFormsEnabled`            | `Boolean`                                  | No       | `false`  | Access to forms.                                                    |
-| `isWikiEnabled`             | `Boolean`                                  | No       | `false`  | Access to the wiki.                                                 |
 | `isPeopleEnabled`           | `Boolean`                                  | No       | `false`  | Access to the people/members section.                               |
 | **Visibility filters**      |                                            |          |          |                                                                     |
 | `showOnlyAssignedTodos`     | `Boolean`                                  | No       | `false`  | Members see only records assigned to them.                          |
@@ -242,11 +241,10 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 | `isRecordsEnabled`          | `Boolean`                      | Records access.                                                           |
 | `isActivityEnabled`         | `Boolean`                      | Activity access.                                                          |
 | `isChatEnabled`             | `Boolean`                      | Chat access.                                                              |
-| `isDocsEnabled`             | `Boolean`                      | Docs access.                                                              |
-| `isFilesEnabled`            | `Boolean`                      | Files access.                                                             |
-| `isFormsEnabled`            | `Boolean`                      | Forms access.                                                             |
-| `isWikiEnabled`             | `Boolean`                      | Wiki access.                                                              |
-| `isPeopleEnabled`           | `Boolean`                      | People section access.                                                    |
+| `isDocsEnabled`              | `Boolean`                      | Docs access (every page, legacy wiki pages included).                    |
+| `isFilesEnabled`             | `Boolean`                      | Files access.                                                             |
+| `isFormsEnabled`             | `Boolean`                      | Forms access.                                                             |
+| `isPeopleEnabled`            | `Boolean`                      | People section access.                                                    |
 | **Visibility filters**      |                                |                                                                           |
 | `showOnlyAssignedTodos`     | `Boolean`                      | Restricts records to those assigned to the member.                        |
 | `showOnlyMentionedComments` | `Boolean`                      | Restricts comments to those mentioning the member.                        |

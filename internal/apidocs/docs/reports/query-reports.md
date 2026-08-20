@@ -72,16 +72,23 @@ The organization is identified by `companyId` (accepts the organization ID or sl
 
 ### ReportFilter
 
-| Field         | Type      | Required | Description                                                                                |
-| ------------- | --------- | -------- | ------------------------------------------------------------------------------------------ |
-| `companyId`   | `String!` | Yes      | The organization (`Company`) to list reports for. Accepts ID or slug.                      |
-| `createdById` | `String`  | No       | Restrict the list to reports created by this user. Applied on top of the visibility scope. |
+| Field         | Type      | Required | Description                                                                                                                            |
+| ------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `companyId`   | `String!` | Yes      | The organization (`Company`) to list reports for. Accepts ID or slug.                                                                  |
+| `createdById` | `String`  | No       | Restrict the list to reports created by this user. Applied on top of the visibility scope.                                             |
+| `adminView`   | `Boolean` | No       | Return every report in the organization, not only yours and those shared with you. Honoured only for an OWNER or ADMIN of `companyId`. |
 
 <Callout variant="info" title="Pagination is applied after the visibility scope">
 
 `reports` first loads every report you created or that was shared with you in the organization, sorts them by `updatedAt` descending, then applies `createdById`, `skip`, and `take`. `totalCount` reflects the count after filtering but before pagination; `hasNextPage` is `skip + take < totalCount` and `hasPreviousPage` is `skip > 0`.
 
 </Callout>
+
+### Listing every report in an organization
+
+`adminView: true` drops the created-by / shared-with restriction, so the list returns every report in `companyId`. Use it to reach reports left behind by people who have left the organization.
+
+The server proves the caller's membership rather than trusting the flag: it checks for an `OWNER` or `ADMIN` `CompanyUser` row in that same `companyId`. A caller who is neither is **silently narrowed** to their normal scope rather than refused — the query succeeds and simply returns their own visible reports. Because the check is against the requested organization, passing another organization's id reaches nothing.
 
 ## Response
 
@@ -213,7 +220,7 @@ Both queries require an authenticated user. `report` raises `REPORT_NOT_FOUND` r
 Report visibility is per-report, independent of workspace membership:
 
 - **`report` (view)** — succeeds only if you are the report's `createdBy` **or** appear in its `reportUsers` (with either `EDITOR` or `VIEWER` role).
-- **`reports` (list)** — returns every report in `filter.companyId` that you created **or** that was shared with you, sorted by `updatedAt` descending. Reports you cannot see are silently excluded; the `createdById` filter narrows this set further.
+- **`reports` (list)** — returns every report in `filter.companyId` that you created **or** that was shared with you, sorted by `updatedAt` descending. Reports you cannot see are silently excluded; the `createdById` filter narrows this set further. An organization OWNER or ADMIN can pass [`adminView: true`](#listing-every-report-in-an-organization) to widen the list to every report in that organization.
 
 Modifying, deleting, and exporting reports have their own (different) access tiers — see [Manage Report Access](/api/reports/manage-report-access), [Duplicate & Delete a Report](/api/reports/duplicate-and-delete-report), and [Export a Report](/api/reports/export-report).
 

@@ -5,7 +5,9 @@ icon: Key
 order: 1
 ---
 
-The Blue API authenticates every request with a **personal access token (PAT)** — a Token ID and a Secret you generate in the app and send as headers on each request. There are no API keys or OAuth apps to register; a token belongs to a user and inherits that user's permissions.
+The Blue API authenticates every request with a **personal access token (PAT)** — a Token ID and a Secret you generate in the app and send as headers on each request. There are no API keys to register; a token belongs to a user and inherits that user's permissions.
+
+Blue also runs an OAuth 2.1 authorization server, but it serves **MCP connectors only** — its tokens are not accepted here. See [Connector authorization (OAuth 2.1)](#connector-authorization-oauth-2-1) below.
 
 The base endpoint is `https://api.blue.app/graphql` for HTTP requests and `wss://api.blue.app/graphql` for subscriptions.
 
@@ -89,6 +91,39 @@ mutation RevokeToken {
 ```
 
 The mutation returns `true` on success and throws `PERSONAL_ACCESS_TOKEN_NOT_FOUND` if no token with that `id` belongs to you. Deleting a token takes effect on the next request.
+
+## Connector authorization (OAuth 2.1)
+
+Blue exposes an OAuth 2.1 authorization server so an MCP client — Claude.ai, ChatGPT, or one you build — can connect on a user's behalf without that user generating a PAT. It is reached through the MCP endpoint, not the GraphQL API:
+
+| Endpoint                                  | Purpose                                   |
+| ----------------------------------------- | ----------------------------------------- |
+| `https://mcp.blue.app/mcp`                | The MCP endpoint itself.                  |
+| `/.well-known/oauth-protected-resource`   | Resource metadata (RFC 9728).             |
+| `/.well-known/oauth-authorization-server` | Authorization server metadata (RFC 8414). |
+| `/oauth2/register`                        | Dynamic Client Registration (RFC 7591).   |
+| `/oauth2/authorize`                       | Authorization request.                    |
+| `/oauth2/token`                           | Token and refresh.                        |
+| `/oauth2/revoke`                          | Token revocation (RFC 7009).              |
+
+Discover the endpoints rather than hard-coding them: an unauthenticated request to `/mcp` returns `401` with a `WWW-Authenticate` header pointing at the resource metadata, and the metadata documents point on to the rest.
+
+What a client must do:
+
+- **Register dynamically.** Only public clients are accepted. Redirect URIs must be `https` and are matched exactly; `http://localhost` is accepted for local clients. Registration is rate-limited per IP.
+- **Use PKCE with `S256`.** It is required, not optional. `code` is the only response type, and `authorization_code` and `refresh_token` are the only grant types.
+- **Use each authorization code once.** A replayed code is refused.
+- **Rotate refresh tokens.** The old refresh token stays usable for a 60-second grace window so a racing client is not broken. A replay outside that window revokes the whole grant.
+
+A grant covers every organization the user belongs to — the same reach as their web session, and no more. Pass the organization per call rather than in a header.
+
+<Callout variant="warning" title="Connector tokens do not work on the GraphQL or REST API">
+
+An access token issued by this server is confined to the MCP endpoint. Sending one to `https://api.blue.app/graphql` or the REST API fails as if no credentials were sent. Use a personal access token for direct API integrations.
+
+</Callout>
+
+Access tokens last 24 hours, but revocation is immediate: Blue checks the grant on every MCP request, so disconnecting an app under **Account > Access > Connected apps** takes effect on its next call. For the end-user walkthrough, see [Claude & ChatGPT](/docs/integrations/claude-chatgpt).
 
 ## Authentication errors
 

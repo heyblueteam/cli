@@ -52,11 +52,11 @@ mutation CreateChart {
 
 #### ChartType
 
-| Value  | Description                                                          |
-| ------ | -------------------------------------------------------------------- |
-| `STAT` | A single headline number (one segment value, or a formula rollup).   |
-| `PIE`  | A pie chart — either manual segments or a grouped `query`.           |
-| `BAR`  | A bar chart — either manual segments or a grouped `query`.           |
+| Value  | Description                                                        |
+| ------ | ------------------------------------------------------------------ |
+| `STAT` | A single headline number (one segment value, or a formula rollup). |
+| `PIE`  | A pie chart — either manual segments or a grouped `query`.         |
+| `BAR`  | A bar chart — either manual segments or a grouped `query`.         |
 
 #### FormulaDisplayInput
 
@@ -72,15 +72,15 @@ mutation CreateChart {
 One shape for every chart. Supply `query` for an auto-generated chart; omit it for a
 manual one, whose numbers come from its `chartSegments` instead.
 
-| Parameter      | Type                       | Required | Description                                                                        |
-| -------------- | -------------------------- | -------- | ---------------------------------------------------------------------------------- |
-| `query`        | `ChartQueryInput`          | No       | What to group by and what to measure. Omit for a manual chart.                     |
-| `presentation` | `ChartPresentationInput`   | No       | How the result is dressed — stacking, target, thresholds, context band.            |
+| Parameter      | Type                     | Required | Description                                                             |
+| -------------- | ------------------------ | -------- | ----------------------------------------------------------------------- |
+| `query`        | `ChartQueryInput`        | No       | What to group by and what to measure. Omit for a manual chart.          |
+| `presentation` | `ChartPresentationInput` | No       | How the result is dressed — stacking, target, thresholds, context band. |
 
 `ChartQueryInput`:
 
-| Parameter    | Type                     | Required | Description                                                                                        |
-| ------------ | ------------------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| Parameter    | Type                      | Required | Description                                                                                        |
+| ------------ | ------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
 | `dimensions` | `[ChartDimensionInput!]!` | Yes      | What records are grouped into. One entry today.                                                    |
 | `metrics`    | `[ChartMetricInput!]!`    | Yes      | What is measured per group. More than one plots several series over the same grouping.             |
 | `breakout`   | `ChartBreakoutInput`      | No       | A second grouping that splits every bucket into slices. See [stacked charts](#stacked-bar-charts). |
@@ -88,28 +88,50 @@ manual one, whose numbers come from its `chartSegments` instead.
 
 `ChartDimensionInput`:
 
-| Field                           | Type                    | Required | Description                                                                                                                                                                      |
-| ------------------------------- | ----------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field                           | Type                    | Required | Description                                                                                                                                                                              |
+| ------------------------------- | ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`                          | `BarChartXAxisType!`    | Yes      | What to bucket records by: `PROJECT`, `ASSIGNEE`, `TAG`, `CUSTOM_FIELD`, `TODO`, `TODO_LIST`, `TODO_STATUS`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`, `TODO_COMPLETED_AT`. |
-| `title`                         | `String`                | No       | Optional axis label.                                                                                                                                                             |
-| `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date dimensions: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.                                                                                                      |
-| `customFieldName`               | `String`                | No       | Custom-field name when `type` is `CUSTOM_FIELD`.                                                                                                                                 |
-| `customFieldType`               | `CustomFieldType`       | No       | Type of that custom field.                                                                                                                                                       |
-| `customFieldReferenceProjectId` | `String`                | No       | For reference custom fields, the referenced project.                                                                                                                             |
+| `title`                         | `String`                | No       | Optional axis label.                                                                                                                                                                     |
+| `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date dimensions: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.                                                                                                              |
+| `customFieldName`               | `String`                | No       | Custom-field name when `type` is `CUSTOM_FIELD`.                                                                                                                                         |
+| `customFieldType`               | `CustomFieldType`       | No       | Type of that custom field.                                                                                                                                                               |
+| `customFieldReferenceProjectId` | `String`                | No       | For reference custom fields, the referenced project.                                                                                                                                     |
+| `order`                         | `ChartOrderInput`       | No       | How the buckets are arranged. Omit to take the order the aggregate produced. See [bucket order and limit](#bucket-order-and-limit).                                                      |
+| `limit`                         | `Int`                   | No       | Keep only the first N buckets after ordering. `1`–`200`. Omit to draw every bucket.                                                                                                      |
+
+#### Bucket order and limit
+
+`ChartOrderInput` decides the order the buckets are drawn in. Ordering happens after every measure has been computed, not in the aggregate, so a chart with several metrics keeps one bucket order.
+
+| Field       | Type                   | Required | Description                                                                              |
+| ----------- | ---------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `by`        | `ChartOrderBy!`        | Yes      | `VALUE` (the measure), `LABEL` (the bucket's name), or `FIELD` (a column of the record). |
+| `direction` | `ChartSortDirection!`  | Yes      | `ASC` or `DESC`.                                                                         |
+| `metricKey` | `String`               | No       | Which metric ranks the buckets, when `by` is `VALUE` and the chart has more than one.    |
+| `field`     | `ChartOrderFieldInput` | No       | Required when `by` is `FIELD`. Names the record column to sort on.                       |
+
+Two orders are refused with `BAD_USER_INPUT`:
+
+- `FIELD` unless the dimension `type` is `TODO`. Only a record axis has exactly one value per bucket to sort on.
+- `LABEL` on a dimension that buckets by date (`TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`, `TODO_COMPLETED_AT`, or a `DATE` custom field). Those labels are formatted dates, so an alphabetical sort would put `Apr 2026` before `Jan 2026`.
+
+`limit` needs a resolvable order to decide which buckets stay — either an explicit `order`, or the display type's own default. A `leaderboard` ranks by `VALUE DESC` on its own, so it accepts a limit without an `order`; a `funnel` takes no order at all and so takes no limit. A limit with no resolvable order, or outside `1`–`200`, is refused with `BAD_USER_INPUT`.
+
+The limit is a display concern: the aggregate still computes and stores every bucket, and [exports](/api/charts/preview-recalculate-export) still cover every record the chart counted. Read the value back from `limit` on the `ChartDimension` output type.
 
 `ChartMetricInput`:
 
-| Field                           | Type                         | Required | Description                                                                                                    |
-| ------------------------------- | ---------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `key`                           | `String`                     | No       | Unique within the chart. Omit and Blue assigns one from the metric's position.                                  |
-| `title`                         | `String`                     | No       | Optional series label.                                                                                         |
-| `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied to the measured records. Omit for a plain record count.                                       |
-| `filter`                        | `TodoFilterInput`            | No       | Narrows this metric only, so two metrics can measure different slices of the same grouping.                    |
-| `color`                         | `String`                     | No       | Explicit series colour. Omit to take the palette colour for the metric's position.                             |
-| `axis`                          | `ChartMetricAxis`            | No       | `LEFT` (default) or `RIGHT`, so two metrics in different units can share a chart.                              |
-| `customFieldName`               | `String`                     | No       | Custom-field name to aggregate.                                                                                |
-| `customFieldType`               | `CustomFieldType`            | No       | Type of that custom field.                                                                                     |
-| `customFieldReferenceProjectId` | `String`                     | No       | For reference custom fields, the referenced project.                                                           |
+| Field                           | Type                         | Required | Description                                                                                 |
+| ------------------------------- | ---------------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `key`                           | `String`                     | No       | Unique within the chart. Omit and Blue assigns one from the metric's position.              |
+| `title`                         | `String`                     | No       | Optional series label.                                                                      |
+| `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied to the measured records. Omit for a plain record count.                   |
+| `filter`                        | `TodoFilterInput`            | No       | Narrows this metric only, so two metrics can measure different slices of the same grouping. |
+| `color`                         | `String`                     | No       | Explicit series colour. Omit to take the palette colour for the metric's position.          |
+| `axis`                          | `ChartMetricAxis`            | No       | `LEFT` (default) or `RIGHT`, so two metrics in different units can share a chart.           |
+| `customFieldName`               | `String`                     | No       | Custom-field name to aggregate.                                                             |
+| `customFieldType`               | `CustomFieldType`            | No       | Type of that custom field.                                                                  |
+| `customFieldReferenceProjectId` | `String`                     | No       | For reference custom fields, the referenced project.                                        |
 
 `ChartPresentationInput` carries `stackMode`, `target`, `direction`, `bands` and `context`. None of it affects which records the chart covers.
 
@@ -117,10 +139,10 @@ manual one, whose numbers come from its `chartSegments` instead.
 
 A `BAR` chart can add a second grouping dimension so each bucket is split into stacked slices — records per assignee within each workspace, for example. Set `breakout` on `ChartQueryInput` to turn this on, and `presentation.stackMode` to choose how the slices combine.
 
-| Parameter                 | Type                 | Required | Description                                                                            |
-| ------------------------- | -------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `query.breakout`          | `ChartBreakoutInput` | No       | The dimension each bucket is split by. Omit for a single-series chart.                 |
-| `presentation.stackMode`  | `ChartStackMode`     | No       | How the slices combine. Ignored when there is no `breakout`. Omit for a stacked chart. |
+| Parameter                | Type                 | Required | Description                                                                            |
+| ------------------------ | -------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `query.breakout`         | `ChartBreakoutInput` | No       | The dimension each bucket is split by. Omit for a single-series chart.                 |
+| `presentation.stackMode` | `ChartStackMode`     | No       | How the slices combine. Ignored when there is no `breakout`. Omit for a stacked chart. |
 
 `ChartBreakoutInput` mirrors the dimension input, minus `interval` — bucketing a date axis by another date is not a composition:
 
@@ -157,20 +179,20 @@ For `chartSegments` (manual charts), the segment and value input fields are docu
 
 `createChart` returns the new `Chart`.
 
-| Field                     | Type               | Description                                                                            |
-| ------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
-| `id`                      | `ID!`              | Unique identifier of the chart.                                                        |
-| `title`                   | `String!`          | Chart title.                                                                           |
-| `position`                | `Float!`           | Sort position within the dashboard.                                                    |
-| `type`                    | `ChartType!`       | `STAT`, `PIE`, or `BAR`.                                                               |
-| `chartSegments`           | `[ChartSegment!]!` | Manual segments. Empty for an auto-generated chart.                                    |
-| `metadata`                | `ChartMetadata`    | The `query`/`presentation` config. `query` is `null` on a manual chart.                |
-| `display`                 | `FormulaDisplay`   | Display formatting (`type`, `currency`, `precision`, `function`).                      |
-| `isCalculating`           | `Boolean`          | A recompute is currently in progress.                                                  |
-| `needCalculation`         | `Boolean`          | Results are stale or pending — a calculation is queued.                                |
-| `isCalculatingWithFilter` | `Boolean`          | Set transiently when the chart is read through `charts(filter.todoFilter)`.            |
-| `createdAt`               | `DateTime!`        | When the chart was created.                                                            |
-| `updatedAt`               | `DateTime!`        | When the chart was last modified.                                                      |
+| Field                     | Type               | Description                                                                 |
+| ------------------------- | ------------------ | --------------------------------------------------------------------------- |
+| `id`                      | `ID!`              | Unique identifier of the chart.                                             |
+| `title`                   | `String!`          | Chart title.                                                                |
+| `position`                | `Float!`           | Sort position within the dashboard.                                         |
+| `type`                    | `ChartType!`       | `STAT`, `PIE`, or `BAR`.                                                    |
+| `chartSegments`           | `[ChartSegment!]!` | Manual segments. Empty for an auto-generated chart.                         |
+| `metadata`                | `ChartMetadata`    | The `query`/`presentation` config. `query` is `null` on a manual chart.     |
+| `display`                 | `FormulaDisplay`   | Display formatting (`type`, `currency`, `precision`, `function`).           |
+| `isCalculating`           | `Boolean`          | A recompute is currently in progress.                                       |
+| `needCalculation`         | `Boolean`          | Results are stale or pending — a calculation is queued.                     |
+| `isCalculatingWithFilter` | `Boolean`          | Set transiently when the chart is read through `charts(filter.todoFilter)`. |
+| `createdAt`               | `DateTime!`        | When the chart was created.                                                 |
+| `updatedAt`               | `DateTime!`        | When the chart was last modified.                                           |
 
 ### Full example
 
@@ -287,12 +309,12 @@ mutation EditChart {
 
 #### EditChartInput
 
-| Parameter  | Type                  | Required | Description                                                                                       |
-| ---------- | --------------------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `id`       | `String!`             | Yes      | ID of the chart to edit.                                                                          |
-| `title`    | `String`              | No       | New title.                                                                                        |
-| `position` | `Float`               | No       | New sort position within the dashboard.                                                           |
-| `display`  | `FormulaDisplayInput` | No       | New display formatting. Replaces the existing `display`.                                          |
+| Parameter  | Type                  | Required | Description                                                                                           |
+| ---------- | --------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `id`       | `String!`             | Yes      | ID of the chart to edit.                                                                              |
+| `title`    | `String`              | No       | New title.                                                                                            |
+| `position` | `Float`               | No       | New sort position within the dashboard.                                                               |
+| `display`  | `FormulaDisplayInput` | No       | New display formatting. Replaces the existing `display`.                                              |
 | `metadata` | `ChartMetadataInput`  | No       | New `query`/`presentation` config. Changing the query re-triggers an asynchronous result calculation. |
 
 <Callout variant="info" title="Editing metadata recalculates; editing title/position/display does not">
@@ -435,10 +457,10 @@ If the chart is found but the delete itself fails, the mutation returns `{ "succ
 
 Two enums share the same seven members but live in different places — keep them straight in examples:
 
-| Enum                         | Where it appears                                                    | Members                                                       |
-| ---------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `ChartFunction`              | `FormulaDisplayInput.function` (the chart-level display rollup)     | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
-| `ChartSegmentValueFunctions` | Each segment value and each chart metric (`function`)              | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
+| Enum                         | Where it appears                                                | Members                                                       |
+| ---------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
+| `ChartFunction`              | `FormulaDisplayInput.function` (the chart-level display rollup) | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
+| `ChartSegmentValueFunctions` | Each segment value and each chart metric (`function`)           | `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, `MAX` |
 
 ## Position defaults
 

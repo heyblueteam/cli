@@ -436,6 +436,12 @@ query GetChartMetadata {
           interval
           customFieldName
           customFieldType
+          order {
+            by
+            direction
+            metricKey
+          }
+          limit
         }
         metrics {
           key
@@ -471,6 +477,8 @@ query GetChartMetadata {
 ```
 
 `query.dimensions[0]` carries the grouping (`type` is a `BarChartXAxisType`, with an optional `interval` for date dimensions) and `query.metrics` carries the aggregates (`function` is a `ChartSegmentValueFunctions`; omit it for a plain record count). Bar and pie are the same query — they differ only in `displayType`. `query` is `null` on a manual chart. The full shapes are documented in [Create and manage charts](/api/charts/manage-charts).
+
+A dimension also carries how its buckets are arranged. `order` is `null` when the chart takes the order the aggregate produced, and `limit` is `null` when the chart draws every bucket. Select both if you rebuild a chart's configuration from a read — they are the only record of a saved order and bucket limit, and the segments in `chartSegments` are returned in full whether or not a limit is set.
 
 ### PageInfo
 
