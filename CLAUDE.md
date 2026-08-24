@@ -210,6 +210,10 @@ blue rec count --workspace <ID> --done false --list <ID>
 
 # Delete records
 blue rec delete --record <ID> --confirm
+
+# Link a GitHub pull request through the workspace integration
+blue rec link-pr --record <ID> --pr 2016
+blue rec link-pr --record <ID> --pr https://github.com/owner/repo/pull/2016 --simple
 ```
 
 **Custom Field Filter Operators:** `EQ`, `NE`, `GT`, `GTE`, `LT`, `LTE`, `IN`, `NIN`, `CONTAINS`, `IS`, `NOT`

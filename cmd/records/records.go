@@ -9,7 +9,7 @@ var Cmd = &cobra.Command{
 	Use:     "records",
 	Aliases: []string{"rec"},
 	Short:   "Manage records",
-	Long:    "Create, list, get, update, delete, move, and count records within workspaces.",
+	Long:    "Create, list, get, update, delete, move, count, and link records within workspaces.",
 }
 
 func init() {
@@ -20,4 +20,5 @@ func init() {
 	Cmd.AddCommand(deleteCmd)
 	Cmd.AddCommand(moveCmd)
 	Cmd.AddCommand(countCmd)
+	Cmd.AddCommand(newLinkPRCmd())
 }
