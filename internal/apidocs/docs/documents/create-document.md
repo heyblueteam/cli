@@ -1,13 +1,13 @@
 ---
 title: Create and edit documents
-description: Create, update, and delete rich-text Documents and Wiki pages in a workspace, including the content/contentBase64 split and the anti-wipe guard.
+description: Create, update, and delete rich-text Documents and Wiki pages in a workspace using HTML.
 icon: FileText
 order: 1
 ---
 
 Use the `createDocument`, `updateDocument`, and `deleteDocument` mutations to manage the lifecycle of a rich-text document — a collaboratively-edited page that lives inside a workspace. Workspaces are `Project` objects in the API, and each document is a `Document`. The same `Document` row powers both regular documents and Wiki pages: set `wiki: true` on create to make it a Wiki page.
 
-A document carries two content representations. `content` is the rendered HTML. `contentBase64` is the base64-encoded collaborative-editing snapshot (the Yjs binary state the editor syncs over WebSocket). When you create a document from the API, sending `content` is usually enough; `contentBase64` is for clients that maintain their own collab state.
+Use `content` to read or write the document body as HTML. Blue converts it to the same collaborative state used by the editor. The raw collaboration state is internal and is not part of the public API.
 
 This page covers rich-text documents only. The separate Portable Document subsystem (PDF templates for printing record data) is documented under [Build Portable Document templates](/api/documents/portable-documents).
 
@@ -48,13 +48,12 @@ mutation CreateWikiPage {
 
 ### CreateDocumentInput
 
-| Parameter       | Type      | Required | Description                                                                                                                                                          |
-| --------------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `projectId`     | `String!` | Yes      | ID or slug of the workspace (`Project`) the document belongs to.                                                                                                     |
-| `title`         | `String`  | No       | Document title. Defaults to an empty string if omitted.                                                                                                              |
-| `content`       | `String`  | No       | Document body as HTML. Defaults to an empty string if omitted.                                                                                                       |
-| `contentBase64` | `String`  | No       | Base64-encoded collaborative-editing snapshot. Leave unset unless your client manages its own collab state.                                                          |
-| `wiki`          | `Boolean` | No       | When `true`, the document is a Wiki page instead of a regular document. The workspace must have the corresponding feature enabled (see [Permissions](#permissions)). |
+| Parameter   | Type      | Required | Description                                                                                                                                                          |
+| ----------- | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectId` | `String!` | Yes      | ID or slug of the workspace (`Project`) the document belongs to.                                                                                                     |
+| `title`     | `String`  | No       | Document title. Defaults to an empty string if omitted.                                                                                                              |
+| `content`   | `String`  | No       | Document body as HTML. Defaults to an empty document if omitted.                                                                                                     |
+| `wiki`      | `Boolean` | No       | When `true`, the document is a Wiki page instead of a regular document. The workspace must have the corresponding feature enabled (see [Permissions](#permissions)). |
 
 ## Response
 
@@ -75,18 +74,17 @@ mutation CreateWikiPage {
 
 The fields available on the returned `Document` type.
 
-| Field           | Type        | Description                                              |
-| --------------- | ----------- | -------------------------------------------------------- |
-| `id`            | `ID!`       | Unique document identifier.                              |
-| `uid`           | `String!`   | Short stable identifier used in URLs.                    |
-| `title`         | `String!`   | Document title.                                          |
-| `content`       | `String`    | Document body as HTML.                                   |
-| `contentBase64` | `String`    | Base64-encoded collaborative-editing snapshot.           |
-| `wiki`          | `Boolean`   | `true` if this is a Wiki page; otherwise `null`/`false`. |
-| `project`       | `Project!`  | The workspace the document belongs to.                   |
-| `createdBy`     | `User!`     | The user who created the document.                       |
-| `createdAt`     | `DateTime!` | When the document was created.                           |
-| `updatedAt`     | `DateTime!` | When the document was last modified.                     |
+| Field       | Type        | Description                                              |
+| ----------- | ----------- | -------------------------------------------------------- |
+| `id`        | `ID!`       | Unique document identifier.                              |
+| `uid`       | `String!`   | Short stable identifier used in URLs.                    |
+| `title`     | `String!`   | Document title.                                          |
+| `content`   | `String`    | Document body as HTML.                                   |
+| `wiki`      | `Boolean`   | `true` if this is a Wiki page; otherwise `null`/`false`. |
+| `project`   | `Project!`  | The workspace the document belongs to.                   |
+| `createdBy` | `User!`     | The user who created the document.                       |
+| `createdAt` | `DateTime!` | When the document was created.                           |
+| `updatedAt` | `DateTime!` | When the document was last modified.                     |
 
 ## Update a document
 
@@ -110,20 +108,12 @@ mutation UpdateDocument {
 
 ### UpdateDocumentInput
 
-| Parameter       | Type      | Required | Description                                                                                                                                                                              |
-| --------------- | --------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`            | `ID!`     | Yes      | ID of the document to update.                                                                                                                                                            |
-| `title`         | `String`  | No       | New title.                                                                                                                                                                               |
-| `content`       | `String`  | No       | New HTML body.                                                                                                                                                                           |
-| `contentBase64` | `String`  | No       | New collaborative-editing snapshot. Subject to the anti-wipe guard below.                                                                                                                |
-| `wiki`          | `Boolean` | No       | Flip the document between document and Wiki page. The caller must have permission for both the current and the resulting type.                                                           |
-| `userId`        | `String`  | No       | Service-only attribution field used by Blue's collaboration server. **Not for client use** — it is validated server-side and rejected on regular calls. See [Permissions](#permissions). |
-
-<Callout variant="warning" title="Anti-wipe guard">
-
-If `contentBase64` is provided and decodes to empty (or undecodable) collab state while the document already has real content, `updateDocument` rejects the call with `BAD_USER_INPUT` rather than blanking the document. This protects against a stale or disconnected client overwriting good content. Title-only updates (no `contentBase64`) are never affected.
-
-</Callout>
+| Parameter | Type      | Required | Description                                                                                                                    |
+| --------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `id`      | `ID!`     | Yes      | ID of the document to update.                                                                                                  |
+| `title`   | `String`  | No       | New title.                                                                                                                     |
+| `content` | `String`  | No       | New HTML body. An explicit empty string clears the body. If omitted, the existing body is unchanged.                           |
+| `wiki`    | `Boolean` | No       | Flip the document between document and Wiki page. The caller must have permission for both the current and the resulting type. |
 
 ## Delete a document
 
@@ -141,20 +131,18 @@ mutation DeleteDocument {
 
 ## Errors
 
-| Code                 | Operation                          | When                                                                                                                                                         |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_NOT_FOUND`  | `createDocument`                   | No workspace matches `projectId`.                                                                                                                            |
-| `DOCUMENT_NOT_FOUND` | `updateDocument`, `deleteDocument` | No document matches `id`.                                                                                                                                    |
-| `FORBIDDEN`          | all                                | The caller isn't an ADMIN/OWNER/MEMBER on the workspace, or the workspace doesn't have the docs (or wiki) feature enabled for the caller's role.             |
-| `BAD_USER_INPUT`     | `updateDocument`                   | The anti-wipe guard rejected a `contentBase64` that would blank existing content, or a service call supplied a `userId` that doesn't resolve to a real user. |
-| `RATE_LIMITED`       | `createDocument`                   | More than 5 `createDocument` calls in the 60-second window for the same user (default limit).                                                                |
-| `UNAUTHENTICATED`    | all                                | The request carries no valid credentials.                                                                                                                    |
+| Code                 | Operation                          | When                                                                                                         |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `PROJECT_NOT_FOUND`  | `createDocument`                   | No workspace matches `projectId`.                                                                            |
+| `DOCUMENT_NOT_FOUND` | `updateDocument`, `deleteDocument` | No document matches `id`.                                                                                    |
+| `FORBIDDEN`          | all                                | The caller is not an ADMIN/OWNER/MEMBER on the workspace, or their role cannot use the docs or wiki feature. |
+| `RATE_LIMITED`       | `createDocument`                   | More than 5 `createDocument` calls in the 60-second window for the same user (default limit).                |
+| `UNAUTHENTICATED`    | all                                | The request carries no valid credentials.                                                                    |
 
 ## Permissions
 
 - **`createDocument`** requires the caller to be an `ADMIN`, `OWNER`, or `MEMBER` on the workspace, and the workspace must have the relevant feature enabled for that role: the **docs** feature for a regular document, or the **wiki** feature when `wiki: true`. It is rate-limited to a default of **5 requests per 60 seconds per user**.
 - **`updateDocument`** and **`deleteDocument`** require the caller to have permission for the document's type (docs for documents, wiki for Wiki pages). For an update that flips `wiki`, the caller needs permission for both the current and the resulting type. `deleteDocument` also succeeds for the document's original creator.
-- **`updateDocument`** additionally accepts internal Blue service callers. The `userId` field exists only for that path — Blue's collaboration server passes it to attribute an edit to the right user. The server validates it against a real `User` and rejects it otherwise, so regular API clients should never set it; the editing user is taken from your credentials.
 
 ## Related
 

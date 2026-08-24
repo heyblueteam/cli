@@ -176,7 +176,7 @@ query WorkspaceLists {
   recordLists(projectId: "project_123") {
     id
     title
-    position
+    rank
     todosCount
   }
 }
@@ -191,7 +191,7 @@ query PaginatedLists {
       items {
         id
         title
-        position
+        rank
       }
       pageInfo {
         totalItems
@@ -202,14 +202,14 @@ query PaginatedLists {
 }
 ```
 
-To create a list, use the `createRecordList` mutation. All three inputs — `projectId`, `title`, and `position` — are required:
+To create a list, use the `createRecordList` mutation. `projectId` and `title` are required. Without placement anchors, the new list is added at the far right.
 
 ```graphql
 mutation CreateList {
-  createRecordList(input: { projectId: "project_123", title: "To Do", position: 1.0 }) {
+  createRecordList(input: { projectId: "project_123", title: "To Do" }) {
     id
     title
-    position
+    rank
   }
 }
 ```

@@ -67,6 +67,31 @@ mutation CreateDueDateField {
 
 Set a date with `setRecordCustomField`, supplying `startDate`, `endDate`, and an optional `timezone`. The mutation returns `Boolean!` — it does not return the updated value, so select no subfields. Read the value back with a follow-up query (see [Read a value](#read-a-value)).
 
+<Callout variant="info" title="All-day values">
+
+For a whole-day value, send `startDate`/`endDate` as bare calendar dates —
+`YYYY-MM-DD`, no time, no offset. That is unambiguous, needs no `granularity`
+or `timezone`, and renders as the same calendar day for every viewer:
+
+```graphql
+mutation {
+  setRecordCustomField(
+    input: {
+      todoId: "todo_123"
+      customFieldId: "cf_date"
+      startDate: "2025-01-15"
+      endDate: "2025-01-15"
+    }
+  )
+}
+```
+
+Stores `dateGranularity: ALL_DAY`. Pass `granularity: TIMED` explicitly if you
+mean a precise midnight deadline rather than a calendar day — a bare date, or a
+midnight timestamp, is otherwise read as all-day.
+
+</Callout>
+
 A **single date** has the same `startDate` and `endDate`:
 
 ```graphql

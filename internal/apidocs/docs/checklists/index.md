@@ -170,7 +170,7 @@ query MyChecklistItems {
 | Argument | Type                        | Required | Description                                                                  |
 | -------- | --------------------------- | -------- | ---------------------------------------------------------------------------- |
 | `filter` | `ChecklistItemFilterInput!` | Yes      | Filtering criteria. Pass `{}` to apply none.                                 |
-| `sort`   | `[TodosSort!]`              | No       | Ordering rules, applied in order. See [Sorting](#sorting). Defaults to none. |
+| `sort`   | `[ChecklistItemsSort!]`     | No       | Ordering rules, applied in order. See [Sorting](#sorting). Defaults to none. |
 | `skip`   | `Int`                       | No       | Number of items to skip (offset). Defaults to `0`.                           |
 | `take`   | `Int`                       | No       | Maximum number of items to return (page size). Defaults to `20`.             |
 
@@ -198,13 +198,13 @@ To get everything, leave the field out — don't set it to `false`.
 
 ### Sorting
 
-The `sort` argument is a list of `TodosSort!` values applied in order; append `_ASC` or `_DESC` to each. The `TodosSort` enum is large (it is shared with the records query), but the `checklistItems` resolver only honors the nine values below. Any other value is silently ignored.
+The `sort` argument is a list of `ChecklistItemsSort!` values applied in order; append `_ASC` or `_DESC` to each. These are the nine values it accepts.
 
 | Sort value           | Orders by               |
 | -------------------- | ----------------------- |
 | `title`              | Parent record title     |
 | `todoListTitle`      | List title              |
-| `todoListPosition`   | List position           |
+| `todoListRank`       | List board order        |
 | `position`           | Checklist item position |
 | `startedAt`          | Item start date         |
 | `duedAt`             | Item due date           |
