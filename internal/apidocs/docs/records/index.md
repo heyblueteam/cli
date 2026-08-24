@@ -26,7 +26,7 @@ The `blue-workspace-id` header scopes record operations to one workspace. Compan
 | Create a record                                        | `createRecord` mutation           | Add a record to a list, with optional tags, assignees, dates, checklists, and custom field values. Documented below. |
 | [List records](/api/records/list-records)              | `recordQueries { todos }` query   | Retrieve and filter records in a workspace.                                                                          |
 | [Update a record](/api/records/update-record)          | `editRecord` mutation             | Change a record's title, dates, or other fields.                                                                     |
-| [Toggle completion](/api/records/toggle-record-status) | `changeTodoDoneStatus` mutation   | Mark a record done or not done.                                                                                      |
+| [Toggle completion](/api/records/toggle-record-status) | `updateTodoDoneStatus` mutation  | Mark a record done or not done.                                                                                      |
 | [Move a record](/api/records/move-record-list)         | `moveRecord` mutation             | Move a record to a different list.                                                                                   |
 | [Copy a record](/api/records/copy-record)              | `copyRecord` mutation             | Duplicate an existing record.                                                                                        |
 | [Assignees](/api/records/assignees)                    | `setRecordAssignees` mutation     | Assign or unassign users.                                                                                            |
@@ -57,7 +57,7 @@ mutation CreateRecord {
   createRecord(input: { title: "Draft launch plan" }) {
     id
     title
-    position
+    rank
   }
 }
 ```
@@ -70,8 +70,9 @@ mutation CreateRecord {
 | -------------- | ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `title`        | `String!`                            | Yes      | The record's title.                                                                                                                         |
 | `todoListId`   | `String`                             | No       | List to add the record to. If omitted, the workspace's first list is used.                                                                  |
-| `position`     | `Float`                              | No       | Explicit sort position within the list. Overrides `placement` when both are given.                                                          |
-| `placement`    | `CreateRecordInputPlacement`         | No       | Where to insert the record when `position` is not set. Defaults to the top of the list.                                                     |
+| `previousId`   | `String`                             | No       | Insert the record directly below this record. Overrides `placement` when both are given.                                                    |
+| `nextId`       | `String`                             | No       | Insert the record directly above this record.                                                                                              |
+| `placement`    | `CreateRecordInputPlacement`         | No       | Where to insert the record when no anchor is given. Defaults to the top of the list.                                                        |
 | `startedAt`    | `DateTime`                           | No       | Start date/time.                                                                                                                            |
 | `duedAt`       | `DateTime`                           | No       | Due date/time.                                                                                                                              |
 | `timezone`     | `String`                             | No       | IANA timezone used to interpret `startedAt`/`duedAt` (e.g. `America/New_York`). Only affects inference when `granularity` is omitted.       |
@@ -149,7 +150,7 @@ Computed types - `FORMULA`, `LOOKUP`, `ROLLUP`, `REFERENCED_BY`, `TIME_DURATION`
     "createRecord": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Draft launch plan",
-      "position": 131070.42
+      "rank": "a0V"
     }
   }
 }
@@ -164,7 +165,7 @@ The mutation returns the `Record` object. Common fields to select:
 | `id`                 | `ID!`             | Unique identifier for the record.                                                                        |
 | `uid`                | `String!`         | Short reference identifier.                                                                              |
 | `title`              | `String!`         | Record title. If custom fields drive a name formula, this reflects the computed title.                   |
-| `position`           | `Float!`          | Sort position within the list.                                                                           |
+| `rank`               | `String`          | Opaque manual-order key within the list. Compare as strings; do not parse or generate one.                |
 | `text`               | `String!`         | Plain-text body.                                                                                         |
 | `html`               | `String!`         | HTML body.                                                                                               |
 | `done`               | `Boolean!`        | Whether the record is completed.                                                                         |
@@ -204,7 +205,7 @@ mutation CreateRecordAdvanced {
     id
     uid
     title
-    position
+    rank
     startedAt
     duedAt
     todoList {
@@ -248,7 +249,7 @@ mutation CreateRecordAdvanced {
 
 ## Behavior
 
-- **Placement.** Send `previousId`/`nextId` to insert a record directly between two existing records (the recommended input). Otherwise `placement` decides: the default (no placement) and `TOP` insert above the current first record; `BOTTOM` inserts after the last. `position` is deprecated and ignored — it no longer selects anything.
+- **Placement.** Send `previousId`/`nextId` to insert a record directly between two existing records (the recommended input). Otherwise `placement` decides: the default (no placement) and `TOP` insert above the current first record; `BOTTOM` inserts after the last.
 - **Dates.** Passing only `duedAt` sets `startedAt` to the start of that day; passing only `startedAt` sets `duedAt` to the same point in time. Pass both to control each independently.
 - **Tags.** A `CreateRecordTagInput` with a `title` reuses an existing tag of the same title and color, or creates a new one (default color `#4a9fff`). A `title` with no match creates the tag.
 - **Custom fields.** Each value is parsed by the field's type; computed fields ignore supplied values. If the record's workspace uses a name-formula field, the returned `title` reflects the computed name rather than the literal input.

@@ -47,14 +47,14 @@ subscription OnRecordComments {
 | Argument                    | Type               | Required | Description                                                                                                                                               |
 | --------------------------- | ------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `category`                  | `CommentCategory!` | Yes      | Which kind of parent the comments belong to. See the enum below.                                                                                          |
-| `categoryId`                | `String!`          | Yes      | The ID of the parent — a `Chat` ID, a `StatusUpdate` ID, or a `Record` ID, matching `category`.                                                     |
+| `categoryId`                | `String!`          | Yes      | The ID of the parent — a `Chat` ID, a `StatusUpdate` ID, or a `Record` ID, matching `category`.                                                           |
 | `showOnlyMentionedComments` | `Boolean`          | No       | When `true`, deliver only comments where you are the mentioner or the mentionee. The `category`/`categoryId` filter is then ignored. Defaults to `false`. |
 
 #### CommentCategory
 
 | Value           | Parent type    | `categoryId` is the ID of |
 | --------------- | -------------- | ------------------------- |
-| `DISCUSSION`    | `Chat`   | A chat thread       |
+| `DISCUSSION`    | `Chat`         | A chat thread             |
 | `STATUS_UPDATE` | `StatusUpdate` | A status update           |
 | `TODO`          | `Record`       | A record                  |
 
@@ -144,18 +144,18 @@ subscription OnChatTyping {
 
 ### Parameters
 
-| Argument | Type                            | Required | Description                                                                      |
-| -------- | ------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| Argument | Type                            | Required | Description                                                                |
+| -------- | ------------------------------- | -------- | -------------------------------------------------------------------------- |
 | `id`     | `String!`                       | Yes      | The thread ID — a `Chat`, `StatusUpdate`, or `Record` ID, matching `name`. |
-| `name`   | `CommentTypingSubscriptionName` | No       | Which thread surface to watch. Pair it with the matching `id`.                   |
+| `name`   | `CommentTypingSubscriptionName` | No       | Which thread surface to watch. Pair it with the matching `id`.             |
 
 #### CommentTypingSubscriptionName
 
-| Value           | `id` is the ID of   |
-| --------------- | ------------------- |
-| `DISCUSSION`    | A chat thread |
-| `STATUS_UPDATE` | A status update     |
-| `TODO`          | A record            |
+| Value           | `id` is the ID of |
+| --------------- | ----------------- |
+| `DISCUSSION`    | A chat thread     |
+| `STATUS_UPDATE` | A status update   |
+| `TODO`          | A record          |
 
 ### Response
 
@@ -206,8 +206,8 @@ subscription OnChats {
 
 ### Parameters
 
-| Argument    | Type      | Required | Description                                        |
-| ----------- | --------- | -------- | -------------------------------------------------- |
+| Argument    | Type      | Required | Description                                  |
+| ----------- | --------- | -------- | -------------------------------------------- |
 | `projectId` | `String!` | Yes      | The workspace whose chats you want to watch. |
 
 ### Response
@@ -233,12 +233,12 @@ subscription OnChats {
 
 #### Returns — ChatSubscriptionPayload
 
-| Field            | Type                       | Description                            |
-| ---------------- | -------------------------- | -------------------------------------- |
-| `mutation`       | `MutationType!`            | `CREATED`, `UPDATED`, or `DELETED`.    |
-| `node`           | `Chat`               | The chat after the change.       |
+| Field            | Type                 | Description                            |
+| ---------------- | -------------------- | -------------------------------------- |
+| `mutation`       | `MutationType!`      | `CREATED`, `UPDATED`, or `DELETED`.    |
+| `node`           | `Chat`               | The chat after the change.             |
 | `previousValues` | `ChatPreviousValues` | Prior state on `UPDATED`/`DELETED`.    |
-| `updatedFields`  | `[String!]`                | Field names that changed on `UPDATED`. |
+| `updatedFields`  | `[String!]`          | Field names that changed on `UPDATED`. |
 
 ### Errors
 
@@ -382,12 +382,12 @@ subscription OnDocuments {
 
 #### Returns — DocumentSubscriptionPayload
 
-| Field            | Type                     | Description                                                                                                                                 |
-| ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mutation`       | `MutationType!`          | `CREATED`, `UPDATED`, or `DELETED`.                                                                                                         |
-| `node`           | `Document`               | The document after the change. Exposes `id`, `title`, `content`, `contentBase64`, `wiki`, `project`, `createdBy`, `createdAt`, `updatedAt`. |
-| `previousValues` | `DocumentPreviousValues` | Prior state on `UPDATED`/`DELETED`.                                                                                                         |
-| `updatedFields`  | `[String!]`              | Field names that changed on `UPDATED`.                                                                                                      |
+| Field            | Type                     | Description                                                                                                                    |
+| ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `mutation`       | `MutationType!`          | `CREATED`, `UPDATED`, or `DELETED`.                                                                                            |
+| `node`           | `Document`               | The document after the change. Exposes `id`, `title`, `content`, `wiki`, `project`, `createdBy`, `createdAt`, and `updatedAt`. |
+| `previousValues` | `DocumentPreviousValues` | Prior state on `UPDATED`/`DELETED`.                                                                                            |
+| `updatedFields`  | `[String!]`              | Field names that changed on `UPDATED`.                                                                                         |
 
 <Callout variant="info" title="Document metadata vs. live editing">
 

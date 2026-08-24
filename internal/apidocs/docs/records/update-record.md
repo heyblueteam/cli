@@ -53,7 +53,6 @@ mutation UpdateRecord {
 | `granularity` | `DateGranularity`         | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](#all-day-vs-timed-dates). Omit to infer from the values sent.                                         |
 | `color`       | `String`                  | No       | Record color as a hex code (see [Color options](#color-options)).                                                                                         |
 | `cover`       | `String`                  | No       | Cover image URL for the record.                                                                                                                           |
-| `position`    | `Float`                   | No       | Deprecated and ignored since the position freeze — it selects nothing.                                                                       |
 | `todoListId`  | `String`                  | No       | Move the record to this list. To move across workspaces, prefer [Move Record to List](/api/records/move-record-list).                                     |
 | `tags`        | `[CreateRecordTagInput!]` | No       | **Replaces** the record's entire tag set with these tags. Pass `[]` to clear all tags. See [Tags](/api/records/tags) for an add/remove-style alternative. |
 
@@ -75,6 +74,28 @@ mutation SetAllDayDueDate {
   }
 }
 ```
+
+### Bare dates are the clearest way to say "all day"
+
+A `startedAt`/`duedAt` sent as a bare calendar date — `YYYY-MM-DD`, no time, no
+offset — is unambiguously an all-day value. It needs no `granularity` and no
+`timezone`, and it round-trips to the same calendar day for every viewer:
+
+```graphql
+mutation {
+  editRecord(input: { todoId: "todo_123", duedAt: "2026-07-10" }) {
+    id
+    duedAt
+    dueDateGranularity
+  }
+}
+```
+
+Stores `2026-07-10T00:00:00.000Z` with `dueDateGranularity: ALL_DAY`.
+
+Prefer this over a midnight timestamp. `"2026-07-10T00:00:00Z"` reaches the same
+result today, but only by inference — and that inference is what makes the
+warning below necessary. A bare date states the intent outright.
 
 <Callout variant="warning" title="Omitting granularity">
 
@@ -131,7 +152,7 @@ Each entry either references an existing tag by `id`, or creates/matches one by 
 | `title`              | `String!`         | Record title.                                                                  |
 | `text`               | `String!`         | Description as plain text.                                                     |
 | `html`               | `String!`         | Description as HTML.                                                           |
-| `position`           | `Float!`          | Deprecated — frozen legacy value; order records by `rank`.                    |
+| `rank`               | `String`          | Opaque manual-order key within the list.                                       |
 | `color`              | `String`          | Record color hex code.                                                         |
 | `cover`              | `String`          | Cover image URL.                                                               |
 | `startedAt`          | `DateTime`        | Start of the due-date range.                                                   |
@@ -159,7 +180,7 @@ mutation UpdateRecordFull {
     }
   ) {
     id
-    position
+    rank
     color
     startedAt
     duedAt

@@ -23,7 +23,7 @@ query GetRecordList {
     id
     uid
     title
-    position
+    rank
     isLocked
     todosCount
     project {
@@ -43,7 +43,7 @@ query GetWorkspaceLists {
   recordLists(projectId: "project_123") {
     id
     title
-    position
+    rank
     isLocked
     todosCount
   }
@@ -66,7 +66,7 @@ query SearchRecordLists(
       items {
         id
         title
-        position
+        rank
         project {
           id
           name
@@ -89,7 +89,7 @@ query SearchRecordLists(
     "projectIds": ["project_123"],
     "search": "sprint"
   },
-  "sort": ["position_ASC"],
+  "sort": ["rank_ASC"],
   "skip": 0,
   "take": 20
 }
@@ -97,21 +97,21 @@ query SearchRecordLists(
 
 ### Create a list
 
-Use the `createRecordList` mutation. Send `previousId`/`nextId` to place the new list between two existing lists; without them it lands at the far right end. `position` is deprecated and ignored.
+Use the `createRecordList` mutation. Send `previousId`/`nextId` to place the new list between two existing lists; without them it lands at the far right end.
 
 ```graphql
 mutation CreateRecordList {
-  createRecordList(input: { projectId: "project_123", title: "Sprint 1", position: 1 }) {
+  createRecordList(input: { projectId: "project_123", title: "Sprint 1" }) {
     id
     title
-    position
+    rank
   }
 }
 ```
 
 ### Rename or reorder a list
 
-Use the `editRecordList` mutation to change a list's title or locked state, or to reorder it with `previousId`/`nextId`. Only `todoListId` is required; omitted fields are left unchanged. `position` is deprecated and ignored — a reorder without anchors keeps the list where it is.
+Use the `editRecordList` mutation to change a list's title or locked state, or to reorder it with `previousId`/`nextId`. Only `todoListId` is required; omitted fields are left unchanged. A reorder without anchors keeps the list where it is.
 
 ```graphql
 mutation EditRecordList {
@@ -120,7 +120,7 @@ mutation EditRecordList {
   ) {
     id
     title
-    position
+    rank
     isLocked
   }
 }
@@ -175,7 +175,8 @@ mutation MarkListUndone {
 | ----------- | --------- | -------- | ---------------------------------------------------------- |
 | `projectId` | `String!` | Yes      | Workspace the list is created in (ID or slug).             |
 | `title`     | `String!` | Yes      | Display name of the list.                                  |
-| `position`  | `Float!`  | Yes      | Deprecated and ignored since the position freeze; it selects nothing. |
+| `previousId` | `String` | No       | Place the new list directly right of this list. Omit both anchors to land at the far right end. |
+| `nextId`    | `String`  | No       | Place the new list directly left of this list.             |
 
 ### EditRecordListInput
 
@@ -183,7 +184,8 @@ mutation MarkListUndone {
 | ------------ | --------- | -------- | ----------------------------------------------- |
 | `todoListId` | `String!` | Yes      | The list to update.                             |
 | `title`      | `String`  | No       | New display name.                               |
-| `position`   | `Float`   | No       | Deprecated and ignored — use `previousId`/`nextId` to reorder. |
+| `previousId` | `String`  | No       | Move the list to directly right of this list.   |
+| `nextId`     | `String`  | No       | Move the list to directly left of this list.    |
 | `isLocked`   | `Boolean` | No       | Lock the list to prevent further changes to it. |
 
 ### DeleteRecordListInput
@@ -214,7 +216,11 @@ Used by `recordListQueries.todoLists`.
 | `titles`     | `[String!]`  | No       | Match exact list titles.         |
 | `search`     | `String`     | No       | Case-insensitive title search.   |
 
-The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]` (SDL default `[position_ASC]`; for a workspace with stable rank ordering the default resolves to `rank_ASC` — prefer sorting by `rank`, `position` values are deprecated), `skip: Int` (default `0`), `take: Int` (default `20`), and `distinct: [RecordListsFilterDistinct!]` to collapse duplicate rows. `RecordListsFilterDistinct` has a single value, `title`.
+The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]`, `skip: Int` (default `0`), `take: Int` (default `20`), and `distinct: [RecordListsFilterDistinct!]` to collapse duplicate rows. `RecordListsFilterDistinct` has a single value, `title`.
+
+Omit `sort` to order by `rank_ASC`, then by `id` for equal ranks. This is the board's left-to-right order when the query targets one workspace. Each workspace has its own rank space, so a multi-workspace result is deterministic but does not represent one shared board order.
+
+Sending `rank_ASC` or `rank_DESC` explicitly requires exactly one `projectIds` entry. A rank sort must be the only sort and cannot be combined with `distinct`. The retired `position_ASC` and `position_DESC` values are no longer part of `RecordListsSort`.
 
 ### RecordListsSort
 
@@ -226,8 +232,8 @@ The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]` 
 | `createdAt_DESC` | Newest created first.             |
 | `updatedAt_ASC`  | Least recently updated first.     |
 | `updatedAt_DESC` | Most recently updated first.      |
-| `position_ASC`   | Deprecated — by frozen position value, ascending. The default order is `rank_ASC`. |
-| `position_DESC`  | Deprecated — by frozen position value, descending. |
+| `rank_ASC`       | Board order, left to right.       |
+| `rank_DESC`      | Board order, right to left.       |
 
 ## Response
 
@@ -239,7 +245,7 @@ The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]` 
     "createRecordList": {
       "id": "clm4n8qwx000008l0g4oxdqn7",
       "title": "Sprint 1",
-      "position": 1
+      "rank": "a1"
     }
   }
 }
@@ -275,7 +281,7 @@ The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]` 
 | `id`               | `ID!`        | Unique identifier.                                                        |
 | `uid`              | `String!`    | Short human-readable identifier.                                          |
 | `title`            | `String!`    | Display name.                                                             |
-| `position`         | `Float!`     | Deprecated — frozen legacy value; order lists by `rank`.                  |
+| `rank`             | `String`     | Opaque board-order key. Compare two lists' ranks as strings; do not parse or generate one. |
 | `isDisabled`       | `Boolean!`   | Whether the list is disabled.                                             |
 | `isLocked`         | `Boolean`    | Whether the list is locked against changes.                               |
 | `completed`        | `Boolean`    | Whether every record in the list is done.                                 |
@@ -290,7 +296,6 @@ The `recordListQueries.todoLists` field also accepts `sort: [RecordListsSort!]` 
 | `tags`             | `[Tag!]!`    | Distinct tags applied to records in this list.                            |
 | `todos`            | `[Record!]!` | Records in this list (see arguments below).                               |
 | `todosCount`       | `Int!`       | Count of records in this list (accepts the same filter arguments).        |
-| `todosMaxPosition` | `Float!`     | Deprecated — positions no longer track record order; read a record's `rank`. |
 
 The `todos` and `todosCount` fields accept arguments to filter the records they resolve: `search: String`, `tagIds: [String!]`, `assigneeIds: [String!]`, `unassigned: Boolean`, `done: Boolean`, `duedAt: DateTime`, `duedAtStart: DateTime`, `duedAtEnd: DateTime`, `startedAt: DateTime`, `fields: JSON`, and `op: FilterLogicalOperator`. `todos` additionally accepts `first: Int`, `skip: Int`, and `orderBy: TodoOrderByInput`.
 

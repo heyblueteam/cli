@@ -88,7 +88,7 @@ When you archive a record, the API:
 2. Notifies connected clients in real time so the card disappears from open sessions.
 3. Excludes the record from charts and reports, whose counts recalculate accordingly.
 
-The record's list and position are left untouched. `unarchiveRecord` clears the archived flag and timestamp, and the record snaps back to exactly the spot it occupied before — there is no need to move or re-position it.
+The record's list and rank are left untouched. `unarchiveRecord` clears the archived flag and timestamp, and the record snaps back to exactly the spot it occupied before — there is no need to move it.
 
 <Callout variant="info" title="Both mutations are idempotent">
 

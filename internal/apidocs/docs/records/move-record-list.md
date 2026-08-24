@@ -52,9 +52,9 @@ The mutation returns `true` on success. Failures throw an error rather than retu
 | ------------ | ---------- | --------------------------------- |
 | `moveRecord` | `Boolean!` | `true` when the record was moved. |
 
-## Position
+## Placement
 
-The record is placed at the end of the destination list. You cannot specify a position — it is computed as the highest existing position in that list plus `65535` (the standard gap Blue leaves between records so later reorders don't need to renumber the list).
+The record lands at the top of the destination list — next to the greatest `rank` there. You cannot choose the spot on this mutation.
 
 ## Side effects
 

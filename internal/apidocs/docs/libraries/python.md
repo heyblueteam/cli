@@ -108,19 +108,19 @@ Lists the lists inside a workspace. Lists are `TodoList` objects in the API, so 
 def get_todo_lists(self, project_id) -> list
 ```
 
-`project_id` is required (it accepts a workspace ID or slug). The helper pre-selects each list's `id`, `title`, and `position`.
+`project_id` is required (it accepts a workspace ID or slug). The helper pre-selects each list's `id`, `title`, and `rank`.
 
 ```python
 todo_lists = client.get_todo_lists("project_123")
 
 for todo_list in todo_lists:
-    print(todo_list.position, todo_list.title)
+    print(todo_list.rank, todo_list.title)
 ```
 
 ```python
 todo_list.id        # "clm4n8qwx000008l0g4oxdqn7"
 todo_list.title     # "In Progress"
-todo_list.position  # 2.0
+todo_list.rank      # "a1"
 ```
 
 ## Building any operation

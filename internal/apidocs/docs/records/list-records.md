@@ -43,8 +43,8 @@ The `companyIds`, `projectIds`, and `todoListIds` arrays each accept **IDs or sl
 | `filter` | `TodosFilter!` | Yes      | Filter criteria (below). `companyIds` is the only required field.                                                                                            |
 | `sort`   | `[TodosSort!]` | No       | Ordering. Defaults to `[]` (the engine's natural order). Multiple keys apply in sequence.                                                                    |
 | `limit`  | `Int`          | No       | Items per page. Omit to get **20**. Any value over 500 — and any value `<= 0` — is coerced to **500** (the max).                                             |
-| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`. Cannot be combined with `after`.                                                                       |
-| `after`  | `String`       | No       | Opaque keyset cursor for constant-cost pagination on large single-workspace scans. Opt-in and narrowly scoped — see [Cursor pagination](#cursor-pagination). |
+| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`. Cannot be combined with `filter.rankBefore`.                                                            |
+| `after`  | `String`       | No       | **Removed.** Any value returns a `BAD_USER_INPUT` error — see [Cursor pagination](#cursor-pagination).                                                        |
 
 <Callout variant="warning" title="limit: 0 is not the default">
 
@@ -84,7 +84,7 @@ The flat fields below combine with `AND` by default. For mixed AND/OR logic and 
 | `q`                       | `String`                   | Alias of `search`.                                                                                                                                                             |
 | `excludeArchivedProjects` | `Boolean`                  | Exclude records in archived workspaces.                                                                                                                                        |
 | `archived`                | `Boolean`                  | Archive scope. Omitted/`false` → active records (archived excluded); `true` → only archived records (needs the view-archived permission). See [Archive scope](#archive-scope). |
-| `recordName`              | `String`                   | Full-text record-title search (indexed; `CONTAINS` by default, override with `recordNameOp`).                                                                                  |
+| `recordName`              | `String`                   | Record-title substring search (`CONTAINS` by default, override with `recordNameOp`).                                                                                           |
 | `coordinates`             | `JSON`                     | Polygon coordinates for map-view geo filtering.                                                                                                                                |
 | `notAssigneeIds`          | `[String!]`                | Exclude records assigned to any of these users.                                                                                                                                |
 | `notTagIds`               | `[String!]`                | Exclude records carrying any of these tags.                                                                                                                                    |
@@ -108,7 +108,7 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 
 | Value                                                                  | Sorts by                                           |
 | ---------------------------------------------------------------------- | -------------------------------------------------- |
-| `position_ASC` / `position_DESC`                                       | Position within the list (the default list order). |
+| `rank_ASC` / `rank_DESC`                                               | Manual (drag) order within the list. `rank_DESC` is the default list order — highest rank first, matching the board top to bottom. |
 | `title_ASC` / `title_DESC`                                             | Record title, alphabetically.                      |
 | `createdAt_ASC` / `createdAt_DESC`                                     | Creation date.                                     |
 | `updatedAt_ASC` / `updatedAt_DESC`                                     | Last-updated date.                                 |
@@ -119,7 +119,6 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 | `assignees_ASC` / `assignees_DESC`                                     | Assignees.                                         |
 | `todoTags_ASC` / `todoTags_DESC`                                       | Tags.                                              |
 | `todoListTitle_ASC` / `todoListTitle_DESC`                             | List title.                                        |
-| `todoListPosition_ASC` / `todoListPosition_DESC`                       | List position.                                     |
 | `projectName_ASC` / `projectName_DESC`                                 | Workspace name.                                    |
 | `checklistTitle_ASC` / `checklistTitle_DESC`                           | Checklist title.                                   |
 | `checklistItemTitle_ASC` / `checklistItemTitle_DESC`                   | Checklist-item title.                              |
@@ -128,6 +127,14 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 | `todoCustomFieldSelectMulti_ASC` / `todoCustomFieldSelectMulti_DESC`   | A multi-select custom field.                       |
 | `todoCustomFieldAssignee_ASC` / `todoCustomFieldAssignee_DESC`         | An assignee custom field.                          |
 | `todoCustomFieldRollup_ASC` / `todoCustomFieldRollup_DESC`             | A rollup custom field.                             |
+
+### Rank replaces position for manual order
+
+`rank` is the manual-order key for records. The retired `position_ASC` and `position_DESC` values are no longer part of `TodosSort`.
+
+Treat each rank as an opaque string. Compare ranks only between records in the same list. Do not parse a rank, generate one, or compare ranks from different lists. To place or move a record, send `previousId` and/or `nextId`; Blue allocates the new rank.
+
+A rank sort must be the only sort and the filter must resolve to exactly one list. Use `rank_DESC` for the board's top-to-bottom order. For queries that span lists, choose another sort field because each list has its own rank space.
 
 ### FilterLogicalOperator
 
@@ -178,14 +185,14 @@ Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple
 
 | Field             | Type       | Description                                                                                                                                                                                                          |
 | ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `totalItems`      | `Int`      | Total records matching the filter, across all pages. `null` on cursor (`after`) pages — the exact-count query is skipped for speed.                                                                                  |
-| `totalPages`      | `Int`      | Total pages at the current `limit`. `null` on cursor (`after`) pages.                                                                                                                                                |
+| `totalItems`      | `Int`      | Total records matching the filter, across all pages.                                                                                                                                                                 |
+| `totalPages`      | `Int`      | Total pages at the current `limit`.                                                                                                                                                                                  |
 | `page`            | `Int`      | Current page, derived from `skip` and `limit`.                                                                                                                                                                       |
 | `perPage`         | `Int`      | Page size in effect (the resolved `limit`).                                                                                                                                                                          |
 | `hasNextPage`     | `Boolean!` | Whether a next page exists.                                                                                                                                                                                          |
 | `hasPreviousPage` | `Boolean!` | Whether a previous page exists.                                                                                                                                                                                      |
-| `nextCursor`      | `String`   | Opaque cursor to pass as `after` for the next page. Returned on cursor-eligible queries (see [Cursor pagination](#cursor-pagination)); `null` on the final page and on any query not eligible for cursor pagination. |
-| `startCursor`     | `String`   | Deprecated. Use `nextCursor` with the `after` argument instead.                                                                                                                                                      |
+| `nextCursor`      | `String`   | Deprecated. Always `null` on this query — the keyset cursor it fed was retired with `position` ordering.                                                                                                              |
+| `startCursor`     | `String`   | Deprecated. See `nextCursor`.                                                                                                                                                                                        |
 | `endCursor`       | `String`   | Deprecated. See `nextCursor`.                                                                                                                                                                                        |
 
 ### Record
@@ -196,7 +203,7 @@ The most useful fields on each returned record. The `Record` type exposes more �
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`                      | `ID!`             | Unique identifier.                                                                                                                                                        |
 | `uid`                     | `String!`         | Short, human-facing identifier.                                                                                                                                           |
-| `position`                | `Float!`          | Position within its list.                                                                                                                                                 |
+| `rank`                    | `String`          | Opaque manual-order key within its list. Compare two records' ranks as strings; do not parse or generate one.                                                              |
 | `title`                   | `String!`         | Record title.                                                                                                                                                             |
 | `text`                    | `String!`         | Description as plain text.                                                                                                                                                |
 | `html`                    | `String!`         | Description as HTML.                                                                                                                                                      |
@@ -234,7 +241,7 @@ The most useful fields on each returned record. The `Record` type exposes more �
 
 ## Full example
 
-Filter to open, high-priority records in two workspaces, due in 2026, sorted by due date then list position, with a rich selection set.
+Filter to open, high-priority records in two workspaces, due in 2026, sorted by due date then list title, with a rich selection set.
 
 ```graphql
 query ListRecordsAdvanced {
@@ -261,7 +268,7 @@ query ListRecordsAdvanced {
         ]
         op: AND
       }
-      sort: [duedAt_ASC, todoListPosition_ASC]
+      sort: [duedAt_ASC, todoListTitle_ASC]
       limit: 50
       skip: 0
     ) {
@@ -389,34 +396,44 @@ A few things to keep in mind:
 
 ## Cursor pagination
 
-Offset pagination (`skip`) is simple, but it gets more expensive the deeper you page — reaching row 100,000 still means the database walks past the 99,999 rows before it. For large single-workspace scans, the optional `after` argument provides a keyset cursor that seeks directly to the page boundary through an index, so page 100 costs the same as page 1.
+Offset pagination (`skip`) is simple, but it gets more expensive the deeper you page — reaching row 100,000 still means the database walks past the 99,999 rows before it. For large single-list scans, `filter.rankBefore` provides a keyset cursor that seeks directly to the page boundary through an index, so page 100 costs the same as page 1.
 
-`after` is opt-in and deliberately narrow. It is honored only when **all** of the following hold; violating any one returns a `BAD_USER_INPUT` error rather than silently falling back to offset mode:
+<Callout variant="warning" title="`after` has been removed">
 
-- The query is scoped to a single workspace that does not use multi-list records (records that appear in more than one list). Cross-workspace queries are not supported yet — use `skip`.
-- `sort` is exactly `[position_DESC]`. Passing any other sort — including omitting `sort` — is rejected; use `skip` for other orderings.
-- `after` is not combined with `skip`.
+The older `after` cursor only worked with `sort: [position_DESC]`. Position ordering for records is retired, so `after` now returns a `BAD_USER_INPUT` error on every call. Use `rankBefore` below, or `skip`.
 
-To start a chain, run a request that meets those conditions (with or without `skip`) and read `pageInfo.nextCursor` — an eligible offset request hands back a usable cursor from page 1, so there is no dedicated "give me a cursor" round trip. Pass that value as `after` on the next request, and keep following `nextCursor` until it returns `null`, which marks the final page.
+</Callout>
 
-Cursor pages skip the exact-count query for speed, so `pageInfo.totalItems` and `totalPages` come back `null` on any request that passes `after`. Drive the loop with `hasNextPage`/`nextCursor` instead of a total.
+`rankBefore` is opt-in and deliberately narrow. It is honored only when **all** of the following hold; violating any one returns a `BAD_USER_INPUT` error rather than silently falling back to offset mode:
+
+- `filter.todoListIds` names exactly one list.
+- `sort` is exactly one of `[rank_ASC]` or `[rank_DESC]`.
+- `rankBefore` is not combined with `skip`.
+
+To start a chain, run the first page with `sort` and `todoListIds` set and no `rankBefore`. Select `rankPage { status generation }` alongside `items`. Take the last item's `rank` and `id`, plus that `generation`, and pass all three back as `rankBefore` on the next request. Keep going until a page returns fewer items than `limit`.
+
+`generation` guards against a rank rebalance landing mid-scan. If the list's ranks are rewritten between pages, the server returns an empty page with `rankPage.status: RESET_REQUIRED` and the new `generation`, instead of silently skipping or repeating records. Restart the chain from page 1 when you see that.
 
 ```graphql
-query CursorPage {
+query RankPage {
   recordQueries {
     todos(
-      filter: { companyIds: ["company_123"], projectIds: ["project_123"] }
-      sort: [position_DESC]
+      filter: {
+        companyIds: ["company_123"]
+        todoListIds: ["list_123"]
+        rankBefore: { rank: "a0V", id: "record_456", generation: 3 }
+      }
+      sort: [rank_DESC]
       limit: 100
-      after: "eyJwb3NpdGlvbiI6..."
     ) {
       items {
         id
         title
+        rank
       }
-      pageInfo {
-        hasNextPage
-        nextCursor
+      rankPage {
+        status
+        generation
       }
     }
   }
@@ -499,7 +516,7 @@ query ListRecordsByGroups {
 | `op`                         | `FilterLogicalOperator`    | How conditions combine within this group.                                                                 |
 | `completedStart`             | `DateTime`                 | Completed on or after this (latest mark-complete timestamp on currently-done records).                    |
 | `completedEnd`               | `DateTime`                 | Completed on or before this.                                                                              |
-| `recordName`                 | `String`                   | Match against the record title (full-text).                                                               |
+| `recordName`                 | `String`                   | Match a substring anywhere in the record title.                                                           |
 | `recordNameOp`               | `FilterComparisonOperator` | Operator for `recordName` (e.g. `CONTAINS`, `EQ`).                                                        |
 | `lastUpdatedByUserIds`       | `[String!]`                | Records last updated by any of these users.                                                               |
 | `lastUpdatedByAutomationIds` | `[String!]`                | Records last updated by any of these automations.                                                         |

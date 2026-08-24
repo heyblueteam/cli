@@ -136,18 +136,17 @@ query ListDocuments {
 
 ### Document fields
 
-| Field           | Type        | Description                                                                                 |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------- |
-| `id`            | `ID!`       | Stable document identifier.                                                                 |
-| `uid`           | `String!`   | Short unique id.                                                                            |
-| `title`         | `String!`   | Document title.                                                                             |
-| `content`       | `String`    | Rendered HTML body.                                                                         |
-| `contentBase64` | `String`    | Base64-encoded Yjs collaboration snapshot (the binary state shared with the collab server). |
-| `wiki`          | `Boolean`   | `true` if this document is a Wiki page.                                                     |
-| `project`       | `Project!`  | The workspace the document belongs to.                                                      |
-| `createdBy`     | `User!`     | The user who created the document (select `fullName`, `email`, etc.).                       |
-| `createdAt`     | `DateTime!` | Creation timestamp.                                                                         |
-| `updatedAt`     | `DateTime!` | Last-update timestamp.                                                                      |
+| Field       | Type        | Description                                                           |
+| ----------- | ----------- | --------------------------------------------------------------------- |
+| `id`        | `ID!`       | Stable document identifier.                                           |
+| `uid`       | `String!`   | Short unique id.                                                      |
+| `title`     | `String!`   | Document title.                                                       |
+| `content`   | `String`    | Rendered HTML body.                                                   |
+| `wiki`      | `Boolean`   | `true` if this document is a Wiki page.                               |
+| `project`   | `Project!`  | The workspace the document belongs to.                                |
+| `createdBy` | `User!`     | The user who created the document (select `fullName`, `email`, etc.). |
+| `createdAt` | `DateTime!` | Creation timestamp.                                                   |
+| `updatedAt` | `DateTime!` | Last-update timestamp.                                                |
 
 ### DocumentPagination fields
 

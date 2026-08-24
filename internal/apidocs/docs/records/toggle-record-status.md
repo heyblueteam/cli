@@ -108,8 +108,8 @@ The record's workspace must be active (not archived). Custom roles can also bloc
 - [Update a record](/api/records/update-record) — edit title, description, dates, and other fields with `editRecord`, and set custom field values. The `editRecord` mutation does not change completion status; use this mutation for that.
 - [List records](/api/records/list-records) — query and filter records, including by completion state.
 
-<Callout variant="info" title="Bulk and deprecated variants">
+<Callout variant="info" title="Bulk variant">
 
-To change completion status on many records in one call, use the `updateRecords(input: UpdateRecordsInput!)` mutation, which returns `Boolean!`. The older `changeTodoDoneStatus(id: String!)` mutation is deprecated in favor of `updateTodoDoneStatus` — migrate any code still calling it.
+To change completion status on many records in one call, use the `updateRecords(input: UpdateRecordsInput!)` mutation, which returns `Boolean!`.
 
 </Callout>
