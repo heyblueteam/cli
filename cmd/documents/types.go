@@ -1,15 +1,14 @@
 package documents
 
 type Document struct {
-	ID            string `json:"id"`
-	UID           string `json:"uid"`
-	Title         string `json:"title"`
-	Content       string `json:"content"`
-	ContentBase64 string `json:"contentBase64"`
-	Wiki          bool   `json:"wiki"`
-	CreatedAt     string `json:"createdAt"`
-	UpdatedAt     string `json:"updatedAt"`
-	Project       struct {
+	ID        string `json:"id"`
+	UID       string `json:"uid"`
+	Title     string `json:"title"`
+	Content   string `json:"content"`
+	Wiki      bool   `json:"wiki"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+	Project   struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"project"`
@@ -25,7 +24,6 @@ var documentFields = `
 	uid
 	title
 	content
-	contentBase64
 	wiki
 	createdAt
 	updatedAt
