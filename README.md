@@ -300,6 +300,8 @@ blue records update -r <id> -w <id> --assignees "user1,user2" --tag-ids "tag1,ta
 blue records move --record <id> --list <id> --workspace <id>
 blue records count --workspace <id> --done false
 blue records delete --record <id> --confirm
+blue records link-pr --record <id> --pr 2016
+blue records link-pr --record <id> --pr https://github.com/owner/repo/pull/2016 --simple
 ```
 
 ### Reports
