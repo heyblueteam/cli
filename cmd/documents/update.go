@@ -15,13 +15,12 @@ var updateCmd = &cobra.Command{
 }
 
 var (
-	updateDocument      string
-	updateTitle         string
-	updateContent       string
-	updateContentFile   string
-	updateContentBase64 string
-	updateWiki          string
-	updateFormat        string
+	updateDocument    string
+	updateTitle       string
+	updateContent     string
+	updateContentFile string
+	updateWiki        string
+	updateFormat      string
 )
 
 func init() {
@@ -29,7 +28,6 @@ func init() {
 	updateCmd.Flags().StringVar(&updateTitle, "title", "", "New title")
 	updateCmd.Flags().StringVar(&updateContent, "content", "", "New HTML content")
 	updateCmd.Flags().StringVar(&updateContentFile, "content-file", "", "File containing new HTML content")
-	updateCmd.Flags().StringVar(&updateContentBase64, "content-base64", "", "New base64 collaboration snapshot")
 	updateCmd.Flags().StringVar(&updateWiki, "wiki", "", "Set wiki state (true or false)")
 	updateCmd.Flags().StringVar(&updateFormat, "format", "", "Output format (json)")
 }
@@ -48,9 +46,6 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 	if content != "" {
 		input["content"] = content
-	}
-	if updateContentBase64 != "" {
-		input["contentBase64"] = updateContentBase64
 	}
 	if updateWiki != "" {
 		switch updateWiki {

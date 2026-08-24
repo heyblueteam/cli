@@ -15,13 +15,12 @@ var createCmd = &cobra.Command{
 }
 
 var (
-	createWorkspace     string
-	createTitle         string
-	createContent       string
-	createContentFile   string
-	createContentBase64 string
-	createWiki          bool
-	createFormat        string
+	createWorkspace   string
+	createTitle       string
+	createContent     string
+	createContentFile string
+	createWiki        bool
+	createFormat      string
 )
 
 func init() {
@@ -29,7 +28,6 @@ func init() {
 	createCmd.Flags().StringVarP(&createTitle, "title", "t", "", "Document title")
 	createCmd.Flags().StringVar(&createContent, "content", "", "HTML content")
 	createCmd.Flags().StringVar(&createContentFile, "content-file", "", "File containing HTML content")
-	createCmd.Flags().StringVar(&createContentBase64, "content-base64", "", "Base64 collaboration snapshot")
 	createCmd.Flags().BoolVar(&createWiki, "wiki", false, "Create as a wiki page")
 	createCmd.Flags().StringVar(&createFormat, "format", "", "Output format (json)")
 }
@@ -57,9 +55,6 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 	if content != "" {
 		input["content"] = content
-	}
-	if createContentBase64 != "" {
-		input["contentBase64"] = createContentBase64
 	}
 	query := fmt.Sprintf(`mutation CreateDocument($input: CreateDocumentInput!) { createDocument(input: $input) { %s } }`, documentFields)
 	var response struct {
