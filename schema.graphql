@@ -250,6 +250,7 @@ type Mutation {
 type Query {
   activityList(companyId: String, projectId: String, userId: String, userIds: [String!], tagIds: [String!], categories: [ActivityCategory!], startDate: DateTime, endDate: DateTime, skip: Int, after: String, before: String, first: Int, last: Int, orderBy: ActivityOrderByInput): ActivityList!
   adminQueries: AdminQueries!
+  appNotice: AppNotice
   assignees(filter: AssigneesFilterInput): [User!]!
   availableSubscriptionPlans: [SubscriptionPlan!]!
   automationList(filter: AutomationFilterInput, skip: Int = 0, take: Int = 20): AutomationPagination!
@@ -352,6 +353,7 @@ type Query {
 type AdminMutations {
   activateCompanyLicense(input: ActivateCompanyLicenseInput!): Company
   banCompany(id: String!): Boolean
+  clearAppNotice: Boolean!
   createCompanyLicenses(input: CreateCompanyLicensesInput!): [CompanyLicense!]!
   deactivateCompanyLicense(input: DeactivateCompanyLicenseInput!): Company
   deleteCompanyLicense(id: String!): Boolean
@@ -359,6 +361,7 @@ type AdminMutations {
   grantLicense(input: GrantLicenseInput!): Boolean
   linkCompanyLicense(input: LinkCompanyLicenseInput!): CompanyLicense
   revokeLicense(input: RevokeLicenseInput!): Boolean
+  setAppNotice(input: AppNoticeInput!): Boolean!
   unbanCompany(id: String!): Boolean
   updateCompany(input: UpdateCompanyInput!): Company!
   updateAdminSettings(input: UpdateAdminSettingsInput!): Boolean
@@ -368,6 +371,7 @@ type AdminMutations {
 
 type AdminQueries {
   adminSettings: AdminSettings!
+  appNotice: AdminAppNotice
   companies(filter: CompanyFilter, sort: [CompanySort!], limit: Int = 20, skip: Int = 0): CompanyPagination!
   companyLicenses(filter: CompanyLicenseFilter, limit: Int = 20, skip: Int = 0): CompanyLicensePagination!
   dashboardOverview: AdminOverviewStats!
@@ -2049,6 +2053,49 @@ type ProjectFeature {
 type AdminSettings {
   hideUpgradeLTD: Boolean
   hideBookDemo: Boolean
+}
+
+enum AppNoticeVariant {
+  INFO
+  WARNING
+  MAINTENANCE
+}
+
+type AppNotice {
+  id: String!
+  variant: AppNoticeVariant!
+  message: String!
+  href: String
+  linkLabel: String
+  details: String
+  startsAt: DateTime
+  endsAt: DateTime
+  dismissible: Boolean!
+}
+
+type AdminAppNotice {
+  enabled: Boolean!
+  id: String
+  variant: AppNoticeVariant
+  message: String
+  href: String
+  linkLabel: String
+  details: String
+  startsAt: DateTime
+  endsAt: DateTime
+  dismissible: Boolean
+}
+
+input AppNoticeInput {
+  id: String!
+  variant: AppNoticeVariant = INFO
+  message: String!
+  href: String
+  linkLabel: String
+  details: String
+  startsAt: DateTime
+  endsAt: DateTime
+  dismissible: Boolean = true
 }
 
 type AdminOverviewStats {
