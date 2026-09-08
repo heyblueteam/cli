@@ -95,6 +95,7 @@ blue [command]
 
 Available Commands:
   activity                    Show recent activity
+  admin                       Manage platform settings (admin only)
   api          (graphql, gql) Run raw Blue API requests
   automations  (auto)         Manage automations
   bootstrap                   Bootstrap workspaces from JSON
@@ -131,6 +132,26 @@ Available Commands:
 ```
 
 Use `blue <command> --help` for details on any command.
+
+### Platform notice (admin only)
+
+The top-bar notice is stored server-side. It can be changed without an app
+release, and all commands use the same authenticated admin check as `/admin`:
+
+```bash
+blue admin notice show
+blue admin notice set --id maintenance-2026-09-12 \
+  --variant maintenance \
+  --message "Scheduled maintenance" \
+  --details "Blue may be unavailable during this window." \
+  --starts-at 2026-09-12T02:00:00Z \
+  --ends-at 2026-09-12T04:00:00Z
+blue admin notice clear
+```
+
+Use a new `--id` when publishing a new message so users who dismissed an old
+notice can see the new one. Links accept relative paths or HTTPS URLs on
+`blue.app` and `status.blue.app`.
 
 ### Global Flags
 

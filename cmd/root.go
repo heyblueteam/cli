@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/heyblueteam/cli/cmd/activity"
+	"github.com/heyblueteam/cli/cmd/admin"
 	"github.com/heyblueteam/cli/cmd/api"
 	"github.com/heyblueteam/cli/cmd/automations"
 	"github.com/heyblueteam/cli/cmd/bootstrap"
@@ -72,6 +73,7 @@ func init() {
 	rootCmd.AddCommand(automations.Cmd)
 	rootCmd.AddCommand(api.Cmd)
 	rootCmd.AddCommand(activity.Cmd)
+	rootCmd.AddCommand(admin.Cmd)
 	rootCmd.AddCommand(bootstrap.Cmd)
 	rootCmd.AddCommand(charts.Cmd)
 	rootCmd.AddCommand(checklists.Cmd)
