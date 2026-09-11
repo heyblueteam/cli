@@ -7,7 +7,7 @@ order: 1
 
 The Blue API authenticates every request with a **personal access token (PAT)** — a Token ID and a Secret you generate in the app and send as headers on each request. There are no API keys to register; a token belongs to a user and inherits that user's permissions.
 
-Blue also runs an OAuth 2.1 authorization server, but it serves **MCP connectors only** — its tokens are not accepted here. See [Connector authorization (OAuth 2.1)](#connector-authorization-oauth-2-1) below.
+Blue also runs an OAuth 2.1 authorization server. An access token it issues is a full-account credential accepted on the GraphQL API, the REST API, and the MCP endpoint alike. See [Connector authorization (OAuth 2.1)](#connector-authorization-oauth-2-1) below.
 
 The base endpoint is `https://api.blue.app/graphql` for HTTP requests and `wss://api.blue.app/graphql` for subscriptions.
 
@@ -117,13 +117,13 @@ What a client must do:
 
 A grant covers every organization the user belongs to — the same reach as their web session, and no more. Pass the organization per call rather than in a header.
 
-<Callout variant="warning" title="Connector tokens do not work on the GraphQL or REST API">
+<Callout variant="warning" title="A connector token carries full account access">
 
-An access token issued by this server is confined to the MCP endpoint. Sending one to `https://api.blue.app/graphql` or the REST API fails as if no credentials were sent. Use a personal access token for direct API integrations.
+An access token issued by this server is not confined to the MCP endpoint. Send it as `Authorization: Bearer <token>` and it is accepted on `https://api.blue.app/graphql` and the REST API too, with the same reach as the user's own session. Treat it like a personal access token.
 
 </Callout>
 
-Access tokens last 24 hours, but revocation is immediate: Blue checks the grant on every MCP request, so disconnecting an app under **Account > Access > Connected apps** takes effect on its next call. For the end-user walkthrough, see [Claude & ChatGPT](/docs/integrations/claude-chatgpt).
+Access tokens last 24 hours, but revocation is immediate and applies everywhere: Blue checks the grant during authentication on every request, whatever the surface, so disconnecting an app under **Account > Access > Connected apps** takes effect on its next call — even while its token is still unexpired. For the end-user walkthrough, see [Claude & ChatGPT](/docs/integrations/claude-chatgpt).
 
 ## Authentication errors
 

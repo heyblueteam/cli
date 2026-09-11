@@ -43,10 +43,17 @@ mutation CopyAutomation {
 | -------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `automationId` | `String!` | Yes      | ID of the automation to copy. Looked up globally, not scoped to a workspace.                                                                                                   |
 | `isActive`     | `Boolean` | No       | **Currently ignored.** The resolver always creates the copy with `isActive: false`. To activate the copy, call [`editAutomation`](/api/automations/edit-automation) afterward. |
+| `name`         | `String`  | No       | Label for the copy. Omit it and a named source produces `<source name> (copy)`; an unnamed source produces an unnamed copy.                                                    |
 
 <Callout variant="warning" title="isActive is a no-op">
 
 `CopyAutomationInput` accepts `isActive`, but the mutation hard-codes the copy to `isActive: false` and never reads the value you pass. Sending `isActive: true` does **not** produce an active copy. Plan to activate via `editAutomation`.
+
+</Callout>
+
+<Callout variant="info" title="The copy keeps its group only within the same workspace">
+
+When the source and the copy are in the same workspace, the copy joins the source's [automation group](/api/automations/automation-groups) and is placed at the end of it. A group belongs to one workspace, so a copy made into a different workspace is ungrouped.
 
 </Callout>
 
@@ -251,4 +258,5 @@ Only OWNER or ADMIN members of an **active** (non-archived) workspace can copy a
 - [Create an automation](/api/automations/create-automation)
 - [Edit an automation](/api/automations/edit-automation)
 - [Delete an automation](/api/automations/delete-automation)
+- [Automation groups](/api/automations/automation-groups)
 - [Automations overview](/api/automations)

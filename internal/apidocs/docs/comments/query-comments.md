@@ -42,16 +42,16 @@ The same query shape reads a chat (`category: DISCUSSION`, `categoryId` = the ch
 
 ### Arguments
 
-| Argument     | Type                     | Required | Description                                                                                         |
-| ------------ | ------------------------ | -------- | --------------------------------------------------------------------------------------------------- |
-| `category`   | `CommentCategory!`       | Yes      | Which kind of target you're reading. Pairs with `categoryId`.                                       |
-| `categoryId` | `String!`                | Yes      | The ID of the target: a chat ID, a status-update ID, or a record (`Todo`) ID, per `category`. |
-| `first`      | `Int`                    | No       | Page size — how many comments to return. Omit to return all matching comments (subject to `skip`).  |
-| `skip`       | `Int`                    | No       | Number of comments to skip before the page, for offset pagination. Defaults to `0`.                 |
-| `after`      | `String`                 | No       | Cursor: return comments whose `id` is greater than or equal to this value. Use a comment `id`.      |
-| `orderBy`    | `ChatOrderByInput` | No       | Sort order. Defaults to `createdAt_ASC` (oldest first).                                             |
-| `before`     | `String`                 | No       | Accepted by the schema but not applied by this query. Paginate with `first` + `skip` (or `after`).  |
-| `last`       | `Int`                    | No       | Accepted by the schema but not applied by this query. Use `first` for the page size.                |
+| Argument     | Type               | Required | Description                                                                                        |
+| ------------ | ------------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| `category`   | `CommentCategory!` | Yes      | Which kind of target you're reading. Pairs with `categoryId`.                                      |
+| `categoryId` | `String!`          | Yes      | The ID of the target: a chat ID, a status-update ID, or a record (`Todo`) ID, per `category`.      |
+| `first`      | `Int`              | No       | Page size — how many comments to return. Defaults to `20` when omitted.                            |
+| `skip`       | `Int`              | No       | Number of comments to skip before the page, for offset pagination. Defaults to `0`.                |
+| `after`      | `String`           | No       | Cursor: return comments whose `id` is greater than or equal to this value. Use a comment `id`.     |
+| `orderBy`    | `ChatOrderByInput` | No       | Sort order. Defaults to `createdAt_ASC` (oldest first).                                            |
+| `before`     | `String`           | No       | Accepted by the schema but not applied by this query. Paginate with `first` + `skip` (or `after`). |
+| `last`       | `Int`              | No       | Accepted by the schema but not applied by this query. Use `first` for the page size.               |
 
 <Callout variant="warning" title="before and last are no-ops here">
 
@@ -61,11 +61,11 @@ The schema accepts `before` and `last`, but `commentList` ignores them. Page wit
 
 ### CommentCategory
 
-| Value           | `categoryId` is the ID of | Read instead via                                     |
-| --------------- | ------------------------- | ---------------------------------------------------- |
-| `DISCUSSION`    | A chat thread       | [Query chats](/api/comments/query-discussions) |
-| `STATUS_UPDATE` | A status update           | The status update's ID                               |
-| `TODO`          | A record (`Todo`)         | [List records](/api/records/list-records)            |
+| Value           | `categoryId` is the ID of | Read instead via                               |
+| --------------- | ------------------------- | ---------------------------------------------- |
+| `DISCUSSION`    | A chat thread             | [Query chats](/api/comments/query-discussions) |
+| `STATUS_UPDATE` | A status update           | The status update's ID                         |
+| `TODO`          | A record (`Todo`)         | [List records](/api/records/list-records)      |
 
 ### ChatOrderByInput
 
@@ -153,7 +153,7 @@ The fields you'll select most often. The `Comment` type exposes more — these a
 | `isRead`       | `Boolean`           | Read state for the current user.                                                     |
 | `isSeen`       | `Boolean`           | Seen state for the current user.                                                     |
 | `reactions`    | `[ReactionGroup!]!` | Emoji reactions on the comment. See [Reactions](/api/comments/reactions).            |
-| `chat`   | `Chat`        | The parent chat, when `category` is `DISCUSSION`.                              |
+| `chat`         | `Chat`              | The parent chat, when `category` is `DISCUSSION`.                                    |
 | `statusUpdate` | `StatusUpdate`      | The parent status update, when `category` is `STATUS_UPDATE`.                        |
 | `todo`         | `Todo`              | The parent record, when `category` is `TODO`.                                        |
 

@@ -37,10 +37,12 @@ mutation CreateAutomation {
 
 ### CreateAutomationInput
 
-| Parameter | Type                              | Required | Description                                                  |
-| --------- | --------------------------------- | -------- | ------------------------------------------------------------ |
-| `trigger` | `CreateAutomationTriggerInput!`   | Yes      | The event that starts the automation.                        |
-| `actions` | `[CreateAutomationActionInput!]!` | Yes      | One or more actions to run when the trigger fires, in order. |
+| Parameter | Type                              | Required | Description                                                                                                                                                |
+| --------- | --------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `trigger` | `CreateAutomationTriggerInput!`   | Yes      | The event that starts the automation.                                                                                                                      |
+| `actions` | `[CreateAutomationActionInput!]!` | Yes      | One or more actions to run when the trigger fires, in order.                                                                                               |
+| `name`    | `String`                          | No       | Optional label, 120 characters or fewer. Blank is stored as null, and the app falls back to the generated trigger and actions summary.                     |
+| `groupId` | `String`                          | No       | [Automation group](/api/automations/automation-groups) to place the automation in. It must belong to the same workspace. Omit for an ungrouped automation. |
 
 ### CreateAutomationTriggerInput
 

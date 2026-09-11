@@ -7,7 +7,7 @@ order: 2
 
 Use the `organization` query to fetch a single organization's profile — its name, owner, plan, access level, and usage limits. Organizations are `Organization` objects in the API, and each one maps to a workspace group under a single billing account.
 
-The query resolves an organization by **ID or slug**, but only one the authenticated user is a member of. It is the read counterpart to [Create an Organization](/api/organization-management/create-organization).
+The query resolves an organization by **ID or slug**, but only one the authenticated user is a member of. It is the read counterpart to the `createOrganization` mutation.
 
 ## Request
 
@@ -150,7 +150,6 @@ A request made **as** a banned organization (a banned company in your `blue-org-
 
 ## Related
 
-- [Create an Organization](/api/organization-management/create-organization)
 - [List Users](/api/user-management/list-users)
 - [List Workspaces](/api/workspaces/list-workspaces)
 - [Authentication](/api/start-guide/authentication)

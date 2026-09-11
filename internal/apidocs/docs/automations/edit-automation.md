@@ -33,6 +33,9 @@ mutation EditAutomation {
 | `trigger`      | `CreateAutomationTriggerInput`   | No       | New trigger configuration. Fully replaces the existing trigger configuration (the trigger row keeps its id; its field values are rewritten from this input). |
 | `actions`      | `[CreateAutomationActionInput!]` | No       | New ordered list of actions. Replaces all existing actions — there is no way to edit a single action in place.                                               |
 | `isActive`     | `Boolean`                        | No       | Set the automation's active state. Deactivating pauses scheduled and due-date triggers; reactivating resumes them.                                           |
+| `name`         | `String`                         | No       | New label, 120 characters or fewer. Omit to keep the current name; send a blank string to clear it.                                                          |
+| `groupId`      | `String`                         | No       | Move the automation to this [group](/api/automations/automation-groups). Omit to keep the current group; send an explicit `null` to move it to Ungrouped.    |
+| `position`     | `Float`                          | No       | Manual order inside the group. Lower values sort first.                                                                                                      |
 
 For the full `CreateAutomationTriggerInput` and `CreateAutomationActionInput` field tables (including the `schedule` block, trigger types, and action types), see [Create Automation](/api/automations/create-automation).
 

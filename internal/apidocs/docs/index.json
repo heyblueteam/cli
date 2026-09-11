@@ -263,6 +263,31 @@
       ]
     },
     {
+      "slug": "automations/automation-groups",
+      "title": "Automation Groups",
+      "description": "Organize a workspace's automations into flat groups, and move an automation between them.",
+      "section": "automations",
+      "sectionTitle": "Automations",
+      "path": "automations/automation-groups.md",
+      "url": "https://blue.app/api/automations/automation-groups",
+      "order": 5,
+      "headings": [
+        "Operations",
+        "List groups",
+        "AutomationGroup",
+        "Create a group",
+        "CreateAutomationGroupInput",
+        "Edit a group",
+        "EditAutomationGroupInput",
+        "Delete a group",
+        "Move an automation",
+        "MoveAutomationInput",
+        "Errors",
+        "Permissions",
+        "Related"
+      ]
+    },
+    {
       "slug": "charts",
       "title": "Charts",
       "description": "Create, build, preview, recalculate, export, and query the STAT, PIE, and BAR charts that live inside a dashboard.",
@@ -1432,6 +1457,7 @@
         "Write through to the source record",
         "Editable targets",
         "Who may edit",
+        "Lookup chains",
         "Notes",
         "Errors",
         "Related"
@@ -1471,6 +1497,7 @@
         "Create",
         "CreateCustomFieldInput (UNIQUE_ID)",
         "Response",
+        "Restart numbering per field value",
         "Set a value",
         "SetRecordCustomFieldInput (UNIQUE_ID, manual mode)",
         "Read a value",
@@ -1616,7 +1643,7 @@
     {
       "slug": "documents",
       "title": "Documents",
-      "description": "Two project-scoped document subsystems - collaboratively-edited rich-text Documents (and Wiki pages) and Portable Document PDF templates you fill from record data.",
+      "description": "Two project-scoped document subsystems - collaboratively-edited rich-text Documents and Portable Document PDF templates you fill from record data.",
       "section": "documents",
       "sectionTitle": "Documents",
       "path": "documents/index.md",
@@ -1631,7 +1658,7 @@
     {
       "slug": "documents/create-document",
       "title": "Create and edit documents",
-      "description": "Create, update, and delete rich-text Documents and Wiki pages in a workspace using HTML.",
+      "description": "Create, update, and delete rich-text Documents in a workspace using HTML.",
       "section": "documents",
       "sectionTitle": "Documents",
       "path": "documents/create-document.md",
@@ -2289,28 +2316,6 @@
         "Key concepts",
         "Identifying an organization",
         "Access control",
-        "Related"
-      ]
-    },
-    {
-      "slug": "organization-management/create-organization",
-      "title": "Create an Organization",
-      "description": "Create a new organization with the createOrganization mutation. The caller becomes the owner and starts a 14-day trial.",
-      "section": "organization-management",
-      "sectionTitle": "Organization Management",
-      "path": "organization-management/create-organization.md",
-      "url": "https://blue.app/api/organization-management/create-organization",
-      "order": 1,
-      "headings": [
-        "Request",
-        "Parameters",
-        "CreateOrganizationInput",
-        "ImageInput",
-        "Slug normalization",
-        "Response",
-        "Returns",
-        "Full example",
-        "Errors",
         "Related"
       ]
     },
@@ -3058,6 +3063,7 @@
         "RepeatingTodoIntervalInput",
         "RepeatingTodoEndInput",
         "RepeatingTodoRepeatType",
+        "startDate",
         "RepeatingTodoAllowedField",
         "RepeatingTodoDueDateMode",
         "RepeatingTodoIntervalType",

@@ -40,36 +40,38 @@ mutation CreateRecurringRecord {
 
 ### CreateRepeatingRecordInput
 
-| Parameter       | Type                           | Required | Description                                                                                |
-| --------------- | ------------------------------ | -------- | ------------------------------------------------------------------------------------------ |
-| `todoId`        | `String!`                      | Yes      | The existing record to turn into a recurring template.                                     |
-| `todoListId`    | `String!`                      | Yes      | The list where each new copy is created.                                                   |
-| `type`          | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence. Use a preset, or `CUSTOM` with `interval`.                             |
-| `fields`        | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.                                                 |
-| `from`          | `DateTime!`                    | Yes      | The first occurrence date/time the schedule starts from.                                   |
-| `interval`      | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`.                                         |
-| `end`           | `RepeatingTodoEndInput`        | No       | When the schedule stops. Omit to repeat indefinitely.                                      |
-| `time`          | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at. Omit to keep the legacy default (midnight UTC). |
-| `dueDateMode`   | `RepeatingTodoDueDateMode`     | No       | How each occurrence gets its due date. Omit for `NONE`.                                    |
-| `dueOffsetDays` | `Int`                          | No       | Days to add to the occurrence date. Only read when `dueDateMode` is `OCCURRENCE_DATE`.     |
+| Parameter       | Type                           | Required | Description                                                                                                           |
+| --------------- | ------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `todoId`        | `String!`                      | Yes      | The existing record to turn into a recurring template.                                                                |
+| `todoListId`    | `String!`                      | Yes      | The list where each new copy is created.                                                                              |
+| `type`          | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence. Use a preset, or `CUSTOM` with `interval`.                                                        |
+| `fields`        | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.                                                                            |
+| `from`          | `DateTime!`                    | Yes      | The first occurrence date/time the schedule starts from.                                                              |
+| `startDate`     | `DateTime`                     | No       | Delay the first occurrence until this date. No occurrence is created before it. Omit to start on the next occurrence. |
+| `interval`      | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`.                                                                    |
+| `end`           | `RepeatingTodoEndInput`        | No       | When the schedule stops. Omit to repeat indefinitely.                                                                 |
+| `time`          | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at. Omit to keep the legacy default (midnight UTC).                            |
+| `dueDateMode`   | `RepeatingTodoDueDateMode`     | No       | How each occurrence gets its due date. Omit for `NONE`.                                                               |
+| `dueOffsetDays` | `Int`                          | No       | Days to add to the occurrence date. Only read when `dueDateMode` is `OCCURRENCE_DATE`.                                |
 
 ### UpdateRepeatingRecordInput
 
 Same shape as `CreateRepeatingRecordInput`, plus `repeatCounts`.
 
-| Parameter       | Type                           | Required | Description                                        |
-| --------------- | ------------------------------ | -------- | -------------------------------------------------- |
-| `todoId`        | `String!`                      | Yes      | The record whose schedule is being updated.        |
-| `todoListId`    | `String!`                      | Yes      | The list where each new copy is created.           |
-| `type`          | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence.                                |
-| `fields`        | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.         |
-| `from`          | `DateTime!`                    | Yes      | The occurrence date/time the schedule runs from.   |
-| `interval`      | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`. |
-| `end`           | `RepeatingTodoEndInput`        | No       | When the schedule stops.                           |
-| `repeatCounts`  | `Int`                          | No       | How many times the record has already repeated.    |
-| `time`          | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at.         |
-| `dueDateMode`   | `RepeatingTodoDueDateMode`     | No       | How each occurrence gets its due date.             |
-| `dueOffsetDays` | `Int`                          | No       | Days to add to the occurrence date.                |
+| Parameter       | Type                           | Required | Description                                                                     |
+| --------------- | ------------------------------ | -------- | ------------------------------------------------------------------------------- |
+| `todoId`        | `String!`                      | Yes      | The record whose schedule is being updated.                                     |
+| `todoListId`    | `String!`                      | Yes      | The list where each new copy is created.                                        |
+| `type`          | `RepeatingTodoRepeatType!`     | Yes      | The repeat cadence.                                                             |
+| `fields`        | `[RepeatingTodoAllowedField]!` | Yes      | Which elements to copy to each occurrence.                                      |
+| `from`          | `DateTime!`                    | Yes      | The occurrence date/time the schedule runs from.                                |
+| `startDate`     | `DateTime`                     | No       | Delay the first occurrence until this date. No occurrence is created before it. |
+| `interval`      | `RepeatingTodoIntervalInput`   | No       | Custom interval. Required when `type` is `CUSTOM`.                              |
+| `end`           | `RepeatingTodoEndInput`        | No       | When the schedule stops.                                                        |
+| `repeatCounts`  | `Int`                          | No       | How many times the record has already repeated.                                 |
+| `time`          | `RepeatingTodoTimeInput`       | No       | Time of day each occurrence is created at.                                      |
+| `dueDateMode`   | `RepeatingTodoDueDateMode`     | No       | How each occurrence gets its due date.                                          |
+| `dueOffsetDays` | `Int`                          | No       | Days to add to the occurrence date.                                             |
 
 ### RepeatingTodoTimeInput
 
@@ -106,6 +108,16 @@ Same shape as `CreateRepeatingRecordInput`, plus `repeatCounts`.
 | `MONTHLY`  | Repeats every month on the same date.    |
 | `YEARLY`   | Repeats every year on the same date.     |
 | `CUSTOM`   | Cadence defined by the `interval` field. |
+
+### startDate
+
+`startDate` delays the series without changing its pattern. The scheduler advances the cadence until an occurrence falls on or after `startDate`, rather than jumping to that date, so the interval, selected weekdays, `time`, and timezone are all preserved. A weekly-on-Wednesday schedule with a Saturday `startDate` produces its first occurrence on the following Wednesday.
+
+`startDate` is evaluated in the schedule's own timezone (`time.timezone`). Omit it for a series that starts on its next occurrence. A `startDate` already in the past has no effect, so a running series behaves the same either way.
+
+The scheduler advances at most 1000 steps looking for the first occurrence. A `startDate` further ahead than that — roughly 2.7 years for a daily cadence, much longer for coarser ones — schedules nothing.
+
+`from` is unchanged: it still anchors an every-N cycle. With an `interval.count` above `1`, the first occurrence is the first matching day on or after `startDate` that also falls in a matching cycle.
 
 ### RepeatingTodoAllowedField
 

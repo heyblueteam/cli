@@ -18,6 +18,7 @@ Workspaces are `Workspace` objects in the API; records are `Record` objects. Eve
 | [Edit an automation](/api/automations/edit-automation)     | `editAutomation` mutation   | Change the trigger, actions, or active state             |
 | [Copy an automation](/api/automations/copy-automation)     | `copyAutomation` mutation   | Duplicate an automation, optionally into another project |
 | [Delete an automation](/api/automations/delete-automation) | `deleteAutomation` mutation | Remove an automation                                     |
+| [Automation groups](/api/automations/automation-groups)    | `automationGroups` query    | List, create, rename, reorder, and delete groups         |
 
 ## Request
 
@@ -105,16 +106,19 @@ When `customFieldIds` (or the deprecated `customFieldId`) is supplied, the query
 
 ### Automation
 
-| Field       | Type                   | Description                                            |
-| ----------- | ---------------------- | ------------------------------------------------------ |
-| `id`        | `ID!`                  | Unique identifier.                                     |
-| `trigger`   | `AutomationTrigger!`   | The event that starts this automation.                 |
-| `actions`   | `[AutomationAction!]!` | Ordered list of actions to run when the trigger fires. |
-| `isActive`  | `Boolean!`             | Whether the automation is currently enabled.           |
-| `createdBy` | `User!`                | The user who created the automation.                   |
-| `project`   | `Workspace!`           | The workspace this automation belongs to.              |
-| `createdAt` | `DateTime!`            | When the automation was created.                       |
-| `updatedAt` | `DateTime!`            | When the automation was last changed.                  |
+| Field       | Type                   | Description                                                                                         |
+| ----------- | ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `id`        | `ID!`                  | Unique identifier.                                                                                  |
+| `trigger`   | `AutomationTrigger!`   | The event that starts this automation.                                                              |
+| `actions`   | `[AutomationAction!]!` | Ordered list of actions to run when the trigger fires.                                              |
+| `isActive`  | `Boolean!`             | Whether the automation is currently enabled.                                                        |
+| `name`      | `String`               | Optional label. Null means the app shows the generated trigger and actions summary.                 |
+| `position`  | `Float`                | Manual order inside the group. Null on automations written before ordering existed; they sort last. |
+| `group`     | `AutomationGroup`      | The group the automation belongs to. Null means ungrouped.                                          |
+| `createdBy` | `User!`                | The user who created the automation.                                                                |
+| `project`   | `Workspace!`           | The workspace this automation belongs to.                                                           |
+| `createdAt` | `DateTime!`            | When the automation was created.                                                                    |
+| `updatedAt` | `DateTime!`            | When the automation was last changed.                                                               |
 
 ### AutomationTrigger
 
@@ -396,5 +400,6 @@ Any member of the project can list its automations, regardless of access level â
 - [Edit an automation](/api/automations/edit-automation)
 - [Copy an automation](/api/automations/copy-automation)
 - [Delete an automation](/api/automations/delete-automation)
+- [Automation groups](/api/automations/automation-groups)
 - [Custom fields](/api/custom-fields)
 - [Workspaces](/api/workspaces)

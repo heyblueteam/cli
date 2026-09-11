@@ -65,6 +65,8 @@ mutation CreateFormattedUniqueIdField {
 | `prefix`                 | `String`           | No       | Text prepended to the displayed value (e.g. `ORD-`). Display-only.                            |
 | `sequenceDigits`         | `Int`              | No       | Zero-pad the displayed number to this width (e.g. `4` → `0042`). Display-only.                |
 | `sequenceStartingNumber` | `Int`              | No       | First number in the sequence. Defaults to `1`. Applies only to the first assignment.          |
+| `sequenceScope`          | `SequenceScope`    | No       | `PROJECT` for one workspace series, or `FIELD` to restart per scope-field value.              |
+| `sequenceScopeFieldId`   | `String`           | No       | Scope field ID when `sequenceScope` is `FIELD`.                                               |
 | `enableBulkAction`       | `Boolean`          | No       | Allow this field in bulk actions. Not all field types support bulk actions; `UNIQUE_ID` does. |
 
 ### Response
@@ -86,6 +88,12 @@ mutation CreateFormattedUniqueIdField {
 ```
 
 When the field is created in sequence mode, a background job numbers every existing record in the workspace and continues numbering new records as they are created.
+
+### Restart numbering per field value
+
+Set `sequenceScope: FIELD` and `sequenceScopeFieldId` to restart numbering for each scope value. The scope field must be in the same workspace. Supported fields are single Reference, Referenced by, single Select, and single Assignee fields.
+
+A Referenced by scope assigns a number only when it currently contains exactly one record. Empty or multi-record results do not identify one group and remain unnumbered.
 
 ## Set a value
 

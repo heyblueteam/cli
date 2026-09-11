@@ -13,7 +13,7 @@ This section covers the organization lifecycle a normal API consumer can drive: 
 
 | Operation               | GraphQL                                   | Description                                                                                                                         |
 | ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Create an organization  | `createOrganization`                      | [Create a new organization](/api/organization-management/create-organization) with a name and slug; the caller becomes its `OWNER`. |
+| Create an organization  | `createOrganization`                      | Create a new organization with a name and slug; the caller becomes its `OWNER`.                                                     |
 | Get an organization     | `organization(id)`                        | [Read a single organization](/api/organization-management/query-organization) by ID or slug.                                        |
 | List organizations      | `organizations(filter, sort, skip, take)` | Page through the organizations the calling user is a member of. Returns `OrganizationPagination` (`{ items, pageInfo }`).           |
 | Update an organization  | `editOrganization(input)`                 | Update an organization's name, slug, image, white-label settings, and other profile fields. Requires `OWNER` access.                |
@@ -56,7 +56,6 @@ Each organization is billed separately. Creating organizations through the API c
 
 ## Related
 
-- [Create an organization](/api/organization-management/create-organization)
 - [Get an organization](/api/organization-management/query-organization)
 - [User Management](/api/user-management) — invite, list, and remove members
 - [Authentication](/api/start-guide/authentication)

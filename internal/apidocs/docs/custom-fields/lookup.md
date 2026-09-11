@@ -13,10 +13,10 @@ Custom fields are `CustomField` objects in the API. A Lookup always points at a 
 
 A Lookup is configured with two things:
 
-- **`referenceId`** — the ID of the source field to read from. This must be a `REFERENCE` or `REFERENCED_BY` field on the same workspace. You cannot point a Lookup at another Lookup.
+- **`referenceId`** — the ID of the source field to read from. This must be a `REFERENCE` or `REFERENCED_BY` field on the same workspace. A `LOOKUP` cannot be the source — it is the link the Lookup travels, and only a relation field is a link.
 - **`lookupType`** — which piece of data to pull from each linked record (tags, assignees, due dates, a custom field value, and so on).
 
-When `lookupType` is `TODO_CUSTOM_FIELD`, you also pass **`lookupId`** — the ID of the specific custom field to read from each linked record.
+When `lookupType` is `TODO_CUSTOM_FIELD`, you also pass **`lookupId`** — the ID of the specific custom field to read from each linked record. `lookupId` may itself be a `LOOKUP` field: a value the linked record borrows from somewhere else can be borrowed again. See [Lookup chains](#lookup-chains).
 
 ## Create
 
@@ -266,11 +266,39 @@ Treat `canEditSource` as a display signal only. The write mutations run their ow
 
 On `editCustomField`, omitting `allowEdits` from `lookupOption` leaves the stored value unchanged. The new target is still checked against the stored value, so repointing an editable Lookup at a target that cannot be edited is rejected even when the flag is absent from the input.
 
+## Lookup chains
+
+`lookupId` may point at a `LOOKUP` field on the linked record. The value is then
+read through two hops:
+
+```
+Task ──Reference──▶ Client ──Reference──▶ Account
+                      ▲                      │
+                      └─── Client's Lookup ──┘
+                             ("Owner name")
+
+Task's Lookup:  referenceId = the Task→Client Reference
+                lookupId    = Client's Lookup
+Result on Task: "Owner name", two hops away.
+```
+
+The chain is resolved server-side and flattened: the stored option records the
+root field the chain terminates at, and `lookupType` is inherited from it. A
+change anywhere along the chain recomputes every Lookup downstream of it.
+
+Two limits apply:
+
+- **`allowEdits` is unavailable.** A `LOOKUP` target is read-only, so write-through
+  is rejected for it.
+- **Cycles are refused.** A Lookup that reads its own value, or one whose target
+  already reads back at it, is rejected at write time. Longer cycles terminate at
+  a fixed cascade depth rather than recomputing forever.
+
 ## Notes
 
 - **No direct value.** You cannot set a Lookup's own value with `setRecordCustomField` — it always reflects the current linked data and recomputes when that data changes. With `allowEdits`, you write the source record instead; see [Write through to the source record](#write-through-to-the-source-record).
 - **No aggregation.** A Lookup extracts the linked values as-is — it has no built-in sum, count, or average across linked records.
-- **Source must be a Reference.** `referenceId` must point at a `REFERENCE` or `REFERENCED_BY` field. Pointing it at another `LOOKUP` is rejected — Lookup-of-Lookup chains are not supported.
+- **Source must be a Reference.** `referenceId` must point at a `REFERENCE` or `REFERENCED_BY` field. Pointing it at another `LOOKUP` is rejected. This limits the *link*, not the *value*: `lookupId` may be a `LOOKUP` — see [Lookup chains](#lookup-chains).
 - **Cross-workspace access.** A viewer only sees Lookup results for linked records in workspaces they have access to.
 
 ## Errors

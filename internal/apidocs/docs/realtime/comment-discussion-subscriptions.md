@@ -328,7 +328,7 @@ Delivered only for workspaces you belong to: the resolver matches the published 
 
 ## subscribeToDocument
 
-Streams collaborative document changes (`Document` objects) within a workspace — created, edited, deleted. Optionally narrow to wiki documents only.
+Streams collaborative document changes (`Document` objects) within a workspace — created, edited, deleted.
 
 ### Request
 
@@ -339,7 +339,6 @@ subscription OnDocuments {
     node {
       id
       title
-      wiki
       createdBy {
         id
         fullName
@@ -358,7 +357,7 @@ subscription OnDocuments {
 | Parameter   | Type      | Required | Description                                                                                                                                         |
 | ----------- | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `projectId` | `String!` | Yes      | The workspace whose documents you want to watch.                                                                                                    |
-| `wiki`      | `Boolean` | No       | When set, deliver only documents whose `wiki` flag matches this value — `true` for wiki pages, `false` for regular documents. Omit to receive both. |
+| `wiki`      | `Boolean` | No       | **Deprecated and ignored.** The stream carries every page in the workspace.                                                                          |
 
 ### Response
 
@@ -370,7 +369,6 @@ subscription OnDocuments {
       "node": {
         "id": "clm4n8qwx000608l0u1v2w3x4",
         "title": "Onboarding runbook",
-        "wiki": true,
         "createdBy": { "id": "clm4n8qwx000108l0a1b2c3d4", "fullName": "Ada Lovelace" },
         "updatedAt": "2026-05-29T14:11:27.000Z"
       },
@@ -385,13 +383,13 @@ subscription OnDocuments {
 | Field            | Type                     | Description                                                                                                                    |
 | ---------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | `mutation`       | `MutationType!`          | `CREATED`, `UPDATED`, or `DELETED`.                                                                                            |
-| `node`           | `Document`               | The document after the change. Exposes `id`, `title`, `content`, `wiki`, `project`, `createdBy`, `createdAt`, and `updatedAt`. |
+| `node`           | `Document`               | The document after the change. Exposes `id`, `title`, `content`, `project`, `createdBy`, `createdAt`, and `updatedAt`.         |
 | `previousValues` | `DocumentPreviousValues` | Prior state on `UPDATED`/`DELETED`.                                                                                            |
 | `updatedFields`  | `[String!]`              | Field names that changed on `UPDATED`.                                                                                         |
 
 <Callout variant="info" title="Document metadata vs. live editing">
 
-`subscribeToDocument` reports document-level changes (title, wiki flag, create/delete). It is not the character-by-character editing channel — live collaborative editing runs over a separate Hocuspocus connection at `/collab`, not the GraphQL WebSocket.
+`subscribeToDocument` reports document-level changes (title, create/delete). It is not the character-by-character editing channel — live collaborative editing runs over a separate Hocuspocus connection at `/collab`, not the GraphQL WebSocket.
 
 </Callout>
 
@@ -403,7 +401,7 @@ subscription OnDocuments {
 
 ### Permissions
 
-Delivered only for workspaces you belong to. When `wiki` is supplied, only documents matching that flag are forwarded; otherwise both wiki and non-wiki documents stream through.
+Delivered only for workspaces you belong to. Every page in the workspace streams through.
 
 ---
 
