@@ -11,17 +11,10 @@ import (
 
 type CreateTodoListResponse struct {
 	CreateTodoList struct {
-		ID       string  `json:"id"`
-		UID      string  `json:"uid"`
-		Title    string  `json:"title"`
-		Position float64 `json:"position"`
+		ID    string `json:"id"`
+		UID   string `json:"uid"`
+		Title string `json:"title"`
 	} `json:"createTodoList"`
-}
-
-type MaxPositionResponse struct {
-	TodoLists []struct {
-		Position float64 `json:"position"`
-	} `json:"todoLists"`
 }
 
 var createCmd = &cobra.Command{
@@ -73,16 +66,6 @@ func runCreate(cmd *cobra.Command, args []string) error {
 
 	client := common.NewClient(config)
 
-	// Get current max position
-	fmt.Printf("Getting current lists in workspace %s...\n", createWorkspace)
-	maxPos, err := getMaxPosition(client, createWorkspace)
-	if err != nil {
-		return fmt.Errorf("failed to get max position: %w", err)
-	}
-
-	increment := 65535.0
-	startPos := maxPos + increment
-
 	if createReverse {
 		for i, j := 0, len(validNames)-1; i < j; i, j = i+1, j-1 {
 			validNames[i], validNames[j] = validNames[j], validNames[i]
@@ -90,35 +73,16 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("\nCreating %d lists...\n", len(validNames))
-	var createdCount int
+	createdCount, failures := createLists(client, createWorkspace, validNames, func(name string, list CreateTodoListResponse) {
+		fmt.Printf("Created list '%s' (ID: %s)\n", list.CreateTodoList.Title, list.CreateTodoList.ID)
+	})
 
-	for i, name := range validNames {
-		position := startPos + (float64(i) * increment)
-
-		mutation := fmt.Sprintf(`
-			mutation CreateTodoList {
-				createTodoList(input: {
-					projectId: "%s"
-					title: "%s"
-					position: %f
-				}) {
-					id
-					uid
-					title
-					position
-				}
-			}
-		`, createWorkspace, common.EscapeGraphQLString(name), position)
-
-		var response CreateTodoListResponse
-		if err := client.ExecuteQueryWithResult(mutation, nil, &response); err != nil {
-			fmt.Printf("Failed to create list '%s': %v\n", name, err)
-			continue
+	if len(failures) > 0 {
+		fmt.Printf("\nCreated %d out of %d lists\n", createdCount, len(validNames))
+		for _, failure := range failures {
+			fmt.Printf("Failed to create list '%s': %v\n", failure.name, failure.err)
 		}
-
-		list := response.CreateTodoList
-		createdCount++
-		fmt.Printf("Created list '%s' (ID: %s)\n", list.Title, list.ID)
+		return fmt.Errorf("failed to create %d of %d lists", len(failures), len(validNames))
 	}
 
 	fmt.Printf("\nSuccessfully created %d out of %d lists\n", createdCount, len(validNames))
@@ -126,28 +90,63 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getMaxPosition(client *common.Client, workspaceID string) (float64, error) {
-	query := `query GetProjectLists($projectId: String!) {
-		todoLists(projectId: $projectId) {
-			position
-		}
-	}`
-
-	variables := map[string]interface{}{
-		"projectId": workspaceID,
-	}
-
-	var response MaxPositionResponse
-	if err := client.ExecuteQueryWithResult(query, variables, &response); err != nil {
-		return 0, err
-	}
-
-	maxPos := 0.0
-	for _, list := range response.TodoLists {
-		if list.Position > maxPos {
-			maxPos = list.Position
+const createTodoListMutation = `
+	mutation CreateTodoList($input: CreateTodoListInput!) {
+		createTodoList(input: $input) {
+			id
+			uid
+			title
 		}
 	}
+`
 
-	return maxPos, nil
+type listGraphQLClient interface {
+	ExecuteQueryWithResult(query string, variables map[string]interface{}, result interface{}) error
+}
+
+type listCreateFailure struct {
+	name string
+	err  error
+}
+
+func createLists(
+	client listGraphQLClient,
+	workspaceID string,
+	names []string,
+	onCreated func(name string, response CreateTodoListResponse),
+) (int, []listCreateFailure) {
+	var previousID string
+	createdCount := 0
+	var failures []listCreateFailure
+
+	for _, name := range names {
+		input := map[string]interface{}{
+			"projectId": workspaceID,
+			"title":     name,
+		}
+		if previousID != "" {
+			input["previousId"] = previousID
+		}
+
+		var response CreateTodoListResponse
+		if err := client.ExecuteQueryWithResult(createTodoListMutation, map[string]interface{}{"input": input}, &response); err != nil {
+			failures = append(failures, listCreateFailure{name: name, err: err})
+			continue
+		}
+		if response.CreateTodoList.ID == "" {
+			failures = append(failures, listCreateFailure{
+				name: name,
+				err:  fmt.Errorf("API response did not include a list ID"),
+			})
+			continue
+		}
+
+		createdCount++
+		previousID = response.CreateTodoList.ID
+		if onCreated != nil {
+			onCreated(name, response)
+		}
+	}
+
+	return createdCount, failures
 }
