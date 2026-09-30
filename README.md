@@ -123,6 +123,7 @@ Available Commands:
   reports                     Manage reports
   saved-views  (views)        Manage saved views
   search                      Search records by name
+  tables       (table)        Manage tables, fields, and records via the record engine
   tags                        Manage tags
   users                       Manage users
   version                     Print version information
@@ -295,6 +296,24 @@ blue open record <id> --workspace <id-or-slug> --print
 blue search "launch" --workspace <id>
 blue search "invoice" --workspace <id> --format json
 blue search "bug" --workspace <id> --done false --limit 50
+```
+
+### Tables
+
+Generic tables, fields, and records via the record engine's REST /v1 API. Unlike `blue records` (legacy lists), these work on any table in a workspace, including tables with no list binding.
+
+```bash
+blue tables list --workspace <id>
+blue tables views --workspace <id>
+blue tables fields list --table <id> --workspace <id>
+blue tables fields create --table <id> --workspace <id> --name "Priority" --type SELECT_SINGLE
+blue tables fields rename --workspace <id> --field <id> --name "New name"
+blue tables fields delete --workspace <id> --field <id> --confirm
+blue tables fields mount --table <id> --workspace <id> --field <id>
+blue tables fields unmount --table <id> --workspace <id> --field <id>
+blue tables records list --table <id> --workspace <id> --limit 50 --format csv
+blue tables records create --table <id> --workspace <id> --title "New record" --field-value '{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}'
+blue tables records set-value --table <id> --record <id> --field <id> --kind text --value "Hello" --workspace <id>
 ```
 
 ### Workspaces

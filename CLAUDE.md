@@ -222,6 +222,36 @@ blue rec link-pr --record <ID> --pr https://github.com/owner/repo/pull/2016 --si
 - Correct: `"cf123:option_id_123,"`
 - Wrong: `"cf123:High"` (don't use display names)
 
+### Tables (`blue tables` / `blue table`)
+
+Generic tables, fields, and records via the record engine's REST /v1 API.
+Unlike `blue records` (legacy lists), these work on any table in a workspace,
+including tables with no list binding.
+
+```bash
+blue tables list --workspace <ID>
+blue tables views --workspace <ID>
+blue tables fields list --table <TABLE_ID> --workspace <ID>
+blue tables fields create --table <TABLE_ID> --workspace <ID> --name "Priority" --type SELECT_SINGLE
+blue tables fields rename --workspace <ID> --field <FIELD_ID> --name "New name"
+blue tables fields delete --workspace <ID> --field <FIELD_ID> --confirm
+blue tables fields mount --table <TABLE_ID> --workspace <ID> --field <FIELD_ID>
+blue tables fields unmount --table <TABLE_ID> --workspace <ID> --field <FIELD_ID>
+
+blue tables records list --table <TABLE_ID> --workspace <ID>          # --format text|json|csv, --limit 1-200, --after <cursor>, --archived
+blue tables records create --table <TABLE_ID> --workspace <ID> --title "New record" \
+  --field-value '{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}'   # repeat --field-value per field
+blue tables records set-value --table <TABLE_ID> --record <RECORD_ID> --field <FIELD_ID> \
+  --kind text --value "Hello" --workspace <ID>                        # prints ACCEPTED/REPLAYED outcome
+```
+
+`records set-value --kind`: `text`, `number`, `date`, `checkbox`, `select`,
+`select-delta`, `assignee`, `reference`, `file`, `country`, `contact`,
+`location`. A `--value` that parses as a JSON object/array is sent as-is;
+anything else is wrapped per kind (`date`, `contact`, and `location` require
+JSON). Writes are idempotent via a generated `clientMutationId` — outcomes:
+`ACCEPTED`, `REPLAYED`, `REJECTED`, `CONFLICT`.
+
 ### Tags (`blue tags`)
 ```bash
 blue tags list --workspace <ID>
