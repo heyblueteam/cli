@@ -1,6 +1,6 @@
 # Blue CLI
 
-A command-line interface for managing Blue workspaces, records, lists, tags, custom fields, automations, and more.
+A command-line interface for managing Blue workspaces, databases, records, fields, automations, and more.
 
 ## Install
 
@@ -112,19 +112,15 @@ Available Commands:
   documents                   Manage documents and wiki pages
   domains                     Manage custom domains and email settings
   exports                     Queue CSV exports
-  fields       (cf)           Manage custom fields
+  databases   (database, db)  Manage databases, fields, and records via the record engine
   files                       Manage files
   forms        (form)         Manage forms
   ids          (id)           Resolve Blue names to IDs
   init                        Set up Blue CLI credentials
-  lists                       Manage lists
   open                        Open Blue pages in a browser
-  records      (rec)          Manage records
   reports                     Manage reports
   saved-views  (views)        Manage saved views
   search                      Search records by name
-  tables       (table)        Manage tables, fields, and records via the record engine
-  tags                        Manage tags
   users                       Manage users
   version                     Print version information
   webhooks     (wh)           Manage webhooks
@@ -269,8 +265,6 @@ blue workspaces list --company <slug> --simple
 ```bash
 blue ids workspace --search CRM
 blue ids field --workspace <id> --search Priority
-blue ids list --workspace <id>
-blue ids tag --workspace <id> --format csv
 blue ids user --search alex --format json
 blue ids record --workspace <id> --search "Launch plan"
 ```
@@ -298,23 +292,31 @@ blue search "invoice" --workspace <id> --format json
 blue search "bug" --workspace <id> --done false --limit 50
 ```
 
-### Tables
+### Databases
 
-Generic tables, fields, and records via the record engine's REST /v1 API. Unlike `blue records` (legacy lists), these work on any table in a workspace, including tables with no list binding.
+Databases, fields, and records via the record engine's REST /v1 API. Every record lives in a database; every value is a field.
 
 ```bash
-blue tables list --workspace <id>
-blue tables views --workspace <id>
-blue tables fields list --table <id> --workspace <id>
-blue tables fields create --table <id> --workspace <id> --name "Priority" --type SELECT_SINGLE
-blue tables fields rename --workspace <id> --field <id> --name "New name"
-blue tables fields delete --workspace <id> --field <id> --confirm
-blue tables fields mount --table <id> --workspace <id> --field <id>
-blue tables fields unmount --table <id> --workspace <id> --field <id>
-blue tables records list --table <id> --workspace <id> --limit 50 --format csv
-blue tables records create --table <id> --workspace <id> --title "New record" --field-value '{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}'
-blue tables records set-value --table <id> --record <id> --field <id> --kind text --value "Hello" --workspace <id>
+blue databases list --workspace <id>
+blue databases views --workspace <id>
+blue databases fields list --database <id> --workspace <id>
+blue databases fields create --database <id> --workspace <id> --name "Priority" --type SELECT_SINGLE
+blue databases fields rename --workspace <id> --field <id> --name "New name"
+blue databases fields delete --workspace <id> --field <id> --confirm
+blue databases fields mount --database <id> --workspace <id> --field <id>
+blue databases fields unmount --database <id> --workspace <id> --field <id>
+blue databases records list --database <id> --workspace <id> --limit 50 --format csv
+blue databases records create --database <id> --workspace <id> --title "New record" --field-value '{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}'
+blue databases records set-value --database <id> --record <id> --field <id> --kind text --value "Hello" --workspace <id>
+blue databases records link-pr --record <id> --pr 2016
 ```
+
+Every field value is one JSON object: `{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}`.
+Kinds: `text`, `number`, `date`, `checkbox`, `select`, `select-delta`,
+`assignee`, `reference`, `file`, `country`, `contact`, `location`. A `--value`
+that parses as JSON is sent as-is; bare strings, numbers, booleans, and
+comma-separated ID lists are wrapped per `--kind`. Writes carry a generated
+idempotency key; retries replay instead of double-applying.
 
 ### Workspaces
 
@@ -329,19 +331,10 @@ blue workspaces delete --workspace <id> --confirm
 ### Records
 
 ```bash
-blue records list --workspace <id> --simple
-blue records list --workspace <id> --done false --assignee <user_id>
-blue records list --workspace <id> --custom-field "cf123:GT:50000" --stats
-blue records get --record <id> --workspace <id>
-blue records create --workspace <id> --list <id> --title "Fix login bug"
-blue records create -w <id> -l <id> -t "Task" --custom-fields "cf123:option_id,"
-blue records update --record <id> --workspace <id> --title "New Title"
-blue records update -r <id> -w <id> --assignees "user1,user2" --tag-ids "tag1,tag2"
-blue records move --record <id> --list <id> --workspace <id>
-blue records count --workspace <id> --done false
-blue records delete --record <id> --confirm
-blue records link-pr --record <id> --pr 2016
-blue records link-pr --record <id> --pr https://github.com/owner/repo/pull/2016 --simple
+blue databases records list --database <id> --workspace <id>
+blue databases records create --database <id> --workspace <id> --title "New record"
+blue databases records set-value --database <id> --record <id> --field <id> --kind text --value "Hello" --workspace <id>
+blue databases records link-pr --record <id> --pr 2016
 ```
 
 ### Reports
@@ -369,45 +362,6 @@ blue saved-views update --view <id> --name "Sprint Board"
 blue saved-views update --view <id> --shared true --config-json '{"searchQuery":"launch"}'
 blue saved-views apply --view <id>
 blue saved-views delete --view <id> --confirm
-```
-
-### Lists
-
-```bash
-blue lists list --workspace <id> --simple
-blue lists create --workspace <id> --names "To Do,In Progress,Done"
-blue lists update --list <id> --workspace <id> --title "Backlog" --locked true
-blue lists update --list <id> --workspace <id> --color "#ff0000"
-blue lists delete --workspace <id> --list <id> --confirm
-```
-
-### Tags
-
-```bash
-blue tags list --workspace <id>
-blue tags create --workspace <id> --title "Bug" --color "#ff0000"
-blue tags update --tag <id> --color "#0066ff"
-blue tags add --record <id> --tag-ids "tag1,tag2"
-blue tags add --record <id> --tag-titles "Bug,Priority" --workspace <id>
-```
-
-### Custom Fields
-
-```bash
-blue fields list --workspace <id> --simple
-blue fields list --workspace <id> --detailed --examples
-blue fields create --workspace <id> --name "Priority" --type "SELECT_SINGLE" --options "High:red,Medium:yellow,Low:green"
-blue fields create --workspace <id> --name "Story Points" --type "NUMBER" --min 1 --max 13
-blue fields update --field <id> --workspace <id> --name "New Name"
-blue fields delete --field <id> --workspace <id> --confirm
-
-# Field options
-blue fields options create --field <id> --workspace <id> --options "High:red,Medium:yellow"
-blue fields options delete --field <id> --workspace <id> --option-ids "id1,id2" --confirm
-
-# Field groups
-blue fields groups list --workspace <id>
-blue fields groups manage --workspace <id> --action create --name "Group Name"
 ```
 
 ### Automations
@@ -605,23 +559,6 @@ blue completion zsh > "${fpath[1]}/_blue"
 blue completion fish > ~/.config/fish/completions/blue.fish
 ```
 
-## Custom Field Values
-
-When creating or updating records with custom fields, use this format:
-
-```bash
---custom-fields "field_id1:value1;field_id2:value2"
-```
-
-**Important:** For SELECT fields, use option IDs with trailing comma:
-- Single select: `"cf123:option_id_123,"`
-- Multi select: `"cf123:option_id_1,option_id_2,"`
-- Text: `"cf123:Hello World"`
-- Number: `"cf456:42.5"`
-- Boolean: `"cf789:true"`
-
-Get option IDs with: `blue fields list --workspace <id> --detailed`
-
 ## Project Structure
 
 ```
@@ -637,15 +574,10 @@ cli/
 │   ├── api/             # blue api *
 │   ├── bootstrap/       # blue bootstrap *
 │   ├── workspaces/      # blue workspaces *
-│   ├── records/         # blue records *
+│   ├── databases/       # blue databases * (databases, fields, records)
 │   ├── reports/         # blue reports *
 │   ├── savedviews/      # blue saved-views *
 │   ├── search/          # blue search
-│   ├── lists/           # blue lists *
-│   ├── tags/            # blue tags *
-│   ├── fields/          # blue fields *
-│   │   ├── options/     # blue fields options *
-│   │   └── groups/      # blue fields groups *
 │   ├── automations/     # blue automations *
 │   ├── charts/          # blue charts *
 │   ├── checklists/      # blue checklists *

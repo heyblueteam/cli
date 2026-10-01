@@ -16,7 +16,7 @@ var Cmd = &cobra.Command{
 	Use:     "ids",
 	Aliases: []string{"id"},
 	Short:   "Resolve Blue names to IDs",
-	Long:    "Look up commonly needed Blue IDs for workspaces, fields, lists, tags, users, and records.",
+	Long:    "Look up commonly needed Blue IDs for workspaces, fields, users, and records.",
 }
 
 type idRow struct {
@@ -38,8 +38,6 @@ var (
 func init() {
 	Cmd.AddCommand(workspaceCmd)
 	Cmd.AddCommand(fieldCmd)
-	Cmd.AddCommand(listCmd)
-	Cmd.AddCommand(tagCmd)
 	Cmd.AddCommand(userCmd)
 	Cmd.AddCommand(recordCmd)
 }

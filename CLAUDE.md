@@ -82,8 +82,6 @@ Resolves human names to the IDs the other commands need. All subcommands take
 ```bash
 blue ids workspace --search CRM
 blue ids field --workspace <ID> --search Priority
-blue ids list --workspace <ID>
-blue ids tag --workspace <ID> --format csv
 blue ids user --search alex --format json
 blue ids record --workspace <ID> --search "Launch plan"
 ```
@@ -167,125 +165,40 @@ blue ws update --workspace <ID> --name "New Name" --features "Chat:true,Files:fa
 blue ws delete --workspace <ID> --confirm
 ```
 
-### Lists (`blue lists`)
-```bash
-blue lists list --workspace <ID> --simple
-blue lists create --workspace <ID> --names "To Do,In Progress,Done"
-blue lists create --workspace <ID> --names "Done,In Progress,To Do" --reverse
-blue lists update --list <ID> --workspace <ID> --title "New Title" --locked true
-blue lists update --list <ID> --workspace <ID> --color "#ff0000"
-blue lists delete --workspace <ID> --list <ID> --confirm
-```
+### Databases (`blue databases` / `blue database` / `blue db`)
 
-### Records (`blue records` / `blue rec`)
-```bash
-# List/query records
-blue rec list --workspace <ID> --simple
-blue rec list --workspace <ID> --done false --assignee <USER_ID> --tags "tag1,tag2"
-blue rec list --workspace <ID> --custom-field "field_id:GT:50000" --stats
-blue rec list --workspace <ID> --custom-field "field_id:CONTAINS:urgent" --calc
-blue rec list --list <ID> --limit 50 --skip 100
-
-# Get single record
-blue rec get --record <ID> --workspace <ID>
-blue rec get --record <ID> --workspace <ID> --simple
-
-# Create records
-blue rec create --workspace <ID> --list <ID> --title "Task Name"
-blue rec create -w <ID> -l <ID> -t "Task" --description "Details" --assignees "user1,user2"
-blue rec create -w <ID> -l <ID> -t "Task" --custom-fields "cf123:option_id_123,;cf456:42"
-
-# Update records
-blue rec update --record <ID> --workspace <ID> --title "New Title"
-blue rec update -r <ID> -w <ID> --assignees "user1,user2" --tag-ids "tag1,tag2"
-blue rec update -r <ID> -w <ID> --custom-fields "cf123:Updated Value;cf456:42"
-blue rec update -r <ID> --due-date "2026-12-31" --timezone "UTC"
-
-# Move records
-blue rec move --record <ID> --list <ID> --workspace <ID>
-
-# Count records
-blue rec count --workspace <ID>
-blue rec count --workspace <ID> --done false --list <ID>
-
-# Delete records
-blue rec delete --record <ID> --confirm
-
-# Link a GitHub pull request through the workspace integration
-blue rec link-pr --record <ID> --pr 2016
-blue rec link-pr --record <ID> --pr https://github.com/owner/repo/pull/2016 --simple
-```
-
-**Custom Field Filter Operators:** `EQ`, `NE`, `GT`, `GTE`, `LT`, `LTE`, `IN`, `NIN`, `CONTAINS`, `IS`, `NOT`
-
-**Custom Field Values for SELECT fields MUST use option IDs with trailing comma:**
-- Correct: `"cf123:option_id_123,"`
-- Wrong: `"cf123:High"` (don't use display names)
-
-### Tables (`blue tables` / `blue table`)
-
-Generic tables, fields, and records via the record engine's REST /v1 API.
-Unlike `blue records` (legacy lists), these work on any table in a workspace,
-including tables with no list binding.
+Databases, fields, and records via the record engine's REST /v1 API. Every
+record lives in a database; every value is a field.
 
 ```bash
-blue tables list --workspace <ID>
-blue tables views --workspace <ID>
-blue tables fields list --table <TABLE_ID> --workspace <ID>
-blue tables fields create --table <TABLE_ID> --workspace <ID> --name "Priority" --type SELECT_SINGLE
-blue tables fields rename --workspace <ID> --field <FIELD_ID> --name "New name"
-blue tables fields delete --workspace <ID> --field <FIELD_ID> --confirm
-blue tables fields mount --table <TABLE_ID> --workspace <ID> --field <FIELD_ID>
-blue tables fields unmount --table <TABLE_ID> --workspace <ID> --field <FIELD_ID>
+blue db list --workspace <ID>
+blue db views --workspace <ID>
+blue db fields list --database <DATABASE_ID> --workspace <ID>
+blue db fields create --database <DATABASE_ID> --workspace <ID> --name "Priority" --type SELECT_SINGLE
+blue db fields rename --workspace <ID> --field <FIELD_ID> --name "New name"
+blue db fields delete --workspace <ID> --field <FIELD_ID> --confirm
+blue db fields mount --database <DATABASE_ID> --workspace <ID> --field <FIELD_ID>
+blue db fields unmount --database <DATABASE_ID> --workspace <ID> --field <FIELD_ID>
 
-blue tables records list --table <TABLE_ID> --workspace <ID>          # --format text|json|csv, --limit 1-200, --after <cursor>, --archived
-blue tables records create --table <TABLE_ID> --workspace <ID> --title "New record" \
+blue db records list --database <DATABASE_ID> --workspace <ID>          # --format text|json|csv, --limit 1-200, --after <cursor>, --archived
+blue db records create --database <DATABASE_ID> --workspace <ID> --title "New record" \
   --field-value '{"fieldId":"f_1","kind":"text","value":{"text":"hi"}}'   # repeat --field-value per field
-blue tables records set-value --table <TABLE_ID> --record <RECORD_ID> --field <FIELD_ID> \
+blue db records set-value --database <DATABASE_ID> --record <RECORD_ID> --field <FIELD_ID> \
   --kind text --value "Hello" --workspace <ID>                        # prints ACCEPTED/REPLAYED outcome
+blue db records link-pr --record <RECORD_ID> --pr 2016
 ```
+
+**Available Field Types:** `TEXT_SINGLE`, `TEXT_MULTI`, `NUMBER`, `CURRENCY`,
+`PERCENT`, `DATE`, `TIME_DURATION`, `SELECT_SINGLE`, `SELECT_MULTI`,
+`CHECKBOX`, `RATING`, `EMAIL`, `PHONE`, `URL`, `LOCATION`, `COUNTRY`, `FILE`,
+`UNIQUE_ID`, `FORMULA`, `REFERENCE`, `LOOKUP`, `BUTTON`, `CURRENCY_CONVERSION`
 
 `records set-value --kind`: `text`, `number`, `date`, `checkbox`, `select`,
 `select-delta`, `assignee`, `reference`, `file`, `country`, `contact`,
 `location`. A `--value` that parses as a JSON object/array is sent as-is;
-anything else is wrapped per kind (`date`, `contact`, and `location` require
-JSON). Writes are idempotent via a generated `clientMutationId` — outcomes:
-`ACCEPTED`, `REPLAYED`, `REJECTED`, `CONFLICT`.
-
-### Tags (`blue tags`)
-```bash
-blue tags list --workspace <ID>
-blue tags create --workspace <ID> --title "Bug" --color "#ff0000"
-blue tags update --tag <ID> --color "#0066ff"
-blue tags add --record <ID> --tag-ids "tag1,tag2"
-blue tags add --record <ID> --tag-titles "Bug,Priority" --workspace <ID>
-```
-
-### Custom Fields (`blue fields` / `blue cf`)
-```bash
-# List fields
-blue cf list --workspace <ID> --simple
-blue cf list --workspace <ID> --detailed --examples --format json
-
-# Create fields
-blue cf create --workspace <ID> --name "Priority" --type "SELECT_SINGLE" --options "High:red,Medium:yellow,Low:green"
-blue cf create --workspace <ID> --name "Story Points" --type "NUMBER" --min 1 --max 13
-blue cf create --workspace <ID> --name "Cost" --type "CURRENCY" --currency "USD"
-
-# Update/delete fields
-blue cf update --field <ID> --workspace <ID> --name "New Name" --description "Updated"
-blue cf delete --field <ID> --workspace <ID> --confirm
-
-# Field options
-blue cf options create --field <ID> --workspace <ID> --options "High:red,Medium:yellow,Low:green"
-blue cf options delete --field <ID> --workspace <ID> --option-ids "id1,id2" --confirm
-
-# Field groups
-blue cf groups list --workspace <ID>
-blue cf groups manage --workspace <ID> --action create --name "Group Name" --color "#ff0000"
-```
-
-**Available Field Types:** `TEXT_SINGLE`, `TEXT_MULTI`, `NUMBER`, `CURRENCY`, `PERCENT`, `DATE`, `TIME_DURATION`, `SELECT_SINGLE`, `SELECT_MULTI`, `CHECKBOX`, `RATING`, `EMAIL`, `PHONE`, `URL`, `LOCATION`, `COUNTRY`, `FILE`, `UNIQUE_ID`, `FORMULA`, `REFERENCE`, `LOOKUP`, `BUTTON`, `CURRENCY_CONVERSION`
+anything else is wrapped per kind (`date`, `contact`, `location`, and
+`select-delta` require JSON). Writes are idempotent via a generated
+`clientMutationId` — outcomes: `ACCEPTED`, `REPLAYED`, `REJECTED`, `CONFLICT`.
 
 ### Automations (`blue automations` / `blue auto`)
 ```bash
@@ -650,13 +563,8 @@ cli/
 │   ├── api/             # blue api *
 │   ├── bootstrap/       # blue bootstrap *
 │   ├── workspaces/      # blue workspaces *
-│   ├── records/         # blue records *
+│   ├── databases/       # blue databases * (databases, fields, records)
 │   ├── search/          # blue search
-│   ├── lists/           # blue lists *
-│   ├── tags/            # blue tags *
-│   ├── fields/          # blue fields *
-│   │   ├── options/     # blue fields options *
-│   │   └── groups/      # blue fields groups *
 │   ├── automations/     # blue automations *
 │   ├── checklists/      # blue checklists *
 │   │   └── items/       # blue checklists items *
