@@ -1,4 +1,4 @@
-package records
+package databases
 
 import (
 	"bytes"
@@ -10,13 +10,13 @@ import (
 )
 
 func TestLinkPRRequiresRecordAndPR(t *testing.T) {
-	cmd := newLinkPRCmd()
+	cmd := newRecordsLinkPRCmd()
 	cmd.SilenceUsage = true
 	if err := cmd.Execute(); err == nil || !strings.Contains(err.Error(), "record ID is required") {
 		t.Fatalf("missing record error = %v", err)
 	}
 
-	cmd = newLinkPRCmd()
+	cmd = newRecordsLinkPRCmd()
 	cmd.SetArgs([]string{"--record", "record-1"})
 	cmd.SilenceUsage = true
 	if err := cmd.Execute(); err == nil || !strings.Contains(err.Error(), "pull request is required") {
@@ -45,7 +45,7 @@ func TestLinkPRUsesGraphQLVariablesAndSimpleOutput(t *testing.T) {
 	t.Setenv("COMPANY_ID", "company")
 
 	prURL := "https://github.com/heyblueteam/blue/pull/2016"
-	cmd := newLinkPRCmd()
+	cmd := newRecordsLinkPRCmd()
 	cmd.SetArgs([]string{"--record", "record-1", "--pr", prURL, "--workspace", "product", "--simple"})
 	cmd.SilenceUsage = true
 	var output bytes.Buffer
@@ -82,7 +82,7 @@ func TestLinkPRDetailedOutput(t *testing.T) {
 	t.Setenv("CLIENT_ID", "client")
 	t.Setenv("COMPANY_ID", "company")
 
-	cmd := newLinkPRCmd()
+	cmd := newRecordsLinkPRCmd()
 	cmd.SetArgs([]string{"--record", "record-1", "--pr", "#42"})
 	cmd.SilenceUsage = true
 	var output bytes.Buffer

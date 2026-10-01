@@ -1,4 +1,4 @@
-package records
+package databases
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ type gitHubEntityLink struct {
 	RepoFullName string `json:"repoFullName"`
 }
 
-func newLinkPRCmd() *cobra.Command {
+func newRecordsLinkPRCmd() *cobra.Command {
 	opts := linkPROptions{}
 	cmd := &cobra.Command{
 		Use:   "link-pr",
@@ -31,11 +31,11 @@ func newLinkPRCmd() *cobra.Command {
 
 The record's workspace must have an active linked GitHub repository. The pull
 request can be a number, a number prefixed with #, or a full GitHub URL.`,
-		Example: `  blue records link-pr --record <id> --pr 2016
-  blue records link-pr -r <id> --pr '#2016' --workspace <id>
-  blue records link-pr -r <id> --pr https://github.com/owner/repo/pull/2016 --simple`,
+		Example: `  blue databases records link-pr --record <id> --pr 2016
+  blue databases records link-pr -r <id> --pr '#2016' --workspace <id>
+  blue databases records link-pr -r <id> --pr https://github.com/owner/repo/pull/2016 --simple`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runLinkPR(cmd, opts)
+			return runRecordsLinkPR(cmd, opts)
 		},
 	}
 
@@ -47,7 +47,7 @@ request can be a number, a number prefixed with #, or a full GitHub URL.`,
 	return cmd
 }
 
-func runLinkPR(cmd *cobra.Command, opts linkPROptions) error {
+func runRecordsLinkPR(cmd *cobra.Command, opts linkPROptions) error {
 	recordID := strings.TrimSpace(opts.recordID)
 	if recordID == "" {
 		return fmt.Errorf("record ID is required. Use --record flag")

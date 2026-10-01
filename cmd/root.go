@@ -19,23 +19,20 @@ import (
 	"github.com/heyblueteam/cli/cmd/company"
 	"github.com/heyblueteam/cli/cmd/context"
 	"github.com/heyblueteam/cli/cmd/dashboards"
+	"github.com/heyblueteam/cli/cmd/databases"
 	"github.com/heyblueteam/cli/cmd/dependencies"
 	"github.com/heyblueteam/cli/cmd/docs"
 	"github.com/heyblueteam/cli/cmd/doctor"
 	"github.com/heyblueteam/cli/cmd/documents"
 	"github.com/heyblueteam/cli/cmd/domains"
 	"github.com/heyblueteam/cli/cmd/exports"
-	"github.com/heyblueteam/cli/cmd/fields"
 	"github.com/heyblueteam/cli/cmd/files"
 	"github.com/heyblueteam/cli/cmd/forms"
 	"github.com/heyblueteam/cli/cmd/ids"
-	"github.com/heyblueteam/cli/cmd/lists"
 	"github.com/heyblueteam/cli/cmd/open"
-	"github.com/heyblueteam/cli/cmd/records"
 	"github.com/heyblueteam/cli/cmd/reports"
 	"github.com/heyblueteam/cli/cmd/savedviews"
 	"github.com/heyblueteam/cli/cmd/search"
-	"github.com/heyblueteam/cli/cmd/tags"
 	"github.com/heyblueteam/cli/cmd/users"
 	"github.com/heyblueteam/cli/cmd/webhooks"
 	"github.com/heyblueteam/cli/cmd/whoami"
@@ -56,7 +53,7 @@ var rootCmd = &cobra.Command{
 	Use:   "blue",
 	Short: "Blue CLI - Manage your Blue workspaces from the command line",
 	Long: `Blue CLI is a command-line tool for interacting with the Blue API.
-Manage workspaces, records, lists, tags, custom fields, automations, and more.`,
+Manage workspaces, databases, records, fields, comments, and more.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if companyFlag, _ := cmd.Flags().GetString("company"); companyFlag != "" {
 			os.Setenv("COMPANY_ID", companyFlag)
@@ -80,13 +77,11 @@ func init() {
 	rootCmd.AddCommand(company.Cmd)
 	rootCmd.AddCommand(dashboards.Cmd)
 	rootCmd.AddCommand(workspaces.Cmd)
-	rootCmd.AddCommand(lists.Cmd)
 	rootCmd.AddCommand(open.Cmd)
-	rootCmd.AddCommand(records.Cmd)
 	rootCmd.AddCommand(reports.Cmd)
 	rootCmd.AddCommand(savedviews.Cmd)
 	rootCmd.AddCommand(search.Cmd)
-	rootCmd.AddCommand(tags.Cmd)
+	rootCmd.AddCommand(databases.Cmd)
 	rootCmd.AddCommand(comments.Cmd)
 	rootCmd.AddCommand(users.Cmd)
 	rootCmd.AddCommand(context.Cmd)
@@ -96,7 +91,6 @@ func init() {
 	rootCmd.AddCommand(docs.Cmd)
 	rootCmd.AddCommand(domains.Cmd)
 	rootCmd.AddCommand(exports.Cmd)
-	rootCmd.AddCommand(fields.Cmd)
 	rootCmd.AddCommand(files.Cmd)
 	rootCmd.AddCommand(forms.Cmd)
 	rootCmd.AddCommand(ids.Cmd)
@@ -145,7 +139,7 @@ func addSourceHints(c *cobra.Command) {
 	}
 }
 
-// sourceHint returns the repo-relative path (e.g. "cmd/records/list.go")
+// sourceHint returns the repo-relative path (e.g. "cmd/ids/field.go")
 // where fn is defined, or "" if it can't be determined.
 func sourceHint(fn func(*cobra.Command, []string) error) string {
 	pc := reflect.ValueOf(fn).Pointer()
