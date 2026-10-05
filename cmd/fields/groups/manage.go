@@ -183,14 +183,13 @@ func fetchProjectTodoFields(client *common.Client, projectID string) ([]common.T
 	return response.Project.TodoFields, nil
 }
 
-// updateProjectTodoFields updates the project's todoFields configuration
-func updateProjectTodoFields(client *common.Client, projectID string, todoFields []common.TodoFieldInput) error {
+// updateProjectTodoFields updates the project's todoFields configuration.
+// The API restores any stored group a save omits, so a group delete must name
+// the group in deletedFolderIds or it comes back.
+func updateProjectTodoFields(client *common.Client, projectID string, todoFields []common.TodoFieldInput, deletedFolderIds ...string) error {
 	mutation := `
-		mutation EditProject($projectId: String!, $todoFields: [TodoFieldInput]) {
-			editProject(input: {
-				projectId: $projectId
-				todoFields: $todoFields
-			}) {
+		mutation EditProject($input: EditProjectInput!) {
+			editProject(input: $input) {
 				id
 				name
 				todoFields {
@@ -207,10 +206,16 @@ func updateProjectTodoFields(client *common.Client, projectID string, todoFields
 		}
 	`
 
-	variables := map[string]interface{}{
+	input := map[string]interface{}{
 		"projectId":  projectID,
 		"todoFields": todoFields,
 	}
+	// Sent only when set, so the other actions still work against an API
+	// that predates deletedFolderIds.
+	if len(deletedFolderIds) > 0 {
+		input["deletedFolderIds"] = deletedFolderIds
+	}
+	variables := map[string]interface{}{"input": input}
 
 	var response ManageFieldGroupsResponse
 	return client.ExecuteQueryWithResult(mutation, variables, &response)
@@ -311,7 +316,7 @@ func actionDelete(client *common.Client, projectID, groupID string) error {
 	}
 
 	inputs := convertToInput(fields)
-	if err := updateProjectTodoFields(client, projectID, inputs); err != nil {
+	if err := updateProjectTodoFields(client, projectID, inputs, groupID); err != nil {
 		return err
 	}
 
