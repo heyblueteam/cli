@@ -5,7 +5,7 @@ icon: Pencil
 order: 2
 ---
 
-Use the `editSavedView` mutation to change a saved view's name, icon, sharing status, or configuration. This page also covers the three related mutations that operate on existing views: `updateSavedViewPosition` (reorder), `setWorkspaceDefaultView` (set the workspace-wide default), and `setUserDefaultView` (set your personal default). Saved views are `SavedView` objects scoped to a workspace (`Project`).
+Use the `editSavedView` mutation to change a saved view's name, icon, sharing status, or configuration. This page also covers the four related mutations that operate on existing views: `updateSavedViewPosition` (move one view), `reorderSavedViews` (reorder a whole section), `setWorkspaceDefaultView` (set the workspace-wide default), and `setUserDefaultView` (set your personal default). Saved views are `SavedView` objects scoped to a workspace (`Project`).
 
 All examples are sent to `https://api.blue.app/graphql` with your authentication headers (`blue-token-id`, `blue-token-secret`, `blue-org-id`). Header names are case-insensitive.
 
@@ -65,6 +65,7 @@ Omitted fields are left unchanged. `viewType` is not part of this input and cann
 
 | Field        | Type             | Description                                                         |
 | ------------ | ---------------- | ------------------------------------------------------------------- |
+| `databaseId` | `ID`             | ID of the database the view belongs to.                             |
 | `id`         | `ID!`            | Unique identifier of the saved view.                                |
 | `uid`        | `String!`        | Short human-friendly identifier.                                    |
 | `name`       | `String!`        | Display name.                                                       |
@@ -164,11 +165,41 @@ mutation UpdateSavedViewPosition {
 }
 ```
 
-Positions are spaced by `65535` when views are created. To place a view between two others, set `position` to a value between theirs (a fractional value is fine). Reordering requires the same modify access as editing — see [Permissions](#permissions).
+Positions are spaced by `65535` when views are created. To place a view between two others, set `position` to a value between theirs (a fractional value is fine). Reordering a shared view requires workspace `OWNER` or `ADMIN` access. Only the creator can reorder a personal view — see [Permissions](#permissions).
+
+## Reorder a whole section
+
+Use the `reorderSavedViews` mutation to set the order of every view in one section at once. It takes the workspace (`projectId: String!`), the section (`isShared: Boolean!`), and the view `ids` in their new order, and returns the reordered `[SavedView!]!`.
+
+```graphql
+mutation ReorderSavedViews {
+  reorderSavedViews(
+    projectId: "project_123"
+    isShared: false
+    ids: ["view_123", "view_456", "view_789"]
+  ) {
+    id
+    name
+    position
+  }
+}
+```
+
+`ids` must list **every** view in that section exactly once — personal views are the caller's own views, shared views are all of the workspace's shared views. A list that is missing a view, contains a duplicate, or names a view from the other section is rejected and nothing is reordered. Blue assigns the new positions in one transaction, so a rejected call never leaves a half-applied order.
+
+Prefer `reorderSavedViews` over repeated `updateSavedViewPosition` calls when you are rewriting a whole section, such as sorting it alphabetically.
+
+| Parameter   | Type         | Required | Description                                                                     |
+| ----------- | ------------ | -------- | ------------------------------------------------------------------------------- |
+| `projectId` | `String!`    | Yes      | The workspace whose views are reordered.                                        |
+| `isShared`  | `Boolean!`   | Yes      | `false` reorders the caller's personal views; `true` reorders the shared views. |
+| `ids`       | `[String!]!` | Yes      | Every view id in that section, in the order you want, first to last.            |
 
 ## Set the workspace default view
 
-Use the `setWorkspaceDefaultView` mutation to set a **shared** view as the default for everyone in the workspace. It takes a `projectId: String!` (ID or slug) and an optional `viewId: String`, and returns the updated `Project!` with its `defaultSavedView`.
+Use the `setWorkspaceDefaultView` mutation to set a **shared** view as the default for everyone in the workspace. It takes a `projectId: String!` (ID or slug), an optional `viewId: String`, and an optional `databaseId: ID`, and returns the updated `Project!` with its `defaultSavedView`.
+
+Pass `databaseId` to scope the default to one database in the workspace. The view must then belong to that database, or the call returns `FORBIDDEN`. A per-database default is read back through the `savedViews` query's `databaseDefaultViewId` field (see [List Saved Views](/api/saved-views/list-saved-views)), not through `Project.defaultSavedView`, which keeps reporting the workspace-wide default you set when you omit `databaseId`.
 
 ```graphql
 mutation SetWorkspaceDefaultView {
@@ -217,7 +248,7 @@ Both setting and clearing require the caller to be an `OWNER` or `ADMIN` of the 
 
 ## Set your personal default view
 
-Use the `setUserDefaultView` mutation to set your own default view for a workspace. It takes a `projectId: String!` (ID or slug) and an optional `viewId: String`, and returns `Boolean!`. The view may be personal or shared, but it must belong to the workspace. Any workspace member can set their own default.
+Use the `setUserDefaultView` mutation to set your own default view for a workspace. It takes a `projectId: String!` (ID or slug), an optional `viewId: String`, and an optional `databaseId: ID`, and returns `Boolean!`. The view may be personal or shared, but it must belong to the workspace (and to the `databaseId` you pass, if any). Any workspace member can set their own default. Pass `databaseId` to scope the default to one database; the result is read back through the `savedViews` query's `userDefaultViewId` field.
 
 ```graphql
 mutation SetUserDefaultView {
@@ -244,7 +275,7 @@ Passing a `viewId` for a view that belongs to a different workspace returns `FOR
 | Code                    | When                                                                                                                                                                                                                                                                                                                                           |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SAVED_VIEW_NOT_FOUND`  | The view ID does not exist, or you lack access to its workspace. Applies to `editSavedView` and `updateSavedViewPosition`.                                                                                                                                                                                                                     |
-| `FORBIDDEN`             | You don't have modify access to the view; you tried to share a view without OWNER/ADMIN; or (for the default-view mutations) the target view is not shared / not in the workspace. Message: `You are not authorized.`                                                                                                                          |
+| `FORBIDDEN`             | You don't have modify access to the view; you tried to share a view without OWNER/ADMIN; or (for the default-view mutations) the target view is not shared / not in the workspace / not in the `databaseId` you passed. Message: `You are not authorized.`                                                                                     |
 | `PROJECT_NOT_FOUND`     | The workspace doesn't exist, or — for `setWorkspaceDefaultView` — you are not an OWNER/ADMIN of it. Also raised by `setUserDefaultView` when you're not a member. Message: `Project was not found.`                                                                                                                                            |
 | `INTERNAL_SERVER_ERROR` | The `viewConfig` you supplied to `editSavedView` failed validation (wrong shape, over the 50 KB limit, or a bad enum value). Validation failures aren't modeled as a dedicated code, and the message is masked to `Internal server error` in production — validate `viewConfig` against the [structure](#viewconfig-structure) before sending. |
 
@@ -261,12 +292,17 @@ Passing a `viewId` for a view that belongs to a different workspace returns `FOR
 
 ## Permissions
 
-`editSavedView` and `updateSavedViewPosition` both require **modify access** to the view first (`findModifiableSavedView`):
+`editSavedView` requires **modify access** to the view:
 
 - The **creator** can modify their own view (personal or shared).
 - An `OWNER` or `ADMIN` can modify a view **only if it is already shared**.
 
 An admin who is not the creator **cannot edit a private personal view** that belongs to another user — the modify-access check throws `FORBIDDEN` before any field-level check runs. So an admin cannot convert someone else's personal view to shared.
+
+Reordering with `updateSavedViewPosition` or `reorderSavedViews` has separate requirements:
+
+- **Shared views:** workspace `OWNER` or `ADMIN` only. Being the creator does not grant reorder access.
+- **Personal views:** the creator only. Owners and admins cannot reorder another user's personal views.
 
 Changing `isShared` adds a second check on top of modify access:
 

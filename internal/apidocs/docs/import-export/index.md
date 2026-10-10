@@ -38,7 +38,10 @@ mutation ImportRecords {
 | `s3Key`         | `String!` | Yes      | Storage key of the uploaded CSV file. Validated server-side: keys containing `..`, a leading `/`, or characters outside `^[a-zA-Z0-9][a-zA-Z0-9_./-]*$` are rejected. |
 | `headers`       | `JSON!`   | Yes      | Ordered JSON array of column header names. Each entry maps the CSV column at that position to a record field, matched by name.                                        |
 | `projectId`     | `String!` | Yes      | The workspace `id` (CUID) to import records into.                                                                                                                     |
+| `databaseId`    | `String`  | No       | Import into this database (table) of the workspace. When set, the whole job runs against that table. See the note below.                                              |
 | `useRustImport` | `Boolean` | No       | **Deprecated** — no longer used and has no effect. Do not set it.                                                                                                     |
+
+Without `databaseId`, the import keeps the whole-workspace behavior described below. With `databaseId`, the entire job runs against that one table on the record engine: only Title and mapped-field columns are supported — List, Description, Tags, dates, and Assignee columns are rejected with `BAD_USER_INPUT` — and the table must already have a Title (display) field, or the call fails with `BAD_USER_INPUT` before the job is queued.
 
 ### Recognized headers
 
@@ -181,6 +184,7 @@ An import can't push a workspace's record count past your plan's `recordsPerWork
 
 - **Lists and tags auto-create.** Lists and tags referenced in the CSV that don't already exist in the workspace are created during the import.
 - **Custom fields match by name.** Any header that isn't a built-in name is matched to a custom field of the same name. Add custom-field columns to the `headers` array to import their values.
+- **Imports stay quiet.** Records created or filled by an import fire no per-record field webhook events and no assignment/date/completion notification emails.
 - **Upload first.** The CSV must be uploaded to storage before you call `importRecords`. See [Uploading Files](/api/files) to get the `s3Key`.
 
 ## Related

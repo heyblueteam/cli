@@ -18,6 +18,8 @@ Blue stores files as `File` objects scoped to an organization (`Organization`) a
 | Transport      | `multipart/form-data` to `/graphql` | `PUT` bytes to a signed storage URL |
 | Best for       | Almost everything                   | Files over 256 MB                   |
 
+Both paths accept any file type. Blue stores the file and serves it back with its stored content type. Filename, extension, and size checks still apply.
+
 All examples authenticate with personal access token headers and target `https://api.blue.app`. See [Authentication](/api/start-guide/authentication) for how to generate a token. Headers are case-insensitive; this page uses the canonical casing.
 
 ---
@@ -359,7 +361,28 @@ The REST endpoint returns HTTP status codes (it is not GraphQL):
 | `400`                             | `filename` missing, both company and project headers not supplied, the extension can't be determined, or `size` exceeds 4.8 GB. |
 | `401`                             | No valid token.                                                                                                                 |
 | `403` (`FILES_DISABLED_FOR_ROLE`) | The caller's workspace role has file uploads disabled.                                                                          |
+| `403` (`PLAN_LIMIT_REACHED`)      | The upload would exceed the organization's storage allowance or per-file tier cap.                                              |
 | `404`                             | Company or project not found; or, on confirm, the file row or stored object is missing.                                         |
+
+`GET /uploads` applies the same plan storage cap and per-file size cap as the GraphQL mutations, using the `size` you declare. The check runs before the `File` row is created, so a refused presign consumes none of your allowance. The body repeats the message at the top level and carries the GraphQL error shape alongside it:
+
+```json
+{
+  "message": "Storage (GB) limit reached (10/10). Upgrade your plan for more.",
+  "error": {
+    "code": "PLAN_LIMIT_REACHED",
+    "message": "Storage (GB) limit reached (10/10). Upgrade your plan for more.",
+    "extensions": {
+      "kind": "over_limit",
+      "resource": "storage_gb",
+      "current": 10,
+      "limit": 10
+    }
+  }
+}
+```
+
+`resource` is `storage_gb` when the organization is out of storage, and `max_upload_size_mb` when the single file is above the tier's per-file cap. Anonymous form uploads are checked against the storage allowance of the organization that owns the form.
 
 ### Anonymous form uploads
 
@@ -451,14 +474,14 @@ The `file` attribute is a JSON string built from the upload response:
 
 ### CreateCommentInput
 
-| Parameter    | Type               | Required | Description                                                            |
-| ------------ | ------------------ | -------- | ---------------------------------------------------------------------- |
-| `html`       | `String!`          | Yes      | Comment body as HTML, including any attachment `<div>`s.               |
-| `text`       | `String!`          | Yes      | Plain-text fallback of the comment.                                    |
-| `category`   | `CommentCategory!` | Yes      | `TODO`, `DISCUSSION`, or `STATUS_UPDATE`.                              |
+| Parameter    | Type               | Required | Description                                                      |
+| ------------ | ------------------ | -------- | ---------------------------------------------------------------- |
+| `html`       | `String!`          | Yes      | Comment body as HTML, including any attachment `<div>`s.         |
+| `text`       | `String!`          | Yes      | Plain-text fallback of the comment.                              |
+| `category`   | `CommentCategory!` | Yes      | `TODO`, `DISCUSSION`, or `STATUS_UPDATE`.                        |
 | `categoryId` | `String!`          | Yes      | ID of the record, chat, or status update the comment belongs to. |
-| `tiptap`     | `Boolean`          | No       | Set `true` so attachment markup is parsed.                             |
-| `parentId`   | `String`           | No       | ID of the comment this replies to.                                     |
+| `tiptap`     | `Boolean`          | No       | Set `true` so attachment markup is parsed.                       |
+| `parentId`   | `String`           | No       | ID of the comment this replies to.                               |
 
 ### Example
 
@@ -541,11 +564,12 @@ mutation CreateRecordCustomFieldFile($input: CreateRecordCustomFieldFileInput!) 
 
 ### CreateRecordCustomFieldFileInput
 
-| Parameter       | Type      | Required | Description                                    |
-| --------------- | --------- | -------- | ---------------------------------------------- |
-| `todoId`        | `String!` | Yes      | ID of the record (`Record`) holding the field. |
-| `customFieldId` | `String!` | Yes      | ID of the file custom field.                 |
-| `fileUid`       | `String!` | Yes      | `uid` of the uploaded file.                  |
+| Parameter       | Type      | Required | Description                                                                                                                       |
+| --------------- | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `todoId`        | `String!` | Yes      | ID of the record (`Record`) holding the field.                                                                                    |
+| `customFieldId` | `String!` | Yes      | ID of the file custom field.                                                                                                      |
+| `databaseId`    | `ID`      | No       | Record table that mounts the field. Pass it when the field is mounted on more than one of the record's tables; omit it otherwise. |
+| `fileUid`       | `String!` | Yes      | `uid` of the uploaded file.                                                                                                       |
 
 The mutation returns `Boolean` — `true` on success. Do not request a sub-selection.
 

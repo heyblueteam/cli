@@ -33,7 +33,7 @@ mutation UpdateRecord {
 
 <Callout variant="info" title="Set the workspace header">
 
-`editRecord` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; the header determines which one the move applies to.
+`editRecord` resolves the record against the workspace in the `X-Bloo-Project-ID` header. A record can live in more than one workspace; you can read it if **any** of them grants you access, but the edit is applied in the workspace named by the header, and the record must live there.
 
 </Callout>
 

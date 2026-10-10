@@ -127,7 +127,7 @@ mutation CreateTextField {
 
 ## Field Types
 
-`CustomFieldType` has 26 values. Most types are created with just `name` + `type`; the table notes the extra input each type reads.
+`CustomFieldType` has 28 values. The 26 types below are the ones this reference covers. The enum also contains `TABLE` and `TIME_IN_VALUE`: `createCustomField` rejects `TIME_IN_VALUE` with `BAD_USER_INPUT` — a Time in Value field can only be added to a record table. Most types are created with just `name` + `type`; the table notes the extra input each type reads.
 
 | `type`                | Stores                                | Extra input                                                                                       |
 | --------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- |

@@ -30,6 +30,8 @@ mutation ExportRecords {
 
 `projectId` accepts a workspace ID or slug.
 
+A workspace can hold more than one database (table). By default the export covers **every** database in the workspace, and the worker builds **one CSV per database**: a single-database workspace gets one file, as before, while a multi-database workspace gets one CSV per database — the email lists a download link for each, and the progress event's `fileUrl` points at one combined CSV whose first two columns, `Source Table ID` and `Source Table`, say which database each row came from. Pass `databaseId` to export a single database instead.
+
 ## Parameters
 
 ### ExportRecordsInput
@@ -37,6 +39,7 @@ mutation ExportRecords {
 | Parameter       | Type          | Required | Description                                                                                          |
 | --------------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------- |
 | `projectId`     | `String!`     | Yes      | ID or slug of the workspace to export records from.                                                  |
+| `databaseId`    | `String`      | No       | Export only this database (table) of the workspace. Must be a live database in that workspace.       |
 | `filter`        | `TodosFilter` | No       | Criteria to limit which records are exported. If omitted, all records in the workspace are exported. |
 | `useRustExport` | `Boolean`     | No       | **Deprecated — no longer used; has no effect.** The resolver ignores this field.                     |
 
@@ -272,14 +275,14 @@ On failure the event carries `"status": "ERROR"`, `"progress": 0`, and an `error
 
 ## Errors
 
-| Code                      | When                                                                                                                                                                     |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_NOT_FOUND`       | `exportRecords`: the workspace does not exist, or the requesting user is not a member of it (membership is part of the lookup).                                          |
-| `REPORT_NOT_FOUND`        | `exportReport`: the report does not exist or the user has no access to it.                                                                                               |
-| `CHART_NOT_FOUND`         | `exportChartCSV`: the chart does not exist, or the user is not a member of the organization that owns the dashboard.                                                     |
-| `CHART_ALREADY_EXPORTING` | `exportChartCSV`: an export for the same `(chartId, userId)` pair is already in flight.                                                                                  |
-| `RATE_LIMITED`            | `exportRecords` / `exportReport`: more than one export request was made within 50 seconds by the same token.                                                             |
-| `FORBIDDEN`               | The caller lacks the required role for the operation (see [Permissions](#permissions)), or `exportReport` is called by an organization without the Reports plan feature. |
+| Code                      | When                                                                                                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PROJECT_NOT_FOUND`       | `exportRecords`: the workspace does not exist, or the requesting user is not a member of it (membership is part of the lookup). `databaseId` raises the same code when it is not a live database in that workspace. |
+| `REPORT_NOT_FOUND`        | `exportReport`: the report does not exist or the user has no access to it.                                                                                                                                          |
+| `CHART_NOT_FOUND`         | `exportChartCSV`: the chart does not exist, or the user is not a member of the organization that owns the dashboard.                                                                                                |
+| `CHART_ALREADY_EXPORTING` | `exportChartCSV`: an export for the same `(chartId, userId)` pair is already in flight.                                                                                                                             |
+| `RATE_LIMITED`            | `exportRecords` / `exportReport`: more than one export request was made within 50 seconds by the same token.                                                                                                        |
+| `FORBIDDEN`               | The caller lacks the required role for the operation (see [Permissions](#permissions)), or `exportReport` is called by an organization without the Reports plan feature.                                            |
 
 `exportReport` also throws a generic (untyped) error — `No valid projects found in report data sources` — when the report's data sources resolve to zero accessible workspaces. This surfaces with no `extensions.code`.
 
@@ -294,9 +297,10 @@ On failure the event carries `"status": "ERROR"`, `"progress": 0`, and an `error
 ## Notes
 
 - **Delivery is email-only.** Every export here returns a bare `true`; the CSV is generated in the background and a download link is emailed to the requesting user. There is no programmatic way to fetch the file from the API.
+- **Exports respect record and field visibility.** `exportRecords` builds each database's CSV through the exporting user's permission-filtered read: a record or a field the caller's role cannot view is silently left out of the file.
 - **Checklists are included.** The `exportTodos` CSV carries a `Checklists` column (after `Project`, before custom-field columns) holding each record's checklist items, with `[x]` for done items and `[ ]` for open ones — for example `Topics: Acid-Base [x], Blood Product [ ]`. Records with no checklists leave the cell empty. This applies to the CSV export only; the PDF export is unaffected.
 - **Chart export deduplication.** `exportChartCSV` sets a lock keyed by `(chartId, userId)` for 6 hours (21,600 s) on each accepted request. A repeat request for the same chart by the same user inside that window is rejected with `CHART_ALREADY_EXPORTING`. The 6-hour window restarts from the most recently accepted export.
-- **Report exports combine data sources.** `exportReport` resolves every workspace referenced by the report's data sources (with per-user permission checks) and merges their filters before queuing one export.
+- **Report exports combine data sources.** `exportReport` resolves every workspace referenced by the report's data sources (permission-checked against the report creator's access) and queues one export that applies each data source's own workspace scope and filter. A report over archived workspaces only still exports them.
 
 ## Related
 

@@ -58,9 +58,20 @@ For this query, `filter.projectId` must be the exact workspace ID — a slug is 
 
 ### SavedViewFilterInput
 
-| Field       | Type      | Required | Description                                                  |
-| ----------- | --------- | -------- | ------------------------------------------------------------ |
-| `projectId` | `String!` | Yes      | The workspace ID. A slug is **not** accepted for this query. |
+| Field        | Type      | Required | Description                                                                                                                                                    |
+| ------------ | --------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectId`  | `String!` | Yes      | The workspace ID. A slug is **not** accepted for this query.                                                                                                   |
+| `databaseId` | `ID`      | No       | List only the views that belong to this database. Omit it to read the workspace's own database's views. A database from another workspace returns `FORBIDDEN`. |
+
+### Database-scoped pagination fields
+
+When `filter.databaseId` is set, the page also carries three database-scoped fields. The two default-view ids are `null` when you omit `databaseId`; `databaseFieldBindings` is then an empty object.
+
+| Field                   | Type   | Description                                                                                        |
+| ----------------------- | ------ | -------------------------------------------------------------------------------------------------- |
+| `databaseDefaultViewId` | `ID`   | The database's workspace-level default view, if you can see it.                                    |
+| `userDefaultViewId`     | `ID`   | The caller's personal default view for this database, if you can see it.                           |
+| `databaseFieldBindings` | `JSON` | Map of legacy field key to engine field ID for the database (for example `{"list": "field_123"}`). |
 
 ## Response
 
@@ -104,6 +115,7 @@ For this query, `filter.projectId` must be the exact workspace ID — a slug is 
 
 | Field        | Type             | Description                                                                          |
 | ------------ | ---------------- | ------------------------------------------------------------------------------------ |
+| `databaseId` | `ID`             | ID of the database the view belongs to.                                              |
 | `id`         | `ID!`            | Unique identifier for the saved view.                                                |
 | `uid`        | `String!`        | Short human-readable identifier.                                                     |
 | `name`       | `String!`        | Display name of the view.                                                            |
@@ -241,7 +253,7 @@ Returns a single `SavedView` (see the [field table](#savedview) above).
 
 Any workspace member can read saved views, regardless of project role. Both queries scope results to the caller: their own personal views plus all shared views in workspaces they belong to. Personal views created by other members are never returned.
 
-To find which view is the workspace default, read `defaultSavedView` on the `Project` type; for the caller's personal default, read `userDefaultSavedView`.
+To find which view is the workspace default, read `defaultSavedView` on the `Project` type; for the caller's personal default, read `userDefaultSavedView`. For a specific database's defaults, pass `filter.databaseId` and read `databaseDefaultViewId` / `userDefaultViewId` from the page.
 
 ## Related
 

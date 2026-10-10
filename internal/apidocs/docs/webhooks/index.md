@@ -116,6 +116,12 @@ Subscribe to these `WebhookEvent` values via the `events` array on [`createWebho
 | `TODO_TAG_REMOVED`          | A tag was removed from a record.          |
 | `TODO_CUSTOM_FIELD_UPDATED` | A custom field value changed on a record. |
 
+<Callout variant="warning" title="Bulk edits and imports stay quiet">
+
+The per-record field events in this table — everything except `TODO_CREATED` and `TODO_DELETED` — fire for ordinary writes only. An `updateRecords` request that edits several records emits none of them for those records; the same request naming exactly one record does. Record changes made by a CSV import emit none. This is deliberate: a 500-record edit must not deliver 500 events and trip the receiver's rate limit.
+
+</Callout>
+
 ### Checklist events
 
 | Event                                     | Description                                    |

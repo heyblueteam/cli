@@ -171,7 +171,7 @@ These codes apply to all three mutations. The `assignees` query returns `FORBIDD
 
 ## Permissions
 
-All three mutations require edit access to the record. `VIEW_ONLY` and `COMMENT_ONLY` members are denied; `OWNER`, `ADMIN`, `MEMBER`, and `CLIENT` are allowed. A custom role with records disabled is also denied, and the workspace must be active (not archived).
+All three mutations require edit access to the record. `VIEW_ONLY` and `COMMENT_ONLY` members are denied; `OWNER`, `ADMIN`, `MEMBER`, and `CLIENT` are allowed. A custom role with records disabled is also denied — as is a custom role whose **Assignee** field is not editable — and the workspace must be active (not archived).
 
 | Role           | Can change assignees |
 | -------------- | -------------------- |

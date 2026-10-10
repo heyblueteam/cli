@@ -9,7 +9,7 @@ A Portable Document is a PDF template scoped to a workspace. You upload a PDF, B
 
 This is a separate subsystem from the collaboratively-edited rich-text [Documents](/api/documents/create-document) — they share the "Documents" section but no model, no fields, and no operations. Portable Documents are about laying record data onto a fixed PDF layout; rich-text Documents are about editing prose.
 
-This page covers the template lifecycle: create one from an uploaded file, rename it, delete it, fetch one, and list a workspace's templates. Placing the overlay fields and printing a filled PDF are covered in [Map fields and print Portable Documents](/api/documents/portable-document-fields).
+This page covers the template lifecycle: create one from an uploaded file, rename it, delete it, fetch one, list a workspace's templates, and link a template to record tables. Placing the overlay fields and printing a filled PDF are covered in [Map fields and print Portable Documents](/api/documents/portable-document-fields).
 
 ## Create a template
 
@@ -71,17 +71,19 @@ See [Upload files](/api/files) for how to obtain a `fileId`.
 
 ## The PortableDocument type
 
-| Field       | Type                       | Description                                                                 |
-| ----------- | -------------------------- | --------------------------------------------------------------------------- |
-| `id`        | `ID!`                      | Unique template identifier.                                                 |
-| `uid`       | `String!`                  | Prefixed unique key (`pdf_…`); also the storage prefix for the page images. |
-| `name`      | `String!`                  | Display name, derived from the source file.                                 |
-| `createdAt` | `DateTime!`                | When the template was created.                                              |
-| `updatedAt` | `DateTime!`                | When the template was last modified.                                        |
-| `createdBy` | `User!`                    | The user who created the template.                                          |
-| `project`   | `Project!`                 | The workspace the template belongs to.                                      |
-| `pages`     | `[PortableDocumentPage!]!` | The rendered pages, in order.                                               |
-| `file`      | `File`                     | The source file, if still referenced.                                       |
+| Field           | Type                               | Description                                                                                                                                 |
+| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | `ID!`                              | Unique template identifier.                                                                                                                 |
+| `uid`           | `String!`                          | Prefixed unique key (`pdf_…`); also the storage prefix for the page images.                                                                 |
+| `name`          | `String!`                          | Display name, derived from the source file.                                                                                                 |
+| `isActive`      | `Boolean!`                         | Whether the template is active. Inactive templates cannot be printed or exported; they stay editable in settings. New templates are active. |
+| `createdAt`     | `DateTime!`                        | When the template was created.                                                                                                              |
+| `updatedAt`     | `DateTime!`                        | When the template was last modified.                                                                                                        |
+| `createdBy`     | `User!`                            | The user who created the template.                                                                                                          |
+| `project`       | `Project!`                         | The workspace the template belongs to.                                                                                                      |
+| `pages`         | `[PortableDocumentPage!]!`         | The rendered pages, in order.                                                                                                               |
+| `databaseLinks` | `[PortableDocumentDatabaseLink!]!` | Links that bind the template's overlay fields to the fields of record tables. Empty when the template has no links.                         |
+| `file`          | `File`                             | The source file, if still referenced.                                                                                                       |
 
 ### PortableDocumentPage
 
@@ -112,10 +114,11 @@ mutation RenamePortableDocument {
 
 ### UpdatePortableDocumentInput
 
-| Parameter | Type      | Required | Description                                                                            |
-| --------- | --------- | -------- | -------------------------------------------------------------------------------------- |
-| `id`      | `String!` | Yes      | The template to rename.                                                                |
-| `name`    | `String`  | No       | New name. A `.pdf` suffix is appended automatically; omit it to keep the current name. |
+| Parameter  | Type      | Required | Description                                                                            |
+| ---------- | --------- | -------- | -------------------------------------------------------------------------------------- |
+| `id`       | `String!` | Yes      | The template to rename.                                                                |
+| `name`     | `String`  | No       | New name. A `.pdf` suffix is appended automatically; omit it to keep the current name. |
+| `isActive` | `Boolean` | No       | Set to `false` to hide the template from printing and PDF export.                      |
 
 ```json
 {
@@ -276,15 +279,90 @@ query ListPortableDocuments {
 | `hasNextPage`     | `Boolean!` | Whether a further page exists.       |
 | `hasPreviousPage` | `Boolean!` | Whether a previous page exists.      |
 
+## Link a template to record tables
+
+Use the `setPortableDocumentDatabaseLinks` mutation to bind a template's overlay fields to the fields of record tables (`RecordDatabase`). The link maps each template placement to a table field, so a batch PDF export of a table's records can fill the template from each record.
+
+```graphql
+mutation LinkPortableDocument {
+  setPortableDocumentDatabaseLinks(
+    input: {
+      documentId: "pdf_123"
+      links: [{ databaseId: "table_123", fieldMappings: { placement_field_1: "field_123" } }]
+    }
+  ) {
+    id
+    databaseLinks {
+      databaseId
+      database {
+        name
+      }
+      fieldMappings
+    }
+  }
+}
+```
+
+The call **replaces** the template's links. Pass every link you want to keep; pass an empty `links` list to remove all of them.
+
+### SetPortableDocumentDatabaseLinksInput
+
+| Parameter    | Type                                    | Required | Description                              |
+| ------------ | --------------------------------------- | -------- | ---------------------------------------- |
+| `documentId` | `String!`                               | Yes      | The template to link.                    |
+| `links`      | `[PortableDocumentDatabaseLinkInput!]!` | Yes      | The full replacement set of table links. |
+
+### PortableDocumentDatabaseLinkInput
+
+| Field           | Type    | Required | Description                                                                                          |
+| --------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `databaseId`    | `ID!`   | Yes      | A record table to link. It must be a live table in the template's workspace, and one link per table. |
+| `fieldMappings` | `JSON!` | Yes      | Object mapping a template placement id to a table field id (`{ placementId: fieldId }`).             |
+
+### Mapping rules
+
+The mapping is validated against the template's live placements and the table fields you can see:
+
+- Record-intrinsic placements (`workspace`, `createdBy`, `completedBy`, `printedAt`, `createdAt`, `updatedAt`, `completedAt`) fill from the record itself and need no mapping.
+- Every other placement needs a mapping to a mounted field visible to you.
+- The mapped field's type must match the placement. Built-in placements require these field types:
+
+| Placement     | Required field type              |
+| ------------- | -------------------------------- |
+| `title`       | Single-line text (`TEXT_SINGLE`) |
+| `description` | Multi-line text (`TEXT_MULTI`)   |
+| `assignees`   | Assignee (`ASSIGNEE`)            |
+| `list`        | Single select (`SELECT_SINGLE`)  |
+| `tags`        | Multi select (`SELECT_MULTI`)    |
+| `startedAt`   | Date (`DATE`)                    |
+| `duedAt`      | Date (`DATE`)                    |
+
+- A `customField` placement is typed by its custom field. If that custom field no longer exists, the mapped field supplies both the identity and the type, and the type must be one the PDF renderer covers (`TEXT_SINGLE`, `TEXT_MULTI`, `CHECKBOX`, `DATE`, `ASSIGNEE`, `SELECT_SINGLE`, `SELECT_MULTI`, `FILE`, `NUMBER`).
+- Mapping keys for placements that no longer exist are dropped.
+
+<Callout variant="warning" title="Links are checked again at export time">
+
+At export time the mapped fields must still be live and mounted on the table. A mapping that is no longer mounted fails the export with `A PDF template mapping is no longer mounted on the table`; a template that is not linked to the selected table fails with `PDF template is not linked to the selected table`.
+
+</Callout>
+
+### PortableDocumentDatabaseLink
+
+| Field           | Type              | Description                                       |
+| --------------- | ----------------- | ------------------------------------------------- |
+| `databaseId`    | `ID!`             | The linked record table's id.                     |
+| `database`      | `RecordDatabase!` | The linked record table.                          |
+| `fieldMappings` | `JSON!`           | The normalized placement-to-field map in storage. |
+
 ## Errors
 
-| Code                          | When                                                                                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `PROJECT_NOT_FOUND`           | `createPortableDocument` — `projectId` matches no workspace.                                                      |
-| `FILE_NOT_FOUND`              | `createPortableDocument` — `fileId` can't be resolved to an uploaded file.                                        |
-| `BAD_USER_INPUT`              | `createPortableDocument` — the source is not `application/pdf`, exceeds 10 pages, or conversion times out at 15s. |
-| `PORTABLE_DOCUMENT_NOT_FOUND` | `updatePortableDocument`, `deletePortableDocument`, or `portableDocument` — no template with that `id`.           |
-| `FORBIDDEN`                   | The caller is not a member of the template's workspace (on delete and single-fetch).                              |
+| Code                          | When                                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PROJECT_NOT_FOUND`           | `createPortableDocument` — `projectId` matches no workspace.                                                                                                                                |
+| `FILE_NOT_FOUND`              | `createPortableDocument` — `fileId` can't be resolved to an uploaded file.                                                                                                                  |
+| `BAD_USER_INPUT`              | `createPortableDocument` — the source is not `application/pdf`, exceeds 10 pages, or conversion times out at 15s. Also `setPortableDocumentDatabaseLinks` — any mapping-validation failure. |
+| `PORTABLE_DOCUMENT_NOT_FOUND` | `updatePortableDocument`, `deletePortableDocument`, `portableDocument`, or `setPortableDocumentDatabaseLinks` — no template with that `id`.                                                 |
+| `FORBIDDEN`                   | The caller is not a member of the template's workspace (on delete and single-fetch), or lacks contribute permission (on `setPortableDocumentDatabaseLinks`).                                |
 
 ## Permissions
 
@@ -292,6 +370,7 @@ All Portable Document operations require an authenticated caller. Beyond authent
 
 - `portableDocument` and `deletePortableDocument` additionally require the caller to be a member of the workspace the template belongs to; otherwise they return `FORBIDDEN`.
 - `createPortableDocument` resolves the workspace from `projectId` and attributes the new template to the caller via `createdBy`.
+- `setPortableDocumentDatabaseLinks` requires **contribute** permission on the template's workspace.
 
 ## Related
 

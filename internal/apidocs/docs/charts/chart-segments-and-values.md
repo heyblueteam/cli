@@ -102,14 +102,16 @@ Two enums share the same members (`AVERAGE`, `AVERAGEA`, `COUNT`, `COUNTA`, `MAX
 
 ##### ChartSegmentValueInput
 
-| Parameter       | Type                         | Required | Description                                                                                         |
-| --------------- | ---------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `title`         | `String!`                    | Yes      | Display name for the value.                                                                         |
-| `projectId`     | `String!`                    | Yes      | ID of the workspace whose records this value aggregates. You must be a member of it.                |
-| `uid`           | `String`                     | No       | Stable identifier the formula references. Auto-generated when omitted.                              |
-| `customFieldId` | `String`                     | No       | Restrict the aggregation to one custom field's values. Must belong to `projectId`.                  |
-| `function`      | `ChartSegmentValueFunctions` | No       | Aggregate to apply: `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, or `MAX`.               |
-| `filter`        | `TodoFilterInput`            | No       | Narrows which records are aggregated. See [List records](/api/records/list-records) for its fields. |
+| Parameter       | Type                         | Required | Description                                                                                                          |
+| --------------- | ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `title`         | `String!`                    | Yes      | Display name for the value.                                                                                          |
+| `projectId`     | `String!`                    | Yes      | ID of the workspace whose records this value aggregates. You must be a member of it.                                 |
+| `uid`           | `String`                     | No       | Stable identifier the formula references. Auto-generated when omitted.                                               |
+| `databaseId`    | `String`                     | No       | The record table the value aggregates. Must be a live table in `projectId`. Cannot be combined with `customFieldId`. |
+| `fieldId`       | `String`                     | No       | The mounted field to aggregate. Requires `databaseId`, and the field must be mounted on that table.                  |
+| `customFieldId` | `String`                     | No       | Restrict the aggregation to one custom field's values. Must belong to `projectId`.                                   |
+| `function`      | `ChartSegmentValueFunctions` | No       | Aggregate to apply: `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, or `MAX`.                                |
+| `filter`        | `TodoFilterInput`            | No       | Narrows which records are aggregated. See [List records](/api/records/list-records) for its fields.                  |
 
 #### Response
 
@@ -262,15 +264,17 @@ mutation CreateChartSegmentValue {
 
 ##### CreateChartSegmentValueInput
 
-| Parameter        | Type                         | Required | Description                                                                                         |
-| ---------------- | ---------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `chartSegmentId` | `String!`                    | Yes      | ID of the segment to add the value to. You must own the dashboard or be an `EDITOR`.                |
-| `title`          | `String!`                    | Yes      | Display name for the value.                                                                         |
-| `projectId`      | `String!`                    | Yes      | ID of the workspace whose records this value aggregates. You must be a member of it.                |
-| `uid`            | `String`                     | No       | Stable identifier the formula references. Auto-generated when omitted.                              |
-| `customFieldId`  | `String`                     | No       | Restrict the aggregation to one custom field's values. Must belong to `projectId`.                  |
-| `function`       | `ChartSegmentValueFunctions` | No       | Aggregate to apply: `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, or `MAX`.               |
-| `filter`         | `TodoFilterInput`            | No       | Narrows which records are aggregated. See [List records](/api/records/list-records) for its fields. |
+| Parameter        | Type                         | Required | Description                                                                                                          |
+| ---------------- | ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `chartSegmentId` | `String!`                    | Yes      | ID of the segment to add the value to. You must own the dashboard or be an `EDITOR`.                                 |
+| `title`          | `String!`                    | Yes      | Display name for the value.                                                                                          |
+| `projectId`      | `String!`                    | Yes      | ID of the workspace whose records this value aggregates. You must be a member of it.                                 |
+| `uid`            | `String`                     | No       | Stable identifier the formula references. Auto-generated when omitted.                                               |
+| `databaseId`     | `String`                     | No       | The record table the value aggregates. Must be a live table in `projectId`. Cannot be combined with `customFieldId`. |
+| `fieldId`        | `String`                     | No       | The mounted field to aggregate. Requires `databaseId`, and the field must be mounted on that table.                  |
+| `customFieldId`  | `String`                     | No       | Restrict the aggregation to one custom field's values. Must belong to `projectId`.                                   |
+| `function`       | `ChartSegmentValueFunctions` | No       | Aggregate to apply: `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, or `MAX`.                                |
+| `filter`         | `TodoFilterInput`            | No       | Narrows which records are aggregated. See [List records](/api/records/list-records) for its fields.                  |
 
 ##### ChartSegmentValueFunctions
 
@@ -303,18 +307,20 @@ mutation CreateChartSegmentValue {
 
 ##### ChartSegmentValue
 
-| Field           | Type                         | Description                                                |
-| --------------- | ---------------------------- | ---------------------------------------------------------- |
-| `id`            | `ID!`                        | Unique identifier of the value.                            |
-| `uid`           | `String!`                    | Stable identifier the segment's formula references.        |
-| `title`         | `String!`                    | The value's display name.                                  |
-| `disabled`      | `Boolean!`                   | Whether the value is excluded from the formula.            |
-| `projectId`     | `String!`                    | The workspace whose records are aggregated.                |
-| `customFieldId` | `String`                     | The custom field the aggregation is restricted to, if any. |
-| `function`      | `ChartSegmentValueFunctions` | The aggregate applied.                                     |
-| `filter`        | `TodoFilter`                 | The record filter applied, if any.                         |
-| `createdAt`     | `DateTime!`                  | When the value was created.                                |
-| `updatedAt`     | `DateTime!`                  | When the value was last modified.                          |
+| Field           | Type                         | Description                                                      |
+| --------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `id`            | `ID!`                        | Unique identifier of the value.                                  |
+| `uid`           | `String!`                    | Stable identifier the segment's formula references.              |
+| `title`         | `String!`                    | The value's display name.                                        |
+| `disabled`      | `Boolean!`                   | Whether the value is excluded from the formula.                  |
+| `projectId`     | `String!`                    | The workspace whose records are aggregated.                      |
+| `databaseId`    | `String`                     | The record table the value aggregates, when bound generically.   |
+| `fieldId`       | `String`                     | The mounted field the aggregation reads, when bound generically. |
+| `customFieldId` | `String`                     | The custom field the aggregation is restricted to, if any.       |
+| `function`      | `ChartSegmentValueFunctions` | The aggregate applied.                                           |
+| `filter`        | `TodoFilter`                 | The record filter applied, if any.                               |
+| `createdAt`     | `DateTime!`                  | When the value was created.                                      |
+| `updatedAt`     | `DateTime!`                  | When the value was last modified.                                |
 
 ### Edit a value
 
@@ -340,14 +346,16 @@ mutation EditChartSegmentValue {
 
 ##### EditChartSegmentValueInput
 
-| Parameter       | Type                         | Required | Description                                                              |
-| --------------- | ---------------------------- | -------- | ------------------------------------------------------------------------ |
-| `id`            | `String!`                    | Yes      | ID of the value to edit. You must own the dashboard or be an `EDITOR`.   |
-| `title`         | `String`                     | No       | New display name.                                                        |
-| `projectId`     | `String`                     | No       | New workspace to aggregate. You must be a member of it.                  |
-| `customFieldId` | `String`                     | No       | New custom field to restrict to. Must belong to the effective workspace. |
-| `function`      | `ChartSegmentValueFunctions` | No       | New aggregate.                                                           |
-| `filter`        | `TodoFilterInput`            | No       | New record filter.                                                       |
+| Parameter       | Type                         | Required | Description                                                                                                                       |
+| --------------- | ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | `String!`                    | Yes      | ID of the value to edit. You must own the dashboard or be an `EDITOR`.                                                            |
+| `title`         | `String`                     | No       | New display name.                                                                                                                 |
+| `projectId`     | `String`                     | No       | New workspace to aggregate. You must be a member of it.                                                                           |
+| `databaseId`    | `String`                     | No       | New record table to aggregate. Cannot be combined with `customFieldId`. Changing `projectId` clears it unless you pass it again.  |
+| `fieldId`       | `String`                     | No       | New mounted field to aggregate. Requires `databaseId` and a mount on it. Changing `projectId` clears it unless you pass it again. |
+| `customFieldId` | `String`                     | No       | New custom field to restrict to. Must belong to the effective workspace.                                                          |
+| `function`      | `ChartSegmentValueFunctions` | No       | New aggregate.                                                                                                                    |
+| `filter`        | `TodoFilterInput`            | No       | New record filter.                                                                                                                |
 
 The response is the updated `ChartSegmentValue` (same shape as `createChartSegmentValue` above).
 

@@ -11,17 +11,64 @@ Reports are distinct from [Dashboards](/api/dashboards): a report is a record-le
 
 ## Concepts to types
 
-| Docs word           | Schema type / field                                        |
-| ------------------- | ---------------------------------------------------------- |
-| Report              | `Report`                                                   |
-| Data source         | `ReportDataSource`                                         |
-| Shared collaborator | `ReportUser` (role `ReportRole`: `EDITOR` / `VIEWER`)      |
-| Field aggregation   | `FieldAggregation` (requested via `AggregationFieldInput`) |
-| Record              | `Todo`                                                     |
-| Workspace           | `Project`                                                  |
-| Organization        | `Company`                                                  |
+| Docs word           | Schema type / field                                                  |
+| ------------------- | -------------------------------------------------------------------- |
+| Report              | `Report`                                                             |
+| Data source         | `ReportDataSource`                                                   |
+| Shared collaborator | `ReportUser` (role `ReportRole`: `EDITOR` / `VIEWER`)                |
+| Field aggregation   | `FieldAggregation` (requested via `AggregationFieldInput`)           |
+| Record              | `Todo` — `Report.records` returns the flat `ReportRecord` projection |
+| Workspace           | `Project`                                                            |
+| Organization        | `Company`                                                            |
 
 A report's data sources currently support a single `sourceType`, `TODOS` — every report aggregates records (`Todo` objects). The `config` and `filters` fields are opaque `JSONObject` blobs whose internal shape is defined by the app, not the GraphQL schema; the filters mirror the [records filter](/api/records/list-records) structure.
+
+## Report field picker
+
+`reportFieldOptions` lists the fields available as report columns across the selected workspaces. It returns every field mounted on a table you can view in those workspaces — organization-library fields and table-owned fields alike.
+
+```graphql
+query ReportFieldOptions {
+  reportFieldOptions(workspaceIds: ["workspace_123", "workspace_456"]) {
+    id
+    name
+    type
+    isOrganizationField
+    workspaceIds
+    databaseIds
+    options {
+      id
+      title
+      color
+      icon
+    }
+  }
+}
+```
+
+| Parameter      | Type     | Required | Description                                                       |
+| -------------- | -------- | -------- | ----------------------------------------------------------------- |
+| `workspaceIds` | `[ID!]!` | Yes      | The workspaces to scan. Pass 1–200 IDs; duplicates are collapsed. |
+
+| Field                 | Type                          | Description                                                                       |
+| --------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
+| `id`                  | `ID!`                         | The field's identifier.                                                           |
+| `name`                | `String!`                     | The field's name.                                                                 |
+| `type`                | `CustomFieldType!`            | The field's type.                                                                 |
+| `isOrganizationField` | `Boolean!`                    | `true` when the field lives in the organization library rather than on one table. |
+| `workspaceIds`        | `[ID!]!`                      | The workspaces whose tables mount the field.                                      |
+| `databaseIds`         | `[ID!]!`                      | The tables that mount the field.                                                  |
+| `options`             | `[ReportFieldOptionChoice!]!` | The select options, for select-type fields.                                       |
+
+<Callout variant="info" title="Same visibility boundary as the table view">
+
+Organization and workspace admins see every field in the selected workspaces. Other members see a field only when they have view access to a table that mounts it and the field is viewable for their role. A field mounted in several workspaces comes back once, with every workspace and table that mounts it.
+
+</Callout>
+
+Passing an empty `workspaceIds` list or more than 200 IDs fails with `Invalid workspace selection.`
+
+## Pages in this section
 
 ## Pages in this section
 

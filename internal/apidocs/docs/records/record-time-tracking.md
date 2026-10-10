@@ -144,12 +144,12 @@ This returns records that have spent **at least** 604,800 seconds (7 days) in li
 
 The entry sits inside the filter's `fields` array (typed `JSON`); supply these keys alongside `timeInList`:
 
-| Key          | Type     | Description                                                                                         |
-| ------------ | -------- | --------------------------------------------------------------------------------------------------- |
-| `type`       | `String` | Must be `"TIME_IN_LIST"`. Entries without a `type` are silently dropped.                            |
-| `op`         | `String` | The comparison. Only `"GTE"` (at least) and `"LTE"` (at most) are applied to time-in-list duration. |
-| `values`     | `Number` | The threshold **in seconds**. Negative values are ignored.                                          |
-| `timeInList` | object   | A `TimeInListFilterInput` (above) naming the list and the cumulative/most-recent mode.              |
+| Key          | Type     | Description                                                                                                                                   |
+| ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`       | `String` | Must be `"TIME_IN_LIST"`. An entry without a valid `type` matches nothing — inside an `AND` block it makes the whole block return no records. |
+| `op`         | `String` | The comparison. Only `"GTE"` (at least) and `"LTE"` (at most) are applied to time-in-list duration. An unsupported operator matches nothing.  |
+| `values`     | `Number` | The threshold **in seconds**. Must be positive — a zero or negative threshold matches nothing.                                                |
+| `timeInList` | object   | A `TimeInListFilterInput` (above) naming the list and the cumulative/most-recent mode.                                                        |
 
 ## Errors
 

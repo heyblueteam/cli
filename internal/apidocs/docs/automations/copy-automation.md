@@ -39,11 +39,12 @@ mutation CopyAutomation {
 
 ### CopyAutomationInput
 
-| Parameter      | Type      | Required | Description                                                                                                                                                                    |
-| -------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `automationId` | `String!` | Yes      | ID of the automation to copy. Looked up globally, not scoped to a workspace.                                                                                                   |
-| `isActive`     | `Boolean` | No       | **Currently ignored.** The resolver always creates the copy with `isActive: false`. To activate the copy, call [`editAutomation`](/api/automations/edit-automation) afterward. |
-| `name`         | `String`  | No       | Label for the copy. Omit it and a named source produces `<source name> (copy)`; an unnamed source produces an unnamed copy.                                                    |
+| Parameter      | Type      | Required | Description                                                                                                                                                                     |
+| -------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `automationId` | `String!` | Yes      | ID of the automation to copy. Looked up globally, not scoped to a workspace.                                                                                                    |
+| `isActive`     | `Boolean` | No       | **Currently ignored.** The resolver always creates the copy with `isActive: false`. To activate the copy, call [`editAutomation`](/api/automations/edit-automation) afterward.  |
+| `name`         | `String`  | No       | Label for the copy. Omit it and a named source produces `<source name> (copy)`; an unnamed source produces an unnamed copy.                                                     |
+| `databaseId`   | `ID`      | No       | Destination table in the destination workspace. Omit it to use the destination workspace's only live table; an ambiguous workspace is refused. The copy is owned by that table. |
 
 <Callout variant="warning" title="isActive is a no-op">
 

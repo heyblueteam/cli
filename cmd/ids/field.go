@@ -10,7 +10,7 @@ import (
 var fieldCmd = &cobra.Command{
 	Use:     "field",
 	Aliases: []string{"fields", "cf"},
-	Short:   "Look up custom field IDs",
+	Short:   "Look up field IDs",
 	Example: `  blue ids field --workspace <id>
   blue ids field --workspace <id> --search Priority`,
 	RunE: runFieldIDs,

@@ -7,7 +7,7 @@ order: 99
 
 When a Blue GraphQL operation fails, the response contains a top-level `errors` array instead of (or alongside) `data`. Each entry carries a human-readable `message` and a machine-readable code at `extensions.code`. Switch on `extensions.code` in your client — never parse the `message` string, which is wording that can change.
 
-Blue throws **123 intentional error codes** from `api/src/lib/errors.ts`. They are listed in full below, grouped by area. Two codes are not in that file but you will still see them: `BAD_USER_INPUT` (input validation) and `INTERNAL_SERVER_ERROR` (the masked code applied to unexpected server failures — see [Safe vs. masked errors](#safe-vs-masked-errors)).
+Blue throws **147 intentional error codes** from `api/src/lib/errors.ts`. They are listed in full below, grouped by area. Two codes are not in that file but you will still see them: `BAD_USER_INPUT` (input validation) and `INTERNAL_SERVER_ERROR` (the masked code applied to unexpected server failures — see [Safe vs. masked errors](#safe-vs-masked-errors)).
 
 ## Error response shape
 
@@ -57,7 +57,25 @@ Thrown for input that fails validation (Blue's `UserInputError`). The validation
 }
 ```
 
-The `data` shape varies by what was validated — treat it as an opaque object keyed by the offending input. `FORMULA_VALIDATION_ERROR` is a specialization of this error for name-formula validation and uses the same `BAD_USER_INPUT` mechanism with its own `code`.
+The `data` shape varies by what was validated — treat it as an opaque object keyed by the offending input.
+
+Name-formula validation is a specialization of this error. It arrives with `extensions.code` set to `BAD_USER_INPUT` like any other validation failure, and carries its own discriminator **nested** at `extensions.data.code`:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Unknown field in formula.",
+      "extensions": {
+        "code": "BAD_USER_INPUT",
+        "data": { "code": "FORMULA_VALIDATION_ERROR" }
+      }
+    }
+  ]
+}
+```
+
+Branch on `extensions.code` first, then on `extensions.data.code`. `FORMULA_VALIDATION_ERROR` never appears as a top-level code.
 
 ### `PLAN_LIMIT_REACHED`
 
@@ -159,8 +177,9 @@ Most operations are governed by the per-tier rate-limit middleware documented on
 | Request           | 60s    | 3   | High-impact account actions (e.g. `deleteOrganization`, `updateEmail`, `verifySecurityCode`)                   |
 | Sign-in           | 60s    | 10  | `signIn`, `socialAuth`                                                                                         |
 | Sign-in request   | 60s    | 10  | `signInRequest`, `signUpRequest`                                                                               |
-| Export            | 50s    | 1   | `exportRecords`, `exportReport`                                                                                |
+| Export            | 50s    | 1   | `exportRecords`, `exportReport`, `exportRecordsPdf`                                                            |
 | Public view       | 60s    | 100 | `publicViewData`, `publicViewRecords`                                                                          |
+| Public view CSV   | 60s    | 2   | `publicViewCsv`                                                                                                |
 | Accept invitation | 60s    | 100 | `verifyAcceptInvitation`                                                                                       |
 | Check auth method | 60s    | 20  | `checkAuthMethod`                                                                                              |
 | Notify org admin  | 24h    | 3   | `notifyOrgAdminCustomFieldLimit`                                                                               |
@@ -173,22 +192,22 @@ Every code below is thrown by the API. Messages are the exact strings the server
 
 ### Authentication & access
 
-| Code                    | Message                                          |
-| ----------------------- | ------------------------------------------------ |
-| `UNAUTHENTICATED`       | You are not authenticated.                       |
-| `FORBIDDEN`             | You are not authorized.                          |
-| `PLAN_LIMIT_REACHED`    | _(varies; see structured detail above)_          |
-| `PRO_REQUIRED`          | This feature requires a Pro subscription.        |
-| `COMPANY_BANNED`        | Company is banned                                |
-| `NOT_AVAILABLE_COUNTRY` | This service is currently not available in your country. |
-| `RATE_LIMITED`          | Too many requests, please try again later.       |
+| Code                    | Message                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `UNAUTHENTICATED`       | You are not authenticated.                                                            |
+| `FORBIDDEN`             | You are not authorized.                                                               |
+| `PLAN_LIMIT_REACHED`    | _(varies; see structured detail above)_                                               |
+| `PRO_REQUIRED`          | This feature requires a Pro subscription.                                             |
+| `COMPANY_BANNED`        | Company is banned                                                                     |
+| `COMPANY_REFUNDED`      | This organization was refunded and is locked. Contact support@blue.app to reactivate. |
+| `NOT_AVAILABLE_COUNTRY` | This service is currently not available in your country.                              |
+| `RATE_LIMITED`          | Too many requests, please try again later.                                            |
 
 ### Validation & input
 
 | Code                             | Message                                          |
 | -------------------------------- | ------------------------------------------------ |
 | `BAD_USER_INPUT`                 | _(varies; carries `extensions.data`)_            |
-| `FORMULA_VALIDATION_ERROR`       | _(name-formula validation message)_              |
 | `BAD_EMAIL`                      | Whoops, something wrong with your email address. |
 | `MISSING_PARAM_ERROR`            | missing param                                    |
 | `MISSING_PROP_ERROR`             | Missing the `…` property.                        |
@@ -238,31 +257,59 @@ Every code below is thrown by the API. Messages are the exact strings the server
 
 ### Records, lists & dependencies
 
-| Code                                | Message                                                             |
-| ----------------------------------- | ------------------------------------------------------------------- |
-| `TODO_NOT_FOUND`                    | Todo was not found.                                                 |
-| `TODO_LIST_NOT_FOUND`               | Todo list was not found.                                            |
-| `TODO_ALREADY_IN_LIST`              | Todo is already in the specified todo list.                         |
-| `TODO_ALREADY_IN_PROJECT`           | Todo is already associated with the target project.                 |
-| `TODO_DEPENDENCY_ALREADY_EXISTS`    | Todo dependency already exists                                      |
-| `TODO_LIST_CREATE_TODO_LIMIT_ERROR` | Todo list has reached the maximum number of todos.                  |
-| `TODO_UDPATE_LIMIT`                 | You are updating too many todos                                     |
-| `TITLE_EDIT_NOT_ALLOWED`            | Cannot edit title when name formula is enabled.                     |
-| `FIELD_REFERENCED_BY_FORMULA`       | Cannot delete field "`…`" - it is used in the project name formula. |
-| `FORMULA_RECOMPUTATION_IN_PROGRESS` | A name formula recomputation is already in progress.                |
+| Code                                | Message                                                                                                                                                                                                                                                               |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TODO_NOT_FOUND`                    | Todo was not found.                                                                                                                                                                                                                                                   |
+| `TODO_LIST_NOT_FOUND`               | Todo list was not found.                                                                                                                                                                                                                                              |
+| `TODO_ALREADY_IN_LIST`              | Todo is already in the specified todo list.                                                                                                                                                                                                                           |
+| `TODO_ALREADY_IN_PROJECT`           | Todo is already associated with the target project.                                                                                                                                                                                                                   |
+| `TODO_DEPENDENCY_ALREADY_EXISTS`    | Todo dependency already exists                                                                                                                                                                                                                                        |
+| `TODO_LIST_CREATE_TODO_LIMIT_ERROR` | Todo list has reached the maximum number of todos.                                                                                                                                                                                                                    |
+| `TODO_UDPATE_LIMIT`                 | You are updating too many todos                                                                                                                                                                                                                                       |
+| `TITLE_EDIT_NOT_ALLOWED`            | Cannot edit title when name formula is enabled.                                                                                                                                                                                                                       |
+| `FIELD_REFERENCED_BY_FORMULA`       | Cannot delete field "`…`" - it is used in the project name formula.                                                                                                                                                                                                   |
+| `FORMULA_RECOMPUTATION_IN_PROGRESS` | A name formula recomputation is already in progress.                                                                                                                                                                                                                  |
+| `WIP_LIMIT_REACHED`                 | _(names the list; carries `listTitle`, `limit`, `remaining`)_                                                                                                                                                                                                         |
+| `BULK_UPDATE_PARTIALLY_APPLIED`     | Bulk update stopped at record X (reason). N of M records were updated; K were not. _(`extensions` carries `appliedRecordIds`, `notAppliedRecordIds` and `retryAdvice`: retry the whole request, or only `notAppliedRecordIds` when the advice is `NOT_APPLIED_ONLY`)_ |
+| `USE_DATABASES_API`                 | This workspace's original table is not available, so the legacy API cannot read its records. Use the /v1/databases API instead.                                                                                                                                       |
+| `UNSUPPORTED_RECORD_QUERY`          | This record query is not supported: _reason_. _(names the refused condition; `extensions.reason` carries it; see below)_                                                                                                                                              |
+
+`UNSUPPORTED_RECORD_QUERY` comes from `todos`, `records`, `recordQueries.todos`, `TodoList.todos` and `Tag.todos` when the record engine cannot answer a filter or sort with the same rows the earlier engine returned. Blue refuses the request rather than drop the condition. The message ends with what to do: remove or change the named condition, or scope the query to one workspace with `filter.projectIds`. When the refused condition is your role's record filter, ask a workspace administrator to change that filter. Shapes that return this code:
+
+- a sort whose built-in field (title, due date, list) is missing on the workspace's table;
+- a `fields[]` condition that also matches empty values (`NIN`, `NE`, "is empty") on a `customFieldName` that two or more live fields of one workspace share — address the field by `customFieldId` without `customFieldName`;
+- a filter condition the record engine cannot evaluate (the reason names it);
+- a role record filter the record engine cannot evaluate.
+
+### Ordering & concurrency
+
+Records, lists and list items carry an explicit order. These codes report that a move could not be placed. **Every code marked retryable below carries `extensions.retryable: true`** — refetch the anchors, re-issue the same mutation, and it will normally succeed.
+
+| Code                   | Message                                                              | Retryable |
+| ---------------------- | -------------------------------------------------------------------- | --------- |
+| `INVALID_PLACEMENT`    | The ordering anchors are invalid.                                    | no        |
+| `STALE_PLACEMENT`      | The ordering anchors are stale. Refresh and try again.               | yes       |
+| `ORDER_CONFLICT`       | The order changed at the same time. Try again.                       | yes       |
+| `ORDER_REBALANCING`    | This order is being rebalanced. Try again shortly.                   | yes       |
+| `ORDER_RANK_CAPACITY`  | This order needs to be rebalanced before it can accept another move. | yes       |
+| `ORDER_RANK_INVARIANT` | The stored order is incomplete.                                      | no        |
+| `TABLE_FIELD_CONFLICT` | This table changed elsewhere. Refresh and try again.                 | yes       |
+
+The two non-retryable codes mean different things: `INVALID_PLACEMENT` says the anchors you sent do not describe a valid position, so fix the request; `ORDER_RANK_INVARIANT` says the stored order is incomplete, which needs operator attention rather than a retry.
 
 ### Workspaces, organizations & limits
 
-| Code                         | Message                                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `PROJECT_NOT_FOUND`          | Project was not found.                                                                   |
-| `PROJECT_URL_ALREADY_EXISTS` | Project URL already exists.                                                              |
-| `CREATE_PROJECT_LIMIT`       | Project size exceeds maximum limit.                                                      |
-| `COMPANY_NOT_FOUND`          | Company was not found.                                                                   |
-| `COMPANY_URL_ALREADY_EXISTS` | Company URL already exists.                                                              |
-| `COMPANY_LICENSE_NOT_FOUND`  | Company license was not found.                                                           |
-| `CUSTOM_FIELD_LIMIT`         | This workspace has reached the 30 custom field limit. Upgrade to Enterprise to add more. |
-| `TOO_MANY_LINKS`             | The company has too many links.                                                          |
+| Code                         | Message                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `PROJECT_NOT_FOUND`          | Project was not found.                                                                            |
+| `PROJECT_URL_ALREADY_EXISTS` | Project URL already exists.                                                                       |
+| `CREATE_PROJECT_LIMIT`       | Project size exceeds maximum limit.                                                               |
+| `COMPANY_NOT_FOUND`          | Company was not found.                                                                            |
+| `COMPANY_URL_ALREADY_EXISTS` | Company URL already exists.                                                                       |
+| `COMPANY_LICENSE_NOT_FOUND`  | Company license was not found.                                                                    |
+| `CUSTOM_FIELD_LIMIT`         | This workspace has reached the 30 custom field limit. Upgrade to Enterprise to add more.          |
+| `TOO_MANY_LINKS`             | The company has too many links.                                                                   |
+| `LAST_PROJECT_MEMBER`        | You are the only member of this project. Add another member or delete the project before leaving. |
 
 ### Custom fields, tags & templates
 
@@ -296,21 +343,25 @@ Every code below is thrown by the API. Messages are the exact strings the server
 
 ### Automations & webhooks
 
-| Code                   | Message                   |
-| ---------------------- | ------------------------- |
-| `AUTOMATION_NOT_FOUND` | Automation was not found. |
-| `WEBHOOK_NOT_FOUND`    | Webhook was not found.    |
+| Code                   | Message                                                      |
+| ---------------------- | ------------------------------------------------------------ |
+| `AUTOMATION_NOT_FOUND` | Automation was not found.                                    |
+| `WEBHOOK_NOT_FOUND`    | Webhook was not found.                                       |
+| `AUTOMATION_CYCLE`     | This automation would create a loop. _(carries `cyclePath`)_ |
 
 ### Dashboards & charts
 
-| Code                            | Message                            |
-| ------------------------------- | ---------------------------------- |
-| `DASHBOARD_NOT_FOUND`           | Dashboard was not found.           |
-| `CHART_NOT_FOUND`               | Chart was not found.               |
-| `CHART_ALREADY_EXPORTING`       | Chart is already being exported.   |
-| `CHART_SEGMENT_NOT_FOUND`       | Chart segment was not found.       |
-| `CHART_SEGMENT_VALUE_NOT_FOUND` | Chart segment value was not found. |
-| `REPORT_NOT_FOUND`              | Report was not found.              |
+| Code                            | Message                                                                                |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| `DASHBOARD_NOT_FOUND`           | Dashboard was not found.                                                               |
+| `CHART_NOT_FOUND`               | Chart was not found.                                                                   |
+| `CHART_ALREADY_EXPORTING`       | Chart is already being exported.                                                       |
+| `CHART_SEGMENT_NOT_FOUND`       | Chart segment was not found.                                                           |
+| `CHART_SEGMENT_VALUE_NOT_FOUND` | Chart segment value was not found.                                                     |
+| `REPORT_NOT_FOUND`              | Report was not found.                                                                  |
+| `SYSTEM_REPORT_NOT_FOUND`       | System report was not found.                                                           |
+| `FIELD_METRIC_NOT_FOUND`        | Field metric was not found.                                                            |
+| `DASHBOARD_CREATE_NOT_ALLOWED`  | Your role in this organization does not allow creating dashboards. _(carries `scope`)_ |
 
 ### Files, folders & documents
 
@@ -323,6 +374,9 @@ Every code below is thrown by the API. Messages are the exact strings the server
 | `DOCUMENT_NOT_FOUND`                | Document not found.                                        |
 | `PORTABLE_DOCUMENT_NOT_FOUND`       | Portable document was not found.                           |
 | `PORTABLE_DOCUMENT_FIELD_NOT_FOUND` | Portable document field was not found.                     |
+| `ANALYTICS_FOLDER_NOT_FOUND`        | Analytics folder was not found.                            |
+| `FAVORITE_NOT_FOUND`                | Favorite was not found.                                    |
+| `FAVORITE_FOLDER_NOT_FOUND`         | Favorite folder was not found.                             |
 
 ### Forms
 
@@ -353,6 +407,7 @@ An import that would exceed your plan's per-workspace record cap is rejected bef
 | `SMTP_CREDENTIAL_RESERVED_SENDER_EMAIL` | Reserved sender email.                                                      |
 | `EMAIL_TEMPLATE_NOT_FOUND`              | Email template was not found.                                               |
 | `APPLICATION_TYPE_NOT_FOUND`            | Application type was not found.                                             |
+| `INBOUND_ADDRESS_NOT_FOUND`             | Inbound address was not found.                                              |
 
 ### Billing & subscriptions
 
@@ -374,12 +429,22 @@ An import that would exceed your plan's per-workspace record cap is rejected bef
 | `RETRIEVE_STRIPE_SUBSCRIPTION_PLAN_ERROR`        | Failed to retrieve a stripe subscription plan.        |
 | `RETRIEVE_STRIPE_PRICE_ERROR`                    | Failed to retrieve a stripe price.                    |
 
+### Community
+
+| Code                        | Message                        |
+| --------------------------- | ------------------------------ |
+| `COMMUNITY_POST_NOT_FOUND`  | Community post was not found.  |
+| `COMMUNITY_REPLY_NOT_FOUND` | Community reply was not found. |
+
 ### System
 
-| Code                    | Message                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `RESOURCE_NOT_FOUND`    | Resource was not found.                                                                      |
-| `INTERNAL_SERVER_ERROR` | Internal server error. _(masked code; see [Safe vs. masked errors](#safe-vs-masked-errors))_ |
+| Code                         | Message                                                                                                                                                                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RESOURCE_NOT_FOUND`         | Resource was not found.                                                                                                                                                                                                                      |
+| `RECORD_ENGINE_WRITE_FREEZE` | Writes are paused for scheduled maintenance. Please try again shortly. _(raised while a record-storage migration holds writes; retry after the maintenance window)_                                                                          |
+| `QUERY_TOO_COMPLEX`          | Query is too expensive: cost N exceeds the maximum of M. Request fewer fields, or page through the results. _(raised during validation, before any resolver runs; `extensions.complexity` and `extensions.maxComplexity` carry the numbers)_ |
+| `DEMO_ALREADY_IN_PROGRESS`   | A demo is already being set up for this account. Please wait for it to finish before starting another.                                                                                                                                       |
+| `INTERNAL_SERVER_ERROR`      | Internal server error. _(masked code; see [Safe vs. masked errors](#safe-vs-masked-errors))_                                                                                                                                                 |
 
 ## Related
 

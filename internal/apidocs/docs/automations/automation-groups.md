@@ -36,9 +36,10 @@ query ListAutomationGroups {
 }
 ```
 
-| Argument    | Type     | Required | Description                                                                        |
-| ----------- | -------- | -------- | ---------------------------------------------------------------------------------- |
-| `projectId` | `String` | No       | Workspace ID or slug. Defaults to the workspace in the `blue-workspace-id` header. |
+| Argument     | Type     | Required | Description                                                                                                                                                                                                            |
+| ------------ | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectId`  | `String` | No       | Workspace ID or slug. Defaults to the workspace in the `blue-workspace-id` header.                                                                                                                                     |
+| `databaseId` | `ID`     | No       | Record table to scope the list to. Must belong to the workspace; a table from another workspace fails with `Automation table must belong to the active workspace.` Groups with no matching automation come back empty. |
 
 Any member of the workspace can list its groups. An explicit `projectId` requires membership of that workspace.
 

@@ -239,7 +239,7 @@ For `TODO_CUSTOM_FIELD`, `lookupResult` mirrors the value shape of the field nam
 
 Set `allowEdits: true` on `lookupOption` to let the looked-up value be changed from the workspace holding the Lookup. The edit is applied to the **source record in the source workspace**, so it changes that record for every workspace that reads it.
 
-There are no new mutations for this. You write the source record directly, with the source record's ID and the source workspace's `blue-workspace-id` header, using the mutation that matches the target: `setRecordCustomField`, `editRecord`, `setRecordAssignees`, `setRecordTags`, or `moveRecord`. `allowEdits` only tells a client that the value is meant to be editable in place — it grants no permission of its own.
+For a Lookup that reads a field directly, there are no new mutations. You write the source record, with the source record's ID and the source workspace's `blue-workspace-id` header, using the mutation that matches the target: `setRecordCustomField`, `editRecord`, `setRecordAssignees`, `setRecordTags`, or `moveRecord` — or, for a `FILE` target, `createRecordCustomFieldFile` and `deleteRecordCustomFieldFile`. A Lookup that reads another Lookup is written with `editLookupChain` instead — see [Write through a lookup chain](#write-through-a-lookup-chain). `allowEdits` only tells a client that the value is meant to be editable in place — it grants no permission of its own.
 
 ### Editable targets
 
@@ -252,9 +252,11 @@ There are no new mutations for this. You write the source record directly, with 
 | `TODO_TAG`          | Yes                                                                                                                                                                                                                         |
 | `TODO_LIST`         | Yes                                                                                                                                                                                                                         |
 | `TODO_DESCRIPTION`  | Yes                                                                                                                                                                                                                         |
-| `TODO_CUSTOM_FIELD` | Only for these target field types: `TEXT_SINGLE`, `TEXT_MULTI`, `NUMBER`, `PERCENT`, `RATING`, `EMAIL`, `PHONE`, `URL`, `CHECKBOX`, `DATE`, `COUNTRY`, `LOCATION`, `CURRENCY`, `SELECT_SINGLE`, `SELECT_MULTI`, `REFERENCE` |
+| `TODO_CUSTOM_FIELD` | Only for these target field types: `TEXT_SINGLE`, `TEXT_MULTI`, `NUMBER`, `PERCENT`, `RATING`, `EMAIL`, `PHONE`, `URL`, `CHECKBOX`, `DATE`, `COUNTRY`, `LOCATION`, `CURRENCY`, `SELECT_SINGLE`, `SELECT_MULTI`, `REFERENCE`, `ASSIGNEE`, `FILE` |
 
-`TODO_CREATED_AT` and `TODO_UPDATED_AT` are system timestamps, and `TODO_REFERENCED_BY` has no per-entry source record, so none of them can be edited. Computed target types (`FORMULA`, `ROLLUP`, `LOOKUP`), `FILE`, and `TABLE` are rejected as well. A Lookup that rides a `REFERENCED_BY` source field is always read-only.
+`TODO_CREATED_AT` and `TODO_UPDATED_AT` are system timestamps, and `TODO_REFERENCED_BY` has no per-entry source record, so none of them can be edited. Computed target types (`FORMULA`, `ROLLUP`) and `TABLE` are rejected as well. A `FILE` target accepts only attach and detach, never a whole-value write. A Lookup that rides a `REFERENCED_BY` source field stays read-only unless the field is scoped to one workspace.
+
+A `LOOKUP` target is the one exception: it is accepted when every Lookup in the chain sets `allowEdits` and the field the chain ends at is itself an editable type. See [Write through a lookup chain](#write-through-a-lookup-chain).
 
 ### Who may edit
 
@@ -265,6 +267,99 @@ Permissions come entirely from the **source** workspace. A user with `VIEW_ONLY`
 Treat `canEditSource` as a display signal only. The write mutations run their own checks and remain the enforcement point, so a client that ignores `canEditSource` gets a permission error rather than an unauthorized write.
 
 On `editCustomField`, omitting `allowEdits` from `lookupOption` leaves the stored value unchanged. The new target is still checked against the stored value, so repointing an editable Lookup at a target that cannot be edited is rejected even when the flag is absent from the input.
+
+### Write through a lookup chain
+
+When the target is another `LOOKUP`, the write has no single known destination — the chain
+must be resolved first, for that host record and that viewer. Two operations do this.
+
+`lookupChainEntries` lists the original values the caller may edit through the chain:
+
+```graphql
+query LookupChainEntries {
+  lookupChainEntries(hostRecordId: "record_123", lookupFieldId: "field_abc") {
+    sourceRecordId
+    sourceRecordTitle
+    sourceWorkspaceId
+    sourceWorkspaceName
+    targetFieldId
+    lookupType
+    value
+  }
+}
+```
+
+| Argument        | Type      | Required | Description                                                       |
+| --------------- | --------- | -------- | ----------------------------------------------------------------- |
+| `hostRecordId`  | `String!` | Yes      | The record the Lookup is rendered on.                             |
+| `lookupFieldId` | `String!` | Yes      | The `LOOKUP` field being edited.                                  |
+| `viaRecordId`   | `String`  | No       | Restrict the walk to one referenced record at the first hop.      |
+
+#### LookupChainEntry
+
+| Field                 | Type                     | Description                                                                              |
+| --------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
+| `sourceRecordId`      | `String!`                | The original record that holds the value.                                                |
+| `sourceRecordTitle`   | `String!`                | Its title, for labelling an editor.                                                      |
+| `sourceWorkspaceId`   | `String!`                | The workspace that record lives in. Send it as `blue-workspace-id` on the write.          |
+| `sourceWorkspaceName` | `String!`                | That workspace's name.                                                                   |
+| `targetFieldId`       | `String`                 | The custom field being edited, or `null` for a default-field target.                     |
+| `lookupType`          | `CustomFieldLookupType!` | Which value the entry holds.                                                             |
+| `value`               | `JSON`                   | The current value, in the same shape one `lookupResult` entry uses.                      |
+
+Entries are resolved live, never joined positionally against a stored snapshot. Records the
+caller cannot view or edit are left out, so an empty list means nothing in the chain is
+editable by them. The walk fails with `BAD_USER_INPUT` when the chain is not editable end to
+end (`This lookup chain is not editable.`) or when it reaches more than 200 records
+(`This lookup links too many records to edit here.`), and with `FORBIDDEN` when the caller
+cannot edit the field the chain ends at.
+
+`editLookupChain` applies one edit to one entry. Send the **source** workspace's
+`blue-workspace-id` header — the value from `sourceWorkspaceId` — not the workspace holding
+the Lookup:
+
+```graphql
+mutation EditLookupChain {
+  editLookupChain(
+    input: {
+      hostRecordId: "record_123"
+      lookupFieldId: "field_abc"
+      sourceRecordId: "record_789"
+      targetFieldId: "field_xyz"
+      operation: CUSTOM_FIELD
+      customField: { todoId: "record_789", customFieldId: "field_xyz", text: "Warehouse B" }
+    }
+  )
+}
+```
+
+The mutation re-resolves the chain, matches `sourceRecordId` and `targetFieldId` against a
+live entry, then calls the ordinary source mutation — so the normal permission checks,
+activity entries and automations all run. It returns `true`.
+
+#### LookupChainOperation
+
+| Operation       | Entry target               | Carries        | Runs                            |
+| --------------- | -------------------------- | -------------- | ------------------------------- |
+| `CUSTOM_FIELD`  | custom field, not `FILE`   | `customField`  | `setRecordCustomField`          |
+| `ATTACH_FILE`   | `FILE` custom field        | `fileUid`      | `createRecordCustomFieldFile`   |
+| `DETACH_FILE`   | `FILE` custom field        | `fileUid`      | `deleteRecordCustomFieldFile`   |
+| `DUE_DATE`      | `TODO_DUE_DATE`            | `dueDate`      | `editRecord`                    |
+| `DESCRIPTION`   | `TODO_DESCRIPTION`         | `html`         | `editRecord`                    |
+| `ASSIGNEES`     | `TODO_ASSIGNEE`            | `assigneeIds`  | `setRecordAssignees`            |
+| `TAGS`          | `TODO_TAG`                 | `tagIds`       | `setRecordTags`                 |
+| `LIST`          | `TODO_LIST`                | `listId`       | `moveRecord`                    |
+
+`customField` takes the same value fields as `setRecordCustomField`. Its `todoId` and
+`customFieldId` are required by the schema but ignored — Blue substitutes the resolved
+entry's record and field. An operation that does not match the entry's `lookupType` is
+rejected with `BAD_USER_INPUT` (`This operation does not match the lookup target.`), and an
+entry that changed since you listed it gives `The lookup source changed or is no longer
+editable. Reload and try again.`
+
+A chain is rejected when it is configured, not when it is written, if it reaches 10 lookups
+or contains the field being configured: `BAD_USER_INPUT`,
+`The lookup chain is circular or too deep to edit.`
 
 ## Lookup chains
 
@@ -286,10 +381,11 @@ The chain is resolved server-side and flattened: the stored option records the
 root field the chain terminates at, and `lookupType` is inherited from it. A
 change anywhere along the chain recomputes every Lookup downstream of it.
 
-Two limits apply:
+Two rules apply:
 
-- **`allowEdits` is unavailable.** A `LOOKUP` target is read-only, so write-through
-  is rejected for it.
+- **Write-through needs the whole chain.** `allowEdits` on a `LOOKUP` target is accepted
+  only when every Lookup in the chain also sets it and the chain ends at an editable
+  field type. See [Write through a lookup chain](#write-through-a-lookup-chain).
 - **Cycles are refused.** A Lookup that reads its own value, or one whose target
   already reads back at it, is rejected at write time. Longer cycles terminate at
   a fixed cascade depth rather than recomputing forever.

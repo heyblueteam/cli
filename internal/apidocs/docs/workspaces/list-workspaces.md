@@ -61,7 +61,7 @@ query ListWorkspaces {
 **`inProject` membership scope**
 
 - `true` or omitted: return workspaces the authenticated user is a member of.
-- `false`: return workspaces the user is **not** a member of. Requires the user to be an owner of at least one of the supplied organizations, otherwise the query throws `FORBIDDEN`.
+- `false`: return workspaces the user is **not** a member of. Requires the user to be an owner or admin of **every** supplied organization, otherwise the query throws `FORBIDDEN`.
 
 ### ProjectSort
 
@@ -220,11 +220,11 @@ query FilteredWorkspaces {
 
 | Code        | When                                                                                                |
 | ----------- | --------------------------------------------------------------------------------------------------- |
-| `FORBIDDEN` | `inProject: false` was requested but the user is not an owner of any of the supplied organizations. |
+| `FORBIDDEN` | `inProject: false` was requested but the user is not an owner or admin of every supplied organization. |
 
 ## Permissions
 
-By default `workspaceList` returns only workspaces the authenticated user belongs to within the given organizations. Listing workspaces the user is _not_ in (`inProject: false`) requires the user to be an owner of at least one of the organizations in `companyIds`.
+By default `workspaceList` returns only workspaces the authenticated user belongs to within the given organizations. Listing workspaces the user is _not_ in (`inProject: false`) requires the user to be an owner or admin of every organization in `companyIds` — the result set spans all of them, so partial authorization is rejected rather than filtered.
 
 ## Related
 

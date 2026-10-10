@@ -41,7 +41,7 @@ The result is a `FormPagination` with `items` (an array of `Form`) and `pageInfo
 
 ## Get one form
 
-`form` fetches a single form — including its ordered `formFields` — by `id`.
+`form` fetches a single form — including its ordered `formFields` — by `id`. The `Form.databaseId` field names the record table submissions land in (`null` means the workspace's original table).
 
 ```graphql
 query GetForm {
@@ -51,6 +51,7 @@ query GetForm {
     description
     isActive
     primaryColor
+    databaseId
     formFields {
       id
       field
@@ -178,7 +179,13 @@ mutation ActivateForm {
 }
 ```
 
-`UpdateFormInput` covers the visible form: `title`, `description`, `footerText`, `showFooter`, `submitText`, `responseText`, `theme`, `primaryColor`, `hideBranding`, `imageURL`, `redirectURL`, `isActive`, plus `assigneeIds`, `tagIds`, and `todoListId` (the list new records land in).
+`UpdateFormInput` covers the visible form: `title`, `description`, `footerText`, `showFooter`, `submitText`, `responseText`, `theme`, `primaryColor`, `hideBranding`, `imageURL`, `redirectURL`, `isActive`, plus `assigneeIds`, `tagIds`, `todoListId` (the list new records land in), and `databaseId` — the record table submissions land in. `databaseId: null` clears it back to the workspace's original table; omit it to leave the target unchanged.
+
+<Callout variant="info" title="The target table must hold a field for every question">
+
+When you set `databaseId`, `updateForm` validates it against the form: a table that cannot take records fails with `That table cannot receive form submissions yet.`, and a table with no field for a question fails with `That table has no field for: <names>. Add the field to the table or remove the question first.` `upsertFormField` runs the same check per question on a form that targets a table and fails with `The table this form saves to has no field for: <name>. Choose another table or another question.`
+
+</Callout>
 
 <Callout variant="info" title="Manage fields with upsertFormField">
 

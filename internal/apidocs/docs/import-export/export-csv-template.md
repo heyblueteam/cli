@@ -17,15 +17,16 @@ mutation ExportTemplate {
 }
 ```
 
-The `projectId` argument accepts a workspace ID or slug.
+The `projectId` argument accepts a workspace ID or slug. Pass `databaseId` to scope the template to a single database (table) of the workspace instead of the whole workspace.
 
 ## Parameters
 
 ### ExportCSVTemplateInput
 
-| Parameter   | Type      | Required | Description                                               |
-| ----------- | --------- | -------- | --------------------------------------------------------- |
-| `projectId` | `String!` | Yes      | ID or slug of the workspace to generate the template for. |
+| Parameter    | Type      | Required | Description                                                                             |
+| ------------ | --------- | -------- | --------------------------------------------------------------------------------------- |
+| `projectId`  | `String!` | Yes      | ID or slug of the workspace to generate the template for.                               |
+| `databaseId` | `String`  | No       | Scope the template to this database (table). Must be a live database in that workspace. |
 
 ## Response
 
@@ -39,7 +40,7 @@ The `projectId` argument accepts a workspace ID or slug.
 }
 ```
 
-The filename is derived deterministically from the workspace name and a timestamp: `slugify("<workspace name> Template <mmHHDDMMYYYY>") + ".csv"`. For a workspace named "Marketing Plan", a template generated on 20 March 2025 produces a name like `marketing-plan-template-301520032025.csv`.
+The filename is derived deterministically from the workspace (or, with `databaseId`, the database's) name and a timestamp: `slugify("<name> Template <mmHHDDMMYYYY>") + ".csv"`. For a workspace named "Marketing Plan", a template generated on 20 March 2025 produces a name like `marketing-plan-template-301520032025.csv`.
 
 ### Returns
 
@@ -49,36 +50,42 @@ The filename is derived deterministically from the workspace name and a timestam
 
 ## Template columns
 
-The generated CSV contains a single header row followed by one empty sample row.
+The generated CSV contains a single header row followed by one empty sample row. Without `databaseId`, the columns are:
 
-| Column                 | Description                                                                                                                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Title`                | Record title.                                                                                                                                                                           |
-| `List`                 | Name of the list to place the record in.                                                                                                                                                |
-| `Done`                 | Completion status (`true` / `false`).                                                                                                                                                   |
-| `Start Date`           | Record start date.                                                                                                                                                                      |
-| `Due Date`             | Record due date.                                                                                                                                                                        |
-| `Description`          | Record description.                                                                                                                                                                     |
-| `Assignees`            | Comma-separated assignee emails.                                                                                                                                                        |
-| `Created At`           | Original creation timestamp.                                                                                                                                                            |
-| `Updated At`           | Original last-updated timestamp.                                                                                                                                                        |
-| `Created By`           | Original creator name or email.                                                                                                                                                         |
-| `Color`                | Record color.                                                                                                                                                                           |
-| `Workspace`            | Workspace name.                                                                                                                                                                         |
-| `Tags`                 | Comma-separated tag titles.                                                                                                                                                             |
-| _Custom field columns_ | One column per custom field in the workspace, ordered by position. A currency-type field adds a `Currency Types` column immediately after it for the currency code (e.g. `USD`, `EUR`). |
+| Column                 | Description                                                        |
+| ---------------------- | ------------------------------------------------------------------ |
+| `Title`                | Record title.                                                      |
+| `List`                 | Name of the list to place the record in.                           |
+| `Done`                 | Completion status (`true` / `false`).                              |
+| `Start Date`           | Record start date.                                                 |
+| `Due Date`             | Record due date.                                                   |
+| `Description`          | Record description.                                                |
+| `Assignees`            | Comma-separated assignee emails.                                   |
+| `Created At`           | Original creation timestamp.                                       |
+| `Updated At`           | Original last-updated timestamp.                                   |
+| `Created By`           | Original creator name or email.                                    |
+| `Color`                | Record color.                                                      |
+| `Project`              | Workspace name.                                                    |
+| `Tags`                 | Comma-separated tag titles.                                        |
+| _Custom field columns_ | One column per custom field in the workspace, ordered by position. |
 
-<Callout variant="info" title="The sample row spans only the base columns">
+<Callout variant="info" title="The sample row spans the full header">
 
-The empty sample row underneath the header covers the 13 base columns above. When the workspace has custom fields, that row is shorter than the full header — it's only a formatting hint, not a per-column placeholder. Add your own values across all columns when you fill in the template.
+The empty sample row underneath the header has one empty cell per column — custom fields included. It is a formatting hint, not a per-column placeholder. Add your own values across all columns when you fill in the template.
+
+</Callout>
+
+<Callout variant="info" title="A database-scoped template lists the database's fields">
+
+With `databaseId`, the header is one column per field mounted on that database (duplicate field names get a ` (2)`, ` (3)` … suffix), named after the database instead of the workspace, and the base columns above are absent.
 
 </Callout>
 
 ## Errors
 
-| Code                | When                                           |
-| ------------------- | ---------------------------------------------- |
-| `PROJECT_NOT_FOUND` | No workspace exists for the given `projectId`. |
+| Code                | When                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| `PROJECT_NOT_FOUND` | No workspace exists for the given `projectId`, or `databaseId` is not a live database in it. |
 
 ```json
 {

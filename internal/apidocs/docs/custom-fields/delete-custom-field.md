@@ -120,8 +120,8 @@ mutation DeleteCustomFieldOption {
 }
 ```
 
-| Parameter       | Type      | Required | Description                                        |
-| --------------- | --------- | -------- | -------------------------------------------------- |
-| `customFieldId` | `String!` | Yes      | The `CustomField.id` the option belongs to.        |
-| `optionId`      | `String!` | Yes      | The `CustomFieldOption.id` to remove.              |
-| `todoId`        | `String`  | No       | Optional record (`Todo.id`) scope for the removal. |
+| Parameter       | Type      | Required | Description                                                                         |
+| --------------- | --------- | -------- | ----------------------------------------------------------------------------------- |
+| `customFieldId` | `String!` | Yes      | The `CustomField.id` the option belongs to.                                         |
+| `optionId`      | `String!` | Yes      | The `CustomFieldOption.id` to remove.                                               |
+| `todoId`        | `String`  | No       | Does not scope the removal — the option is removed from every record that holds it. |
