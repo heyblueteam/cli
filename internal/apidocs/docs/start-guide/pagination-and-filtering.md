@@ -61,11 +61,11 @@ The page-size argument is named **`take`** on most queries (`forms`, `customFiel
 
 Three `*List` queries — `organizationUserList`, `commentList`, and `activityList` — expose the relay-flavored `after`, `before`, `first`, `last`, and `orderBy` arguments alongside `skip`. Their resolvers do **not** implement full bidirectional cursoring. What each actually honors:
 
-| Query             | Honors                                          | Ignores                            | Notes                                                                                          |
-| ----------------- | ----------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Query                  | Honors                                          | Ignores                            | Notes                                                                                          |
+| ---------------------- | ----------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `organizationUserList` | `skip`, `search`, `orderBy`                     | `first`, `last`, `before`, `after` | Page size is hard-capped at **200** server-side regardless of `first`. Page with `skip`.       |
-| `commentList`     | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a **keyset** cursor: pass a comment `id`, results start at rows with `id >= after`. |
-| `activityList`    | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a keyset cursor on the activity `id`.                                               |
+| `commentList`          | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a **keyset** cursor: pass a comment `id`, results start at rows with `id >= after`. |
+| `activityList`         | `skip`, `first` (page size), `after`, `orderBy` | `last`, `before`                   | `after` is a keyset cursor on the activity `id`.                                               |
 
 Because `before`/`last` are no-ops on these queries, treat them as offset queries: page forward with `skip` (or with the keyset `after` cursor on `commentList`/`activityList`), and read `pageInfo` to know when to stop. The deprecated `pageInfo.startCursor`/`pageInfo.endCursor` fields are not populated by these resolvers.
 
@@ -255,13 +255,15 @@ The in-app search box filters records on the client after they load — it does 
 
 ## Errors
 
-| Code                    | When                                                                                                                   |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `BAD_USER_INPUT`        | `publicViewRecords` got an invalid `limit` (not 25/150), a `skip` that isn't a multiple of `limit`, or `skip > 10000`. |
-| `FORBIDDEN`             | The filter references a workspace or organization the caller can't access.                                             |
-| `COMPANY_NOT_FOUND`     | `organizationUserList` got a `companyId` the caller isn't a member of.                                                      |
-| `PUBLIC_VIEW_NOT_FOUND` | `publicViewRecords` got a `publicViewId` that doesn't exist.                                                           |
-| `UNAUTHENTICATED`       | A password-protected public view was queried without a valid view token.                                               |
+| Code                       | When                                                                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BAD_USER_INPUT`           | `publicViewRecords` got an invalid `limit` (not 25/150), a `skip` that isn't a multiple of `limit`, or `skip > 10000`. `publicViewCsv` raises it too, for a view that does not exist or does not enable CSV export. |
+| `FORBIDDEN`                | The filter references a workspace or organization the caller can't access.                                                                                                                                          |
+| `COMPANY_NOT_FOUND`        | `organizationUserList` got a `companyId` the caller isn't a member of.                                                                                                                                              |
+| `UNSUPPORTED_RECORD_QUERY` | A record read the record engine cannot answer with the same rows as before — the message names the condition and how to change it. See [Error codes](/api/start-guide/error-codes#records-lists--dependencies).     |
+| `USE_DATABASES_API`        | The workspace's original table is not available, so the legacy record reads cannot return its records. Use the `/v1/databases` REST API instead.                                                                    |
+| `PUBLIC_VIEW_NOT_FOUND`    | `publicViewRecords` got a `publicViewId` that doesn't exist.                                                                                                                                                        |
+| `UNAUTHENTICATED`          | A password-protected public view was queried without a valid view token.                                                                                                                                            |
 
 ## Related
 

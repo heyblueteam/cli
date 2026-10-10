@@ -26,7 +26,7 @@ The `blue-workspace-id` header scopes record operations to one workspace. Compan
 | Create a record                                        | `createRecord` mutation           | Add a record to a list, with optional tags, assignees, dates, checklists, and custom field values. Documented below. |
 | [List records](/api/records/list-records)              | `recordQueries { todos }` query   | Retrieve and filter records in a workspace.                                                                          |
 | [Update a record](/api/records/update-record)          | `editRecord` mutation             | Change a record's title, dates, or other fields.                                                                     |
-| [Toggle completion](/api/records/toggle-record-status) | `updateTodoDoneStatus` mutation  | Mark a record done or not done.                                                                                      |
+| [Toggle completion](/api/records/toggle-record-status) | `updateTodoDoneStatus` mutation   | Mark a record done or not done.                                                                                      |
 | [Move a record](/api/records/move-record-list)         | `moveRecord` mutation             | Move a record to a different list.                                                                                   |
 | [Copy a record](/api/records/copy-record)              | `copyRecord` mutation             | Duplicate an existing record.                                                                                        |
 | [Assignees](/api/records/assignees)                    | `setRecordAssignees` mutation     | Assign or unassign users.                                                                                            |
@@ -66,23 +66,25 @@ mutation CreateRecord {
 
 ### CreateRecordInput
 
-| Parameter      | Type                                 | Required | Description                                                                                                                                 |
-| -------------- | ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`        | `String!`                            | Yes      | The record's title.                                                                                                                         |
-| `todoListId`   | `String`                             | No       | List to add the record to. If omitted, the workspace's first list is used.                                                                  |
-| `previousId`   | `String`                             | No       | Insert the record directly below this record. Overrides `placement` when both are given.                                                    |
-| `nextId`       | `String`                             | No       | Insert the record directly above this record.                                                                                              |
-| `placement`    | `CreateRecordInputPlacement`         | No       | Where to insert the record when no anchor is given. Defaults to the top of the list.                                                        |
-| `startedAt`    | `DateTime`                           | No       | Start date/time.                                                                                                                            |
-| `duedAt`       | `DateTime`                           | No       | Due date/time.                                                                                                                              |
-| `timezone`     | `String`                             | No       | IANA timezone used to interpret `startedAt`/`duedAt` (e.g. `America/New_York`). Only affects inference when `granularity` is omitted.       |
-| `granularity`  | `DateGranularity`                    | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](/api/records/update-record#all-day-vs-timed-dates). Omit to infer from the values sent. |
-| `notify`       | `Boolean`                            | No       | Send creation notifications to assignees and watchers.                                                                                      |
-| `description`  | `String`                             | No       | HTML body for the record. Sanitized server-side; stored as both `html` and plain `text`.                                                    |
-| `assigneeIds`  | `[String!]`                          | No       | User IDs to assign. IDs that aren't workspace members are silently dropped.                                                                 |
-| `checklists`   | `[CreateChecklistWithoutTodoInput!]` | No       | Checklists to create on the record.                                                                                                         |
-| `customFields` | `[CreateRecordInputCustomField]`     | No       | Initial custom field values.                                                                                                                |
-| `tags`         | `[CreateRecordTagInput!]`            | No       | Tags to attach.                                                                                                                             |
+| Parameter      | Type                                 | Required | Description                                                                                                                                                                                      |
+| -------------- | ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `title`        | `String!`                            | Yes      | The record's title.                                                                                                                                                                              |
+| `todoListId`   | `String`                             | No       | List to add the record to. If omitted, the workspace's first list is used.                                                                                                                       |
+| `databaseId`   | `ID`                                 | No       | Create the record in this table instead of the workspace's own. A table that cannot receive the create (wrong workspace, trashed, no display field) is rejected rather than silently retargeted. |
+| `fieldValues`  | `[JSONObject!]`                      | No       | Values for the table's optional creation form, each `{fieldId, kind, value}` — see [Create a record in a table](#create-a-record-in-a-table).                                                    |
+| `previousId`   | `String`                             | No       | Insert the record directly below this record. Overrides `placement` when both are given.                                                                                                         |
+| `nextId`       | `String`                             | No       | Insert the record directly above this record.                                                                                                                                                    |
+| `placement`    | `CreateRecordInputPlacement`         | No       | Where to insert the record when no anchor is given. Defaults to the top of the list.                                                                                                             |
+| `startedAt`    | `DateTime`                           | No       | Start date/time.                                                                                                                                                                                 |
+| `duedAt`       | `DateTime`                           | No       | Due date/time.                                                                                                                                                                                   |
+| `timezone`     | `String`                             | No       | IANA timezone used to interpret `startedAt`/`duedAt` (e.g. `America/New_York`). Only affects inference when `granularity` is omitted.                                                            |
+| `granularity`  | `DateGranularity`                    | No       | `ALL_DAY` or `TIMED`. See [All-day vs. timed dates](/api/records/update-record#all-day-vs-timed-dates). Omit to infer from the values sent.                                                      |
+| `notify`       | `Boolean`                            | No       | Send creation notifications to assignees and watchers.                                                                                                                                           |
+| `description`  | `String`                             | No       | HTML body for the record. Sanitized server-side; stored as both `html` and plain `text`.                                                                                                         |
+| `assigneeIds`  | `[String!]`                          | No       | User IDs to assign. IDs that aren't workspace members are silently dropped.                                                                                                                      |
+| `checklists`   | `[CreateChecklistWithoutTodoInput!]` | No       | Checklists to create on the record.                                                                                                                                                              |
+| `customFields` | `[CreateRecordInputCustomField]`     | No       | Initial custom field values.                                                                                                                                                                     |
+| `tags`         | `[CreateRecordTagInput!]`            | No       | Tags to attach.                                                                                                                                                                                  |
 
 ### CreateRecordInputPlacement
 
@@ -165,7 +167,7 @@ The mutation returns the `Record` object. Common fields to select:
 | `id`                 | `ID!`             | Unique identifier for the record.                                                                        |
 | `uid`                | `String!`         | Short reference identifier.                                                                              |
 | `title`              | `String!`         | Record title. If custom fields drive a name formula, this reflects the computed title.                   |
-| `rank`               | `String`          | Opaque manual-order key within the list. Compare as strings; do not parse or generate one.                |
+| `rank`               | `String`          | Opaque manual-order key within the list. Compare as strings; do not parse or generate one.               |
 | `text`               | `String!`         | Plain-text body.                                                                                         |
 | `html`               | `String!`         | HTML body.                                                                                               |
 | `done`               | `Boolean!`        | Whether the record is completed.                                                                         |
@@ -227,14 +229,15 @@ mutation CreateRecordAdvanced {
 
 ## Errors
 
-| Code                                | When                                                                                                                                      |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `PROJECT_NOT_FOUND`                 | No workspace context - the `blue-workspace-id` header is missing or invalid.                                                              |
-| `FORBIDDEN`                         | The caller's workspace role is `VIEW_ONLY` or `COMMENT_ONLY`, or records are disabled for the workspace.                                  |
-| `PLAN_LIMIT_REACHED`                | The workspace or organization is at its record limit for the current plan.                                                                |
-| `TODO_LIST_NOT_FOUND`               | The `todoListId` doesn't exist or the caller can't access it.                                                                             |
-| `TODO_LIST_CREATE_TODO_LIMIT_ERROR` | The target list already holds the maximum of 100,000 records.                                                                             |
-| `CUSTOM_FIELD_VALUE_PARSE_ERROR`    | A `customFields` value fails validation for its field type (e.g. an unparseable phone number, a rating out of range, an invalid country). |
+| Code                                | When                                                                                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PROJECT_NOT_FOUND`                 | No workspace context - the `blue-workspace-id` header is missing or invalid.                                                                                                    |
+| `FORBIDDEN`                         | The caller's workspace role is `VIEW_ONLY` or `COMMENT_ONLY`, or records are disabled for the workspace.                                                                        |
+| `BAD_USER_INPUT`                    | The workspace cannot receive new records right now, or a supplied value fails a rule the message names (e.g. a table that cannot receive the create when `databaseId` is sent). |
+| `PLAN_LIMIT_REACHED`                | The workspace or organization is at its record limit for the current plan.                                                                                                      |
+| `TODO_LIST_NOT_FOUND`               | The `todoListId` doesn't exist or the caller can't access it.                                                                                                                   |
+| `TODO_LIST_CREATE_TODO_LIMIT_ERROR` | The target list already holds the maximum of 100,000 records.                                                                                                                   |
+| `CUSTOM_FIELD_VALUE_PARSE_ERROR`    | A `customFields` value fails validation for its field type (e.g. an unparseable phone number, a rating out of range, an invalid country).                                       |
 
 ```json
 {
@@ -253,6 +256,68 @@ mutation CreateRecordAdvanced {
 - **Dates.** Passing only `duedAt` sets `startedAt` to the start of that day; passing only `startedAt` sets `duedAt` to the same point in time. Pass both to control each independently.
 - **Tags.** A `CreateRecordTagInput` with a `title` reuses an existing tag of the same title and color, or creates a new one (default color `#4a9fff`). A `title` with no match creates the tag.
 - **Custom fields.** Each value is parsed by the field's type; computed fields ignore supplied values. If the record's workspace uses a name-formula field, the returned `title` reflects the computed name rather than the literal input.
+
+## Create a record in a table
+
+`createRecordInDatabase` is the generic path for creating a record in an explicit table — the route an AI agent, MCP tool, or REST/SDK caller uses. It targets a table (`RecordDatabase`) directly, so it also works on tables that have no list, and the workspace is part of the input: it must match the workspace in the `blue-workspace-id` header.
+
+### Request
+
+```graphql
+mutation CreateRecordInTable {
+  createRecordInDatabase(
+    input: {
+      workspaceId: "project_123"
+      databaseId: "table_123"
+      title: "Draft launch plan"
+      fieldValues: [{ fieldId: "field_123", kind: "text", value: { text: "In progress" } }]
+    }
+  ) {
+    recordId
+    databaseId
+    created
+    joined
+    rank
+  }
+}
+```
+
+### CreateRecordInDatabaseInput
+
+| Parameter       | Type            | Required | Description                                                                                                                                                                          |
+| --------------- | --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `workspaceId`   | `ID!`           | Yes      | Workspace that owns the table. Must match the workspace in the `blue-workspace-id` header.                                                                                           |
+| `databaseId`    | `ID!`           | Yes      | The table to create the record in.                                                                                                                                                   |
+| `recordId`      | `ID`            | No       | Caller-supplied record ID (cuid2 shape). Retrying with the same ID is a no-op, which makes retries safe. Omitted: the server mints one.                                              |
+| `title`         | `String!`       | Yes      | The record's title.                                                                                                                                                                  |
+| `groupOptionId` | `ID`            | No       | A live option of the table's grouping (list) field. Omitted, the record has no grouping value.                                                                                       |
+| `fieldValues`   | `[JSONObject!]` | No       | Values for the table's optional creation form, each `{fieldId, kind, value}`. `kind` names the value shape - for example `text`, `number`, `date`, `checkbox`, `select`, `assignee`. |
+
+### Response
+
+| Field        | Type       | Description                                                                                                                                      |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `recordId`   | `ID!`      | The new record's ID.                                                                                                                             |
+| `databaseId` | `ID!`      | The table the record was created in.                                                                                                             |
+| `created`    | `Boolean!` | `true` when a new record row was made.                                                                                                           |
+| `joined`     | `Boolean!` | `true` when this call joined an existing record to this table instead of creating a new one - the record already lived in another of its tables. |
+| `rank`       | `String`   | The record's manual-order key in the table. Opaque - compare as strings, never parse.                                                            |
+
+### Authorization and the creation form
+
+- You need record-creation access in the target workspace: `OWNER`, `ADMIN`, or `MEMBER`; a custom role additionally needs edit access, the create-records permission, and records enabled. An organization-level `OWNER`/`ADMIN` bypasses a restricted role.
+- The table must be live and have a text field configured to name records.
+- If the table's creation form marks fields as required, the call must supply them in `fieldValues`; defaults for other form fields are applied automatically. Otherwise the call is rejected with `BAD_USER_INPUT`.
+- Sending `groupOptionId` requires the table to have a grouping field, and the option must be live.
+
+### Errors
+
+| Code                 | When                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `UNAUTHENTICATED`    | No valid token.                                                                                                                                                          |
+| `FORBIDDEN`          | Not a member of the workspace, an insufficient role for the table, or the workspace is archived.                                                                         |
+| `BAD_USER_INPUT`     | A title/`databaseId` problem, a workspace mismatch, a `groupOptionId` that does not exist, or required creation-form fields not supplied. The message names the problem. |
+| `PLAN_LIMIT_REACHED` | The call would give one record a second table while the organization is not on the plan that allows multi-table records.                                                 |
 
 ## Related
 

@@ -228,11 +228,11 @@ Returns `Boolean!` — `true` when assignees are updated.
 }
 ```
 
-Only users who are members of the record's workspace (and your organization) can be assigned; IDs that don't meet both conditions are silently skipped. Newly assigned users receive an email and push notification.
+Only users who are members of the record's workspace (and your organization) can be assigned; IDs that don't meet both conditions are silently skipped. Newly assigned users receive an email and push notification. The notification is skipped when the record was created through the generic database APIs and has no legacy record row; the assignment itself always applies.
 
 ## Set the due date
 
-Use the `updateChecklistItemDueDate` mutation to set or clear an item's start and due dates. Setting a due date schedules an overdue notification for the item's assignees.
+Use the `updateChecklistItemDueDate` mutation to set or clear an item's start and due dates. Setting a due date schedules an overdue notification for the item's assignees. Like the assignment notification, the overdue notification is skipped when the record was created through the generic database APIs and has no legacy record row.
 
 ### Request
 

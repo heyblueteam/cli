@@ -294,7 +294,7 @@ mutation DeleteOption {
 | --------------- | --------- | -------- | ---------------------------------------------------------------------------------- |
 | `customFieldId` | `String!` | Yes      | The field the option belongs to.                                                   |
 | `optionId`      | `String!` | Yes      | The option to delete.                                                              |
-| `todoId`        | `String`  | No       | Scope the delete to a single record's selection rather than the option definition. |
+| `todoId`        | `String`  | No       | Does not scope the delete — the option is removed from every record that holds it. |
 
 ## Notes
 

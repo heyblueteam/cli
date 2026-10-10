@@ -58,7 +58,7 @@ mutation PlaceCustomFieldBox {
 | Parameter       | Type      | Required | Description                                                                                                                    |
 | --------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `pageId`        | `String!` | Yes      | The `PortableDocumentPage` this field is placed on. The page's parent template determines which workspace's permissions apply. |
-| `field`         | `String!` | Yes      | Which record attribute to bind. One of `title`, `description`, `dueEnd`, `assignees`, `tags`, or `customField`.                |
+| `field`         | `String!` | Yes      | Which record attribute to bind. One of `title`, `description`, `comments`, `dueEnd`, `assignees`, `tags`, or `customField`.    |
 | `positionX`     | `Float!`  | Yes      | Horizontal anchor of the field on the page.                                                                                    |
 | `positionY`     | `Float!`  | Yes      | Vertical anchor of the field on the page.                                                                                      |
 | `width`         | `Float`   | No       | Bounding-box width. When set together with `height`, the printed value wraps to fit.                                           |
@@ -72,10 +72,19 @@ mutation PlaceCustomFieldBox {
 | ------------- | ----------------------------------------------------------------- |
 | `title`       | Title (`Todo.title`).                                             |
 | `description` | Description text (`Todo.text`).                                   |
+| `comments`    | Comment history, oldest first (see below).                        |
 | `dueEnd`      | Due date (`Todo.duedAt`), formatted in the record's timezone.     |
 | `assignees`   | Assignee names, comma-separated.                                  |
 | `tags`        | Tag titles, comma-separated.                                      |
 | `customField` | The custom field named by `customFieldId`, formatted by its type. |
+
+### The `comments` field
+
+A `comments` overlay prints the record's comment history: one entry per comment, oldest first, as `Author — date time` followed by the comment text, with a blank line between entries. Timestamps use the record's timezone and the calling user's date format preference.
+
+The history is rendered as plain text, so a comment containing markup prints exactly as it was typed. Give the field a `width` and `height` — without bounds the whole history is drawn on one line.
+
+`printPortableDocument` filters the history to what the **calling user** may see, not the record's full comment list: a caller restricted to mentions gets only their own and mentioned comments, and a caller who cannot view email comments gets none of those. The same PDF template can therefore produce different comment histories for different callers.
 
 ## Response
 
@@ -94,19 +103,19 @@ mutation PlaceCustomFieldBox {
 
 ### PortableDocumentField
 
-| Field         | Type                    | Description                                                                                    |
-| ------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `id`          | `ID!`                   | Unique identifier of the field.                                                                |
-| `uid`         | `String!`               | Short opaque identifier.                                                                       |
-| `field`       | `String!`               | The bound attribute (`title`, `description`, `dueEnd`, `assignees`, `tags`, or `customField`). |
-| `positionX`   | `Float!`                | Horizontal anchor on the page.                                                                 |
-| `positionY`   | `Float!`                | Vertical anchor on the page.                                                                   |
-| `width`       | `Float`                 | Bounding-box width, if set.                                                                    |
-| `height`      | `Float`                 | Bounding-box height, if set.                                                                   |
-| `createdAt`   | `DateTime!`             | When the field was created.                                                                    |
-| `updatedAt`   | `DateTime!`             | When the field was last changed.                                                               |
-| `page`        | `PortableDocumentPage!` | The page the field is placed on.                                                               |
-| `customField` | `CustomField`           | The bound custom field, when `field` is `customField`; otherwise `null`.                       |
+| Field         | Type                    | Description                                                                                                |
+| ------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `id`          | `ID!`                   | Unique identifier of the field.                                                                            |
+| `uid`         | `String!`               | Short opaque identifier.                                                                                   |
+| `field`       | `String!`               | The bound attribute (`title`, `description`, `comments`, `dueEnd`, `assignees`, `tags`, or `customField`). |
+| `positionX`   | `Float!`                | Horizontal anchor on the page.                                                                             |
+| `positionY`   | `Float!`                | Vertical anchor on the page.                                                                               |
+| `width`       | `Float`                 | Bounding-box width, if set.                                                                                |
+| `height`      | `Float`                 | Bounding-box height, if set.                                                                               |
+| `createdAt`   | `DateTime!`             | When the field was created.                                                                                |
+| `updatedAt`   | `DateTime!`             | When the field was last changed.                                                                           |
+| `page`        | `PortableDocumentPage!` | The page the field is placed on.                                                                           |
+| `customField` | `CustomField`           | The bound custom field, when `field` is `customField`; otherwise `null`.                                   |
 
 ## Update a field
 
@@ -205,7 +214,7 @@ mutation PrintRecord {
 | Code                          | When                                 |
 | ----------------------------- | ------------------------------------ |
 | `TODO_NOT_FOUND`              | No record matches `todoId`.          |
-| `PORTABLE_DOCUMENT_NOT_FOUND` | No template matches `pdfId`.         |
+| `PORTABLE_DOCUMENT_NOT_FOUND` | No template matches `pdfId`, or the template is inactive (`isActive: false`). |
 | `UNAUTHENTICATED`             | No valid credentials on the request. |
 
 ## Permissions

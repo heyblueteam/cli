@@ -30,11 +30,11 @@ The `blue-workspace-id` header scopes requests to one workspace. Company and pro
 
 Three more mutations round out the surface but don't have dedicated pages:
 
-| Operation             | GraphQL                                                                 | Description                                                                      |
-| --------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Reorder a view        | `updateSavedViewPosition(id: String!, position: Float!): SavedView!`    | Move a view to a new sidebar position.                                           |
-| Set workspace default | `setWorkspaceDefaultView(projectId: String!, viewId: String): Project!` | Set a shared view as the workspace's default; pass `null` for `viewId` to clear. |
-| Set personal default  | `setUserDefaultView(projectId: String!, viewId: String): Boolean!`      | Set the calling member's default view for a workspace; `null` clears it.         |
+| Operation             | GraphQL                                                                                 | Description                                                                      |
+| --------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Reorder a view        | `updateSavedViewPosition(id: String!, position: Float!): SavedView!`                    | Move a view to a new sidebar position.                                           |
+| Set workspace default | `setWorkspaceDefaultView(projectId: String!, viewId: String, databaseId: ID): Project!` | Set a shared view as the workspace's default; pass `null` for `viewId` to clear. |
+| Set personal default  | `setUserDefaultView(projectId: String!, viewId: String, databaseId: ID): Boolean!`      | Set the calling member's default view for a workspace; `null` clears it.         |
 
 ## Create a saved view
 
@@ -62,14 +62,15 @@ mutation CreateSavedView {
 
 #### CreateSavedViewInput
 
-| Parameter    | Type             | Required | Description                                                                                                               |
-| ------------ | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `projectId`  | `String!`        | Yes      | ID or slug of the workspace to create the view in. The caller must be a member of the workspace.                          |
-| `name`       | `String!`        | Yes      | Display name. Must be non-empty and at most 100 characters.                                                               |
-| `viewType`   | `SavedViewType!` | Yes      | The layout. One of the `SavedViewType` values below.                                                                      |
-| `viewConfig` | `JSON!`          | Yes      | Layout configuration object. May be empty (`{}`). Validated server-side - see [View configuration](#view-configuration).  |
-| `icon`       | `String`         | No       | Icon identifier. At most 50 characters.                                                                                   |
-| `isShared`   | `Boolean`        | No       | `true` shares the view with all workspace members. Defaults to `false` (personal). Only `OWNER` / `ADMIN` may set `true`. |
+| Parameter    | Type             | Required | Description                                                                                                                                                |
+| ------------ | ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectId`  | `String!`        | Yes      | ID or slug of the workspace to create the view in. The caller must be a member of the workspace.                                                           |
+| `databaseId` | `ID`             | No       | ID of the database the view belongs to. Omit it to attach the view to the workspace's own database. A database from another workspace returns `FORBIDDEN`. |
+| `name`       | `String!`        | Yes      | Display name. Must be non-empty and at most 100 characters.                                                                                                |
+| `viewType`   | `SavedViewType!` | Yes      | The layout. One of the `SavedViewType` values below.                                                                                                       |
+| `viewConfig` | `JSON!`          | Yes      | Layout configuration object. May be empty (`{}`). Validated server-side - see [View configuration](#view-configuration).                                   |
+| `icon`       | `String`         | No       | Icon identifier. At most 50 characters.                                                                                                                    |
+| `isShared`   | `Boolean`        | No       | `true` shares the view with all workspace members. Defaults to `false` (personal). Only `OWNER` / `ADMIN` may set `true`.                                  |
 
 #### SavedViewType
 
@@ -103,6 +104,7 @@ The mutation returns the created `SavedView`.
 
 | Field        | Type             | Description                                                        |
 | ------------ | ---------------- | ------------------------------------------------------------------ |
+| `databaseId` | `ID`             | ID of the database the view belongs to.                            |
 | `id`         | `ID!`            | Unique identifier for the view.                                    |
 | `uid`        | `String!`        | Short public identifier.                                           |
 | `name`       | `String!`        | Display name.                                                      |
@@ -198,6 +200,8 @@ mutation CreateSprintView {
 | `fieldId`   | `String` | Custom field ID to group by (used with `customField` / `customDateField` / `customLookupField`).                                                                        |
 | `fieldName` | `String` | Human-readable field label.                                                                                                                                             |
 | `mode`      | `String` | For date-based grouping: `"actual"` or `"relative"`.                                                                                                                    |
+
+A `customField` grouping on a Referenced By field groups records by their reference count.
 
 ### Columns
 

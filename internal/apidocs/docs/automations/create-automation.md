@@ -37,56 +37,66 @@ mutation CreateAutomation {
 
 ### CreateAutomationInput
 
-| Parameter | Type                              | Required | Description                                                                                                                                                |
-| --------- | --------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `trigger` | `CreateAutomationTriggerInput!`   | Yes      | The event that starts the automation.                                                                                                                      |
-| `actions` | `[CreateAutomationActionInput!]!` | Yes      | One or more actions to run when the trigger fires, in order.                                                                                               |
-| `name`    | `String`                          | No       | Optional label, 120 characters or fewer. Blank is stored as null, and the app falls back to the generated trigger and actions summary.                     |
-| `groupId` | `String`                          | No       | [Automation group](/api/automations/automation-groups) to place the automation in. It must belong to the same workspace. Omit for an ungrouped automation. |
+| Parameter    | Type                              | Required | Description                                                                                                                                                                                                                                                                                                        |
+| ------------ | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `trigger`    | `CreateAutomationTriggerInput!`   | Yes      | The event that starts the automation.                                                                                                                                                                                                                                                                              |
+| `actions`    | `[CreateAutomationActionInput!]!` | Yes      | One or more actions to run when the trigger fires, in order.                                                                                                                                                                                                                                                       |
+| `name`       | `String`                          | No       | Optional label, 120 characters or fewer. Blank is stored as null, and the app falls back to the generated trigger and actions summary.                                                                                                                                                                             |
+| `groupId`    | `String`                          | No       | [Automation group](/api/automations/automation-groups) to place the automation in. It must belong to the same workspace. Omit for an ungrouped automation.                                                                                                                                                         |
+| `databaseId` | `ID`                              | No       | The record table that owns the automation. Omit it to let Blue resolve the table: the one you pass, else the workspace's only live table. A workspace with zero or more than one table fails with `Automation table is required.` or `This workspace has more than one table: pass databaseId for the automation.` |
+
+### The automation's record table
+
+Every automation belongs to one record table. `databaseId` on `createAutomation` names it; when omitted, Blue resolves it as the workspace's only live table, and refuses an ambiguous workspace. The trigger and action `fieldId`/`optionIds` inputs below resolve against that table's mounted fields; a field not mounted on it fails with `Automation field <id> is not mounted on its table.`
 
 ### CreateAutomationTriggerInput
 
 The trigger fields that apply depend on `type`. Most fields are filters that narrow when the trigger fires; `schedule` is only for `SCHEDULED` triggers, and `conditionMode` is only for `CONDITIONAL` triggers.
 
-| Parameter              | Type                                   | Required | Description                                                                                                                            |
-| ---------------------- | -------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`                 | `AutomationTriggerType!`               | Yes      | The event that triggers the automation. See [AutomationTriggerType](#automationtriggertype).                                           |
-| `metadata`             | `AutomationTriggerMetadataInput`       | No       | Trigger-specific settings (e.g. due-date `offset` for `DUE_DATE_EXPIRED`).                                                             |
-| `customFieldId`        | `String`                               | No       | Custom field to watch (for custom-field triggers).                                                                                     |
-| `customFieldOptionIds` | `[String!]`                            | No       | Specific custom-field option IDs to match.                                                                                             |
-| `todoListId`           | `String`                               | No       | Restrict the trigger to a single list (`RecordList`).                                                                                  |
-| `todoListIds`          | `[String!]`                            | No       | Restrict the trigger to multiple lists.                                                                                                |
-| `tagIds`               | `[String!]`                            | No       | Tag IDs that must match.                                                                                                               |
-| `todoIds`              | `[String!]`                            | No       | Restrict the trigger to specific records.                                                                                              |
-| `assigneeIds`          | `[String!]`                            | No       | Assignee (user) IDs that must match.                                                                                                   |
-| `color`                | `String`                               | No       | Color to match (hex, e.g. `#FF5733`).                                                                                                  |
-| `colors`               | `[String!]`                            | No       | Multiple colors to match.                                                                                                              |
-| `dueStart`             | `DateTime`                             | No       | Start of a due-date range to match.                                                                                                    |
-| `dueEnd`               | `DateTime`                             | No       | End of a due-date range to match.                                                                                                      |
-| `showCompleted`        | `Boolean`                              | No       | Include completed records when matching.                                                                                               |
-| `fields`               | `JSON`                                 | No       | Opaque, internally structured field-condition payload, mirrored from the workspace filter UI. Build it in the app rather than by hand. |
-| `op`                   | `FilterLogicalOperator`                | No       | How to combine filter conditions: `AND` or `OR`.                                                                                       |
-| `conditionMode`        | `ConditionalAutomationMode`            | No       | For `CONDITIONAL` triggers only: `STARTS_MATCHING` or `STOPS_MATCHING`.                                                                |
-| `filterGroups`         | `JSON`                                 | No       | Opaque, internally structured filter-group payload for `CONDITIONAL` triggers. Build it in the app.                                    |
-| `filterGroupLinks`     | `JSON`                                 | No       | Opaque, internally structured links between filter groups. Build it in the app.                                                        |
-| `schedule`             | `CreateAutomationTriggerScheduleInput` | No       | Required for `SCHEDULED` triggers; ignored otherwise.                                                                                  |
+| Parameter              | Type                                   | Required | Description                                                                                                                                          |
+| ---------------------- | -------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                 | `AutomationTriggerType!`               | Yes      | The event that triggers the automation. See [AutomationTriggerType](#automationtriggertype).                                                         |
+| `metadata`             | `AutomationTriggerMetadataInput`       | No       | Trigger-specific settings (e.g. due-date `offset` for `DUE_DATE_EXPIRED`).                                                                           |
+| `customFieldId`        | `String`                               | No       | Custom field to watch (for custom-field triggers).                                                                                                   |
+| `customFieldOptionIds` | `[String!]`                            | No       | Specific custom-field option IDs to match. On the generic `fieldId` path, generic option identities for the trigger field.                           |
+| `fieldId`              | `ID`                                   | No       | Generic field bound to this trigger: a Field mounted on the automation's table. Takes precedence over `customFieldId`.                               |
+| `optionIds`            | `[String!]`                            | No       | Generic option, user, or record operand identities for the trigger field.                                                                            |
+| `transition`           | `AutomationTransitionInput`            | No       | Single-select From/To transition for `CUSTOM_FIELD_VALUE_CHANGED` triggers. Required there on the `fieldId` path; invalid on any other trigger type. |
+| `onlyIf`               | `JSON`                                 | No       | Only-if record filter (records-list filter groups), evaluated after the event and before the actions run.                                            |
+| `todoListId`           | `String`                               | No       | Restrict the trigger to a single list (`RecordList`).                                                                                                |
+| `todoListIds`          | `[String!]`                            | No       | Restrict the trigger to multiple lists.                                                                                                              |
+| `tagIds`               | `[String!]`                            | No       | Tag IDs that must match.                                                                                                                             |
+| `todoIds`              | `[String!]`                            | No       | Restrict the trigger to specific records.                                                                                                            |
+| `assigneeIds`          | `[String!]`                            | No       | Assignee (user) IDs that must match.                                                                                                                 |
+| `color`                | `String`                               | No       | Color to match (hex, e.g. `#FF5733`).                                                                                                                |
+| `colors`               | `[String!]`                            | No       | Multiple colors to match.                                                                                                                            |
+| `dueStart`             | `DateTime`                             | No       | Start of a due-date range to match.                                                                                                                  |
+| `dueEnd`               | `DateTime`                             | No       | End of a due-date range to match.                                                                                                                    |
+| `showCompleted`        | `Boolean`                              | No       | Include completed records when matching.                                                                                                             |
+| `fields`               | `JSON`                                 | No       | Opaque, internally structured field-condition payload, mirrored from the workspace filter UI. Build it in the app rather than by hand.               |
+| `op`                   | `FilterLogicalOperator`                | No       | How to combine filter conditions: `AND` or `OR`.                                                                                                     |
+| `conditionMode`        | `ConditionalAutomationMode`            | No       | For `CONDITIONAL` triggers only: `STARTS_MATCHING` or `STOPS_MATCHING`.                                                                              |
+| `filterGroups`         | `JSON`                                 | No       | Opaque, internally structured filter-group payload for `CONDITIONAL` triggers. Build it in the app.                                                  |
+| `filterGroupLinks`     | `JSON`                                 | No       | Opaque, internally structured links between filter groups. Build it in the app.                                                                      |
+| `schedule`             | `CreateAutomationTriggerScheduleInput` | No       | Required for `SCHEDULED` triggers; ignored otherwise.                                                                                                |
 
 ### CreateAutomationTriggerScheduleInput
 
 Configures a `SCHEDULED` trigger. `hour`, `minute`, and `timezone` are always required; the other fields are used by specific `type` values (e.g. `dayOfWeek` for `WEEKLY`, `dayOfMonth` for `MONTHLY`, `cronExpression` for `CUSTOM`).
 
-| Parameter        | Type                      | Required | Description                                                                |
-| ---------------- | ------------------------- | -------- | -------------------------------------------------------------------------- |
-| `type`           | `AutomationScheduleType!` | Yes      | Schedule frequency. See [AutomationScheduleType](#automationscheduletype). |
-| `hour`           | `Int!`                    | Yes      | Hour of day to run, `0`–`23`.                                              |
-| `minute`         | `Int!`                    | Yes      | Minute of hour to run, `0`–`59`.                                           |
-| `timezone`       | `String!`                 | Yes      | IANA timezone, e.g. `"America/New_York"`.                                  |
-| `days`           | `[Int!]`                  | No       | Specific days for the schedule.                                            |
-| `dayOfWeek`      | `[Int!]`                  | No       | Days of week, `0`=Sunday through `6`=Saturday. Used by `WEEKLY`.           |
-| `dayOfMonth`     | `Int`                     | No       | Day of month, `1`–`31`. Used by `MONTHLY`/`YEARLY`.                        |
-| `month`          | `Int`                     | No       | Month of year, `1`–`12`. Used by `YEARLY`.                                 |
-| `cronExpression` | `String`                  | No       | Custom cron expression. Used by `CUSTOM`.                                  |
-| `isActive`       | `Boolean`                 | No       | Whether the schedule is active.                                            |
+| Parameter        | Type                      | Required | Description                                                                                                                                                                          |
+| ---------------- | ------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `type`           | `AutomationScheduleType!` | Yes      | Schedule frequency. See [AutomationScheduleType](#automationscheduletype).                                                                                                           |
+| `hour`           | `Int!`                    | Yes      | Hour of day to run, `0`–`23`.                                                                                                                                                        |
+| `minute`         | `Int!`                    | Yes      | Minute of hour to run, `0`–`59`.                                                                                                                                                     |
+| `timezone`       | `String!`                 | Yes      | IANA timezone, e.g. `"America/New_York"`.                                                                                                                                            |
+| `days`           | `[Int!]`                  | No       | Specific days for the schedule.                                                                                                                                                      |
+| `dayOfWeek`      | `[Int!]`                  | No       | Days of week, `0`=Sunday through `6`=Saturday. Used by `WEEKLY`.                                                                                                                     |
+| `dayOfMonth`     | `Int`                     | No       | Day of month, `1`–`31`. Used by `MONTHLY`/`YEARLY`.                                                                                                                                  |
+| `month`          | `Int`                     | No       | Month of year, `1`–`12`. Used by `YEARLY`.                                                                                                                                           |
+| `cronExpression` | `String`                  | No       | Custom cron expression. Used by `CUSTOM`.                                                                                                                                            |
+| `isActive`       | `Boolean`                 | No       | Whether the schedule is active. Omit on an edit to keep the stored value — a schedule deactivated by the migration or a field deletion stays deactivated.                            |
+| `fieldId`        | `ID`                      | No       | The DATE field the schedule reads each record's date from. A record with no value in this field has no occurrence and is skipped; there is no fallback to the record's native dates. |
 
 ### AutomationTriggerMetadataInput
 
@@ -99,21 +109,26 @@ Configures a `SCHEDULED` trigger. `hour`, `minute`, and `timezone` are always re
 
 The fields that apply depend on `type` — e.g. `tagIds` for `ADD_TAG`/`REMOVE_TAG`, `assigneeIds` for `ADD_ASSIGNEE`, `duedIn` for `CHANGE_DUE_DATE`, `metadata.email` for `SEND_EMAIL`, `httpOption` for `MAKE_HTTP_REQUEST`.
 
-| Parameter              | Type                              | Required | Description                                                                                            |
-| ---------------------- | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
-| `type`                 | `AutomationActionType!`           | Yes      | The action to run. See [AutomationActionType](#automationactiontype).                                  |
-| `duedIn`               | `Int`                             | No       | Days from the trigger to set the due date (for `CHANGE_DUE_DATE`).                                     |
-| `customFieldId`        | `String`                          | No       | Target custom field (for `ADD_CUSTOM_FIELD`/`REMOVE_CUSTOM_FIELD`).                                    |
-| `customFieldOptionIds` | `[String!]`                       | No       | Custom-field option IDs to set.                                                                        |
-| `todoListId`           | `String`                          | No       | Target list for `CHANGE_TODO_LIST`.                                                                    |
-| `metadata`             | `AutomationActionMetadataInput`   | No       | Action-specific payload (email, checklists, copy options, field values).                               |
-| `tagIds`               | `[String!]`                       | No       | Tags to add or remove.                                                                                 |
-| `assigneeIds`          | `[String!]`                       | No       | Assignees to add or remove.                                                                            |
-| `projectIds`           | `[String!]`                       | No       | Target workspaces for `ADD_PROJECT`.                                                                   |
-| `color`                | `String`                          | No       | Color to apply (hex), for `ADD_COLOR`.                                                                 |
-| `assigneeTriggerer`    | `String`                          | No       | Used by `ADD_ASSIGNEE_TRIGGERER`/`REMOVE_ASSIGNEE_TRIGGERER` to act on the user who fired the trigger. |
-| `portableDocumentId`   | `String`                          | No       | Document template ID for `GENERATE_PDF`.                                                               |
-| `httpOption`           | `AutomationActionHttpOptionInput` | No       | HTTP request configuration for `MAKE_HTTP_REQUEST`.                                                    |
+| Parameter              | Type                              | Required | Description                                                                                                                                                                                                                                                                |
+| ---------------------- | --------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`                 | `AutomationActionType!`           | Yes      | The action to run. See [AutomationActionType](#automationactiontype).                                                                                                                                                                                                      |
+| `duedIn`               | `Int`                             | No       | Days from the trigger to set the due date (for `CHANGE_DUE_DATE`).                                                                                                                                                                                                         |
+| `customFieldId`        | `String`                          | No       | Target custom field (for `ADD_CUSTOM_FIELD`/`REMOVE_CUSTOM_FIELD`).                                                                                                                                                                                                        |
+| `customFieldOptionIds` | `[String!]`                       | No       | Custom-field option IDs to set.                                                                                                                                                                                                                                            |
+| `fieldId`              | `ID`                              | No       | Generic field bound to this action: a writable Field mounted on the automation's table. Takes precedence over `customFieldId`. Only for `ADD_CUSTOM_FIELD`/`REMOVE_CUSTOM_FIELD` — any other action type fails with `generic field bindings require a field value action`. |
+| `optionIds`            | `[String!]`                       | No       | Generic option identities for Set/Remove field value: the typed value for selects, users for people fields, records for reference fields.                                                                                                                                  |
+| `databaseId`           | `ID`                              | No       | For `CHANGE_TODO_LIST` onto a single/multi-select field: the table, in any workspace of the organization, that mounts `fieldId`. `optionIds` carries the one option. Omit to move to a list. Requires `action.databaseId`, `fieldId`, and exactly one `optionIds` entry.   |
+| `setValueMode`         | `AutomationSetValueMode`          | No       | Multi-value Set field value: `ADD` keeps existing values, `REPLACE` (default) replaces the set. `ADD` requires a multi-value field (`SELECT_MULTI`, `ASSIGNEE`, `REFERENCE`).                                                                                              |
+| `removeValueMode`      | `AutomationRemoveValueMode`       | No       | Multi-value Remove field value: `SELECTED` removes the chosen values, `ALL` (default) clears the field. `SELECTED` requires a multi-value field (`SELECT_MULTI`, `ASSIGNEE`, `REFERENCE`).                                                                                 |
+| `todoListId`           | `String`                          | No       | Target list for `CHANGE_TODO_LIST`.                                                                                                                                                                                                                                        |
+| `metadata`             | `AutomationActionMetadataInput`   | No       | Action-specific payload (email, checklists, copy options, field values).                                                                                                                                                                                                   |
+| `tagIds`               | `[String!]`                       | No       | Tags to add or remove.                                                                                                                                                                                                                                                     |
+| `assigneeIds`          | `[String!]`                       | No       | Assignees to add or remove.                                                                                                                                                                                                                                                |
+| `projectIds`           | `[String!]`                       | No       | Target workspaces for `ADD_PROJECT`.                                                                                                                                                                                                                                       |
+| `color`                | `String`                          | No       | Color to apply (hex), for `ADD_COLOR`.                                                                                                                                                                                                                                     |
+| `assigneeTriggerer`    | `String`                          | No       | Used by `ADD_ASSIGNEE_TRIGGERER`/`REMOVE_ASSIGNEE_TRIGGERER` to act on the user who fired the trigger.                                                                                                                                                                     |
+| `portableDocumentId`   | `String`                          | No       | Document template ID for `GENERATE_PDF`.                                                                                                                                                                                                                                   |
+| `httpOption`           | `AutomationActionHttpOptionInput` | No       | HTTP request configuration for `MAKE_HTTP_REQUEST`.                                                                                                                                                                                                                        |
 
 ### AutomationActionMetadataInput
 
@@ -211,30 +226,31 @@ Used by `MAKE_HTTP_REQUEST` actions.
 
 ### AutomationTriggerType
 
-| Value                                     | Fires when                                                         |
-| ----------------------------------------- | ------------------------------------------------------------------ |
-| `TODO_CREATED`                            | A record is created.                                               |
-| `TODO_LIST_CHANGED`                       | A record moves to a different list.                                |
-| `TODO_MARKED_AS_COMPLETE`                 | A record is completed.                                             |
-| `TODO_MARKED_AS_INCOMPLETE`               | A record is reopened.                                              |
-| `ASSIGNEE_ADDED`                          | An assignee is added.                                              |
-| `ASSIGNEE_REMOVED`                        | An assignee is removed.                                            |
-| `DUE_DATE_CHANGED`                        | A record's due date changes.                                       |
-| `DUE_DATE_REMOVED`                        | A record's due date is cleared.                                    |
-| `TAG_ADDED`                               | A tag is added.                                                    |
-| `TAG_REMOVED`                             | A tag is removed.                                                  |
-| `CHECKLIST_ITEM_MARKED_AS_DONE`           | A checklist item is checked.                                       |
-| `CHECKLIST_ITEM_MARKED_AS_UNDONE`         | A checklist item is unchecked.                                     |
-| `DUE_DATE_EXPIRED`                        | A record's due date passes (uses `metadata.offset`).               |
-| `TODO_COPIED_OR_MOVED_FROM_OTHER_PROJECT` | A record is copied or moved in from another workspace.             |
-| `CUSTOM_FIELD_ADDED`                      | A custom-field value is set.                                       |
-| `CUSTOM_FIELD_REMOVED`                    | A custom-field value is cleared.                                   |
-| `COLOR_ADDED`                             | A color is added.                                                  |
-| `COLOR_REMOVED`                           | A color is removed.                                                |
-| `CUSTOM_FIELD_BUTTON_CLICKED`             | A button custom field is clicked.                                  |
-| `PROJECT_ADDED_TO_TODO`                   | A record is added to a workspace.                                  |
-| `SCHEDULED`                               | A schedule elapses (requires `schedule`).                          |
-| `CONDITIONAL`                             | A record starts or stops matching a filter (uses `conditionMode`). |
+| Value                                     | Fires when                                                                                            |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `TODO_CREATED`                            | A record is created.                                                                                  |
+| `TODO_LIST_CHANGED`                       | A record moves to a different list.                                                                   |
+| `TODO_MARKED_AS_COMPLETE`                 | A record is completed.                                                                                |
+| `TODO_MARKED_AS_INCOMPLETE`               | A record is reopened.                                                                                 |
+| `ASSIGNEE_ADDED`                          | An assignee is added.                                                                                 |
+| `ASSIGNEE_REMOVED`                        | An assignee is removed.                                                                               |
+| `DUE_DATE_CHANGED`                        | A record's due date changes.                                                                          |
+| `DUE_DATE_REMOVED`                        | A record's due date is cleared.                                                                       |
+| `TAG_ADDED`                               | A tag is added.                                                                                       |
+| `TAG_REMOVED`                             | A tag is removed.                                                                                     |
+| `CHECKLIST_ITEM_MARKED_AS_DONE`           | A checklist item is checked.                                                                          |
+| `CHECKLIST_ITEM_MARKED_AS_UNDONE`         | A checklist item is unchecked.                                                                        |
+| `DUE_DATE_EXPIRED`                        | A record's due date passes (uses `metadata.offset`).                                                  |
+| `CUSTOM_FIELD_VALUE_CHANGED`              | A watched field's value moves from a From option to a To option (single-select From/To `transition`). |
+| `TODO_COPIED_OR_MOVED_FROM_OTHER_PROJECT` | A record is copied or moved in from another workspace.                                                |
+| `CUSTOM_FIELD_ADDED`                      | A custom-field value is set.                                                                          |
+| `CUSTOM_FIELD_REMOVED`                    | A custom-field value is cleared.                                                                      |
+| `COLOR_ADDED`                             | A color is added.                                                                                     |
+| `COLOR_REMOVED`                           | A color is removed.                                                                                   |
+| `CUSTOM_FIELD_BUTTON_CLICKED`             | A button custom field is clicked.                                                                     |
+| `PROJECT_ADDED_TO_TODO`                   | A record is added to a workspace.                                                                     |
+| `SCHEDULED`                               | A schedule elapses (requires `schedule`).                                                             |
+| `CONDITIONAL`                             | A record starts or stops matching a filter (uses `conditionMode`).                                    |
 
 ### AutomationActionType
 

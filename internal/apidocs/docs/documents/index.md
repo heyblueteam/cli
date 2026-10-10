@@ -37,12 +37,12 @@ The product nouns map to GraphQL types as follows. Use the product word in prose
 
 ## Pages
 
-| Page                                                                               | Covers                                                                                                                                    |
-| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| [Create and edit documents](/api/documents/create-document)                        | Create a rich-text document, update it, and delete it - `createDocument`, `updateDocument`, `deleteDocument`.                             |
-| [Query and subscribe to documents](/api/documents/query-documents)                 | Fetch one document, list a project's documents with filtering/sorting/pagination, and subscribe to real-time create/update/delete events. |
-| [Build Portable Document templates](/api/documents/portable-documents)             | Create a Portable Document template from an uploaded PDF, rename it, delete it, fetch one, and list a project's templates.                |
-| [Map fields and print Portable Documents](/api/documents/portable-document-fields) | Place, update, and delete overlay fields that bind record attributes to a page, then print a filled PDF for a given record.               |
+| Page                                                                               | Covers                                                                                                                                               |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Create and edit documents](/api/documents/create-document)                        | Create a rich-text document, update it, and delete it - `createDocument`, `updateDocument`, `deleteDocument`.                                        |
+| [Query and subscribe to documents](/api/documents/query-documents)                 | Fetch one document, list a project's documents with filtering/sorting/pagination, and subscribe to real-time create/update/delete events.            |
+| [Build Portable Document templates](/api/documents/portable-documents)             | Create a Portable Document template from an uploaded PDF, rename it, delete it, fetch one, list a project's templates, and link it to record tables. |
+| [Map fields and print Portable Documents](/api/documents/portable-document-fields) | Place, update, and delete overlay fields that bind record attributes to a page, then print a filled PDF for a given record.                          |
 
 ## Related
 

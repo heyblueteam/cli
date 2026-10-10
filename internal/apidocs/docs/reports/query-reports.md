@@ -176,7 +176,7 @@ The server proves the caller's membership rather than trusting the flag: it chec
 | `reportUsers`     | `[ReportUser!]!`       | Users the report is shared with, with their role. See [Manage Report Access](/api/reports/manage-report-access).                                                              |
 | `projectIds`      | `[String!]`            | Computed union of every workspace ID across all data sources that the report creator can access. See the note below.                                                          |
 
-The `Report` type also exposes the `todos`, `todoCount`, and `aggregations` fields. Those are the report's data surface and are documented on [Report Data & Aggregations](/api/reports/report-data-aggregations), which also covers the `TodosFilter`/`TodosSort` inputs (shared with the [Records](/api/records) section).
+The `Report` type also exposes the `records`, `recordCount`, `todos`, `todoCount`, and `aggregations` fields. Those are the report's data surface and are documented on [Report Data & Aggregations](/api/reports/report-data-aggregations), which also covers the `TodosFilter`/`TodosSort` inputs (shared with the [Records](/api/records) section).
 
 <Callout variant="info" title="projectIds is computed, not stored">
 

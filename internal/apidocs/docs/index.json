@@ -82,49 +82,54 @@
       "order": 15
     },
     {
+      "slug": "public-views",
+      "title": "Public views",
+      "order": 16
+    },
+    {
       "slug": "realtime",
       "title": "Real-time",
-      "order": 16
+      "order": 17
     },
     {
       "slug": "records",
       "title": "Records",
-      "order": 17
+      "order": 18
     },
     {
       "slug": "reports",
       "title": "Reports",
-      "order": 18
+      "order": 19
     },
     {
       "slug": "saved-views",
       "title": "Saved Views",
-      "order": 19
+      "order": 20
     },
     {
       "slug": "start-guide",
       "title": "Start Guide",
-      "order": 20
+      "order": 21
     },
     {
       "slug": "status-updates",
       "title": "Status Updates",
-      "order": 21
+      "order": 22
     },
     {
       "slug": "user-management",
       "title": "User Management",
-      "order": 22
+      "order": 23
     },
     {
       "slug": "webhooks",
       "title": "Webhooks",
-      "order": 23
+      "order": 24
     },
     {
       "slug": "workspaces",
       "title": "Workspaces",
-      "order": 24
+      "order": 25
     }
   ],
   "documents": [
@@ -169,6 +174,7 @@
         "Request",
         "Parameters",
         "CreateAutomationInput",
+        "The automation's record table",
         "CreateAutomationTriggerInput",
         "CreateAutomationTriggerScheduleInput",
         "AutomationTriggerMetadataInput",
@@ -319,6 +325,7 @@
         "ChartType",
         "FormulaDisplayInput",
         "ChartMetadataInput",
+        "Table scope",
         "Bucket order and limit",
         "Stacked bar charts",
         "Response",
@@ -1457,6 +1464,9 @@
         "Write through to the source record",
         "Editable targets",
         "Who may edit",
+        "Write through a lookup chain",
+        "LookupChainEntry",
+        "LookupChainOperation",
         "Lookup chains",
         "Notes",
         "Errors",
@@ -1524,6 +1534,62 @@
         "Set a value",
         "Read a value",
         "Notes",
+        "Related"
+      ]
+    },
+    {
+      "slug": "custom-fields/field-library",
+      "title": "Field Library",
+      "description": "Share one field across every workspace - promote it to the organization library, demote it back to one workspace, detach a workspace-local copy, or merge duplicates.",
+      "section": "custom-fields",
+      "sectionTitle": "Custom Fields",
+      "path": "custom-fields/field-library.md",
+      "url": "https://blue.app/api/custom-fields/field-library",
+      "order": 30,
+      "headings": [
+        "Promote a field to the library",
+        "PromoteFieldInput",
+        "Returns",
+        "Demote a field to one workspace",
+        "DemoteFieldInput",
+        "Returns",
+        "Detach a field into a workspace-local copy",
+        "DetachFieldInput",
+        "Returns",
+        "Merge fields",
+        "MergeFieldsInput",
+        "Returns",
+        "Choosing the right operation",
+        "Errors",
+        "Permissions",
+        "Related"
+      ]
+    },
+    {
+      "slug": "custom-fields/select-options",
+      "title": "Select Options",
+      "description": "Add, rename, reorder, limit, remap and retire the options of a record-engine select field — the choices behind SELECT_SINGLE and SELECT_MULTI fields and the columns of a board.",
+      "section": "custom-fields",
+      "sectionTitle": "Custom Fields",
+      "path": "custom-fields/select-options.md",
+      "url": "https://blue.app/api/custom-fields/select-options",
+      "order": 31,
+      "headings": [
+        "Create an option",
+        "CreateRecordFieldOptionInput",
+        "Two authorization paths",
+        "Rename an option",
+        "RenameRecordFieldOptionInput",
+        "Move an option",
+        "MoveRecordFieldOptionInput",
+        "Set a WIP limit",
+        "SetRecordFieldOptionWipInput",
+        "Remap an option (retire it)",
+        "RemapRecordFieldOptionInput",
+        "Remap and delete an option",
+        "RemapAndDeleteRecordFieldOptionInput",
+        "Errors",
+        "Permissions",
         "Related"
       ]
     },
@@ -1729,6 +1795,11 @@
         "Arguments",
         "PortableDocumentFilter",
         "PageInfo",
+        "Link a template to record tables",
+        "SetPortableDocumentDatabaseLinksInput",
+        "PortableDocumentDatabaseLinkInput",
+        "Mapping rules",
+        "PortableDocumentDatabaseLink",
         "Errors",
         "Permissions",
         "Related"
@@ -1747,6 +1818,7 @@
         "Create a field",
         "CreatePortableDocumentFieldInput",
         "`field` values",
+        "The `comments` field",
         "Response",
         "PortableDocumentField",
         "Update a field",
@@ -2045,6 +2117,35 @@
       ]
     },
     {
+      "slug": "import-export/export-records-pdf",
+      "title": "Export Records as PDF",
+      "description": "Export workspace records to a single PDF rendered from a Portable Document template and delivered by email, with optional filters and real-time progress.",
+      "section": "import-export",
+      "sectionTitle": "Import Export",
+      "path": "import-export/export-records-pdf.md",
+      "url": "https://blue.app/api/import-export/export-records-pdf",
+      "order": 4,
+      "headings": [
+        "Request",
+        "Parameters",
+        "ExportRecordsPdfInput",
+        "The template's table link",
+        "RecordsFilter",
+        "Custom-field filters",
+        "Response",
+        "Returns",
+        "Full example",
+        "Which records are selected",
+        "Delivery",
+        "Track export progress",
+        "Errors",
+        "Job-time failures",
+        "Permissions",
+        "Notes",
+        "Related"
+      ]
+    },
+    {
       "slug": "inbox",
       "title": "Inbox \u0026 Messaging overview",
       "description": "How Blue's unified Inbox works - one cross-workspace feed of record comment threads, workspace chats, AI conversations, and direct messages / group chats, backed by a real InboxThread table.",
@@ -2335,6 +2436,29 @@
         "Returns",
         "Full example",
         "Errors",
+        "Related"
+      ]
+    },
+    {
+      "slug": "public-views/public-view-csv",
+      "title": "Export a public view to CSV",
+      "description": "Read a published public view's rows as CSV text with the publicViewCsv query.",
+      "section": "public-views",
+      "sectionTitle": "Public views",
+      "path": "public-views/public-view-csv.md",
+      "url": "https://blue.app/api/public-views/public-view-csv",
+      "order": 0,
+      "headings": [
+        "Request",
+        "Parameters",
+        "Where the view ID comes from",
+        "Response",
+        "Columns",
+        "Custom-field cells",
+        "Limits",
+        "Errors",
+        "Access",
+        "Related operations",
         "Related"
       ]
     },
@@ -2805,6 +2929,12 @@
         "Full example",
         "Errors",
         "Behavior",
+        "Create a record in a table",
+        "Request",
+        "CreateRecordInDatabaseInput",
+        "Response",
+        "Authorization and the creation form",
+        "Errors",
         "Related"
       ]
     },
@@ -2900,6 +3030,8 @@
       "order": 4,
       "headings": [
         "Request",
+        "Move to a database",
+        "Values the destination does not have",
         "Parameters",
         "MoveRecordInput",
         "Response",
@@ -3124,6 +3256,29 @@
       ]
     },
     {
+      "slug": "records/record-groups",
+      "title": "Record groups",
+      "description": "Group records by list, assignee, due date, or tag, with a count per group, using the recordGroups query.",
+      "section": "records",
+      "sectionTitle": "Records",
+      "path": "records/record-groups.md",
+      "url": "https://blue.app/api/records/record-groups",
+      "order": 13,
+      "headings": [
+        "Request",
+        "Parameters",
+        "RecordGroupType",
+        "Response",
+        "RecordGroup",
+        "PageInfo",
+        "Ordering",
+        "Full example",
+        "Scope and visibility",
+        "Errors",
+        "Related"
+      ]
+    },
+    {
       "slug": "reports",
       "title": "Reports",
       "description": "Aggregate records across one or more workspaces into a single saved analytical view with counts, field aggregations, and CSV export.",
@@ -3134,6 +3289,8 @@
       "order": 0,
       "headings": [
         "Concepts to types",
+        "Report field picker",
+        "Pages in this section",
         "Pages in this section",
         "Access at a glance"
       ]
@@ -3203,6 +3360,9 @@
         "Parameters",
         "`Report.todos` arguments",
         "`Report.todoCount` arguments",
+        "`Report.records` arguments",
+        "`ReportRecord`",
+        "`Report.recordCount` arguments",
         "`Report.aggregations` arguments",
         "AggregationFieldInput",
         "Response",
@@ -3330,6 +3490,7 @@
         "Parameters",
         "Arguments",
         "SavedViewFilterInput",
+        "Database-scoped pagination fields",
         "Response",
         "SavedViewPagination",
         "SavedView",
@@ -3360,6 +3521,7 @@
         "Full example",
         "viewConfig structure",
         "Update view position",
+        "Reorder a whole section",
         "Set the workspace default view",
         "Set your personal default view",
         "Errors",
@@ -3553,6 +3715,7 @@
         "Sign-in, sessions \u0026 invitations",
         "Users \u0026 membership",
         "Records, lists \u0026 dependencies",
+        "Ordering \u0026 concurrency",
         "Workspaces, organizations \u0026 limits",
         "Custom fields, tags \u0026 templates",
         "Comments, activity \u0026 notifications",
@@ -3564,6 +3727,7 @@
         "Imports",
         "Custom domains \u0026 email",
         "Billing \u0026 subscriptions",
+        "Community",
         "System",
         "Related"
       ]
@@ -3741,6 +3905,7 @@
         "List pending invitations",
         "Resend or cancel an invitation",
         "Remove a user",
+        "Delegate field-schema management",
         "Create a custom role",
         "Errors",
         "Related"
@@ -3841,16 +4006,17 @@
         "Parameters",
         "ProjectUserRoleFilter",
         "CreateProjectUserRoleInput",
-        "RecordTagFilterInput",
         "RecordFilterInput",
         "CreateProjectUserRoleCustomFieldInput",
         "CreateProjectUserRoleTodoListInput",
         "CreateProjectUserRoleTodoFieldInput",
+        "CopyWorkspaceUserRoleInput",
         "UpdateProjectUserRoleInput",
         "DeleteProjectUserRoleInput",
         "Response",
         "Returns — ProjectUserRole",
         "Full example",
+        "Copy a role",
         "Assigning a role",
         "Errors",
         "Permissions",

@@ -62,7 +62,7 @@ Rollup fields are computed — `setRecordCustomField` rejects them with a `BAD_U
 
 ## Read a value
 
-A rollup result lands in exactly one of three typed columns depending on what it aggregates: `rollupValueNumeric` (a decimal returned as a string to preserve precision), `rollupValueDate`, or `rollupValueText`. `rollupResultType` tells you which one is populated, and `rollupComputeStatus` reports whether the value is current.
+A rollup result lands in exactly one of three typed columns depending on what it aggregates: `rollupValueNumeric` (a decimal returned as a string to preserve precision), `rollupValueDate`, or `rollupValueText`. `rollupResultType` tells you which one is populated, and `rollupComputeStatus` reports whether the value is current. A numeric result over currency amounts also carries `rollupValueCurrency`.
 
 ```graphql
 query RecordRollups {
@@ -76,6 +76,7 @@ query RecordRollups {
           type
           rollupResultType
           rollupValueNumeric
+          rollupValueCurrency
           rollupValueDate
           rollupValueText
           rollupComputeStatus
@@ -101,6 +102,7 @@ query RecordRollups {
                 "type": "ROLLUP",
                 "rollupResultType": "numeric",
                 "rollupValueNumeric": "48000",
+                "rollupValueCurrency": "USD",
                 "rollupValueDate": null,
                 "rollupValueText": null,
                 "rollupComputeStatus": "FRESH"
@@ -118,6 +120,7 @@ query RecordRollups {
 
 - `rollupComputeStatus` is one of `FRESH`, `COMPUTING`, `FAILED`, or `BROKEN_SOURCE`. A `BROKEN_SOURCE` status means the source or aggregate field was removed — re-point the rollup or recreate it.
 - `rollupValueNumeric` is a string so large or fractional totals survive the JavaScript number boundary; parse it on your side.
+- `rollupValueCurrency` is the ISO 4217 code of a `SUM`, `AVERAGE`, `MIN`, or `MAX` over a Currency field or a Table currency column. It is set only when every aggregated amount has the same currency. It is `null` for other results and when the currency is not known — an amount has no currency, or the rollup has not been recomputed since the field was added. Fall back to the aggregated field's currency settings.
 - `COUNT` counts the reached records; `COUNTA` counts those with a non-empty value; `ARRAYJOIN` concatenates the text values.
 
 ## Related

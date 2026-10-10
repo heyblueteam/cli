@@ -105,8 +105,10 @@ Some sensitive operations carry their own limit, independent of the tier limits 
 | `submitForm`                     | 5 requests   | 60 seconds |
 | `exportRecords`                  | 1 request    | 50 seconds |
 | `exportReport`                   | 1 request    | 50 seconds |
+| `exportRecordsPdf`               | 1 request    | 50 seconds |
 | `publicViewData`                 | 100 requests | 60 seconds |
 | `publicViewRecords`              | 100 requests | 60 seconds |
+| `publicViewCsv`                  | 2 requests   | 60 seconds |
 | `deleteOrganization`             | 3 requests   | 60 seconds |
 | `deleteOrganizationRequest`      | 3 requests   | 60 seconds |
 | `updateEmail`                    | 3 requests   | 60 seconds |

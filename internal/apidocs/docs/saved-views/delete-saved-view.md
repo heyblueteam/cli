@@ -5,7 +5,7 @@ icon: Trash2
 order: 3
 ---
 
-Use the `deleteSavedView` mutation to permanently remove a saved view from a workspace. Saved views are `SavedView` objects in the API. Before the view is deleted, Blue clears every default-view reference that pointed to it — both the workspace default (`Project.defaultViewId`) and every user's personal default (`ProjectUser.defaultViewId`) — so no record layout is left pointing at a missing view.
+Use the `deleteSavedView` mutation to permanently remove a saved view from a workspace. Saved views are `SavedView` objects in the API. Before the view is deleted, Blue clears every default-view reference that pointed to it — the workspace default (`Project.defaultViewId`), every user's personal default (`ProjectUser.defaultViewId`), and every per-database default (`setWorkspaceDefaultView`/`setUserDefaultView` with a `databaseId`) — so no record layout is left pointing at a missing view.
 
 Deleting a view publishes a real-time `DELETED` event to anyone subscribed to the workspace's views (see [Related](#related)). This action is permanent and cannot be undone.
 
@@ -63,7 +63,7 @@ Header names are case-insensitive.
 
 <Callout variant="warning" title="Always check success">
 
-Permission and lookup failures (`SAVED_VIEW_NOT_FOUND`, `FORBIDDEN`) are thrown as GraphQL errors before any deletion is attempted. But if the delete itself fails *after* authorization succeeds — for example a database error while clearing default references — the mutation returns `{ "success": false }` instead of an error. Treat `success: false` as a real outcome and check it on every call; do not assume a missing `errors` array means the view is gone.
+Permission and lookup failures (`SAVED_VIEW_NOT_FOUND`, `FORBIDDEN`) are thrown as GraphQL errors before any deletion is attempted. But if the delete itself fails _after_ authorization succeeds — for example a database error while clearing default references — the mutation returns `{ "success": false }` instead of an error. Treat `success: false` as a real outcome and check it on every call; do not assume a missing `errors` array means the view is gone.
 
 </Callout>
 

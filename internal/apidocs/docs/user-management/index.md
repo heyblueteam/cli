@@ -32,14 +32,15 @@ Headers are case-insensitive. The Company and Project headers accept either an I
 
 ### Users
 
-| Operation                                               | Type     | Description                                               |
-| ------------------------------------------------------- | -------- | --------------------------------------------------------- |
-| [`workspaceUserList`](/api/user-management/list-users)    | Query    | List users in a workspace, with pagination and search.    |
-| [`assignees`](/api/records/assignees)                   | Query    | List users who can be assigned to records in a workspace. |
-| `currentUser`                                           | Query    | Return the authenticated user.                            |
-| [`inviteUser`](/api/user-management/invite-user)        | Mutation | Invite a user to a workspace or organization.             |
-| [`removeProjectUser`](/api/user-management/remove-user) | Mutation | Remove a user from a single workspace.                    |
-| [`removeOrganizationUser`](/api/user-management/remove-user) | Mutation | Remove a user from the entire organization.               |
+| Operation                                                    | Type     | Description                                                    |
+| ------------------------------------------------------------ | -------- | -------------------------------------------------------------- |
+| [`workspaceUserList`](/api/user-management/list-users)       | Query    | List users in a workspace, with pagination and search.         |
+| [`assignees`](/api/records/assignees)                        | Query    | List users who can be assigned to records in a workspace.      |
+| `currentUser`                                                | Query    | Return the authenticated user.                                 |
+| [`inviteUser`](/api/user-management/invite-user)             | Mutation | Invite a user to a workspace or organization.                  |
+| [`removeProjectUser`](/api/user-management/remove-user)      | Mutation | Remove a user from a single workspace.                         |
+| [`removeOrganizationUser`](/api/user-management/remove-user) | Mutation | Remove a user from the entire organization.                    |
+| `updateCompanyUserFieldManagement`                           | Mutation | Grant or revoke a member's ability to manage the field schema. |
 
 ### Invitations
 
@@ -52,11 +53,11 @@ Headers are case-insensitive. The Company and Project headers accept either an I
 
 ### Custom roles
 
-| Operation                                                                           | Type     | Description                          |
-| ----------------------------------------------------------------------------------- | -------- | ------------------------------------ |
-| [`createWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Create a custom role in a workspace. |
-| [`updateWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Update a custom role.                |
-| [`deleteWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                | Mutation | Delete a custom role.                |
+| Operation                                                                               | Type     | Description                          |
+| --------------------------------------------------------------------------------------- | -------- | ------------------------------------ |
+| [`createWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                  | Mutation | Create a custom role in a workspace. |
+| [`updateWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                  | Mutation | Update a custom role.                |
+| [`deleteWorkspaceUserRole`](/api/user-management/retrieve-custom-role)                  | Mutation | Delete a custom role.                |
 | [`workspaceUserRole` / `workspaceUserRoles`](/api/user-management/retrieve-custom-role) | Query    | Read one or many custom roles.       |
 
 ## Access levels
@@ -229,6 +230,26 @@ mutation RemoveFromOrganization {
 ```
 
 You cannot remove a user whose level is `OWNER`; transfer ownership first. See [Remove Users](/api/user-management/remove-user) for the cleanup each removal performs.
+
+### Delegate field-schema management
+
+`updateCompanyUserFieldManagement` grants or revokes one organization member's ability to manage the field schema — create, rename, and delete fields — without making them an `ADMIN`. It takes `companyId`, `userId`, and `canManageFields: Boolean!`, and returns `Boolean!`.
+
+```graphql
+mutation DelegateFieldManagement {
+  updateCompanyUserFieldManagement(
+    input: { companyId: "company_123", userId: "user_123", canManageFields: true }
+  )
+}
+```
+
+```json
+{ "data": { "updateCompanyUserFieldManagement": true } }
+```
+
+Only an organization `OWNER` or `ADMIN` can call it; anyone else receives `FORBIDDEN`. The target must be a plain member: a user who is not a member of the organization fails with `BAD_USER_INPUT` (`That user is not a member of this organization.`), and so does an owner or admin target (`Organization owners and admins already manage every field.`). Both directions are idempotent. The grant covers every field in the organization; per-field delegation is not implemented.
+
+Read the grant back through `User.canManageFields(companyId)` — `true` for owners and admins regardless of the grant, and for members holding the grant.
 
 ### Create a custom role
 

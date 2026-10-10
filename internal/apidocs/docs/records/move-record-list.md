@@ -25,14 +25,43 @@ mutation MoveRecordCrossWorkspace {
 }
 ```
 
+## Move to a database
+
+A database has no single list, so you can also send a destination database instead of a list. The record moves into that database, in the same workspace or another one. Optionally set a value of one of its single-select or multi-select fields in the same call:
+
+```graphql
+mutation MoveRecordToDatabase {
+  moveRecord(
+    input: {
+      recordId: "todo_123"
+      databaseId: "database_456"
+      fieldId: "field_789"
+      optionId: "option_012"
+    }
+  )
+}
+```
+
+A single-select value replaces the record's value. A multi-select value is added to its values. To change only the value in the record's current database, send its own `databaseId` with `fieldId` and `optionId`; that call records no move.
+
+## Values the destination does not have
+
+When the record moves into another database, values in fields that the destination does not have are carried over. The title, description, due date, assignees, and tags go into the destination's fields of the same kind. Other values go into a destination field with the same name and type. If there is none, the field is added to the destination, and missing select options are added. Lists are not carried. The values also stay in the source fields.
+
 ## Parameters
 
 ### MoveRecordInput
 
-| Parameter    | Type      | Required | Description                 |
-| ------------ | --------- | -------- | --------------------------- |
-| `todoId`     | `String!` | Yes      | ID of the record to move.   |
-| `todoListId` | `String!` | Yes      | ID of the destination list. |
+Send exactly one destination: `todoListId` (or `recordListId`), or `databaseId`.
+
+| Parameter          | Type     | Required | Description                                                                              |
+| ------------------ | -------- | -------- | ---------------------------------------------------------------------------------------- |
+| `todoId`           | `String` | Yes\*    | ID of the record to move. \*Or `recordId`.                                               |
+| `todoListId`       | `String` | No       | ID of the destination list. Or `recordListId`.                                           |
+| `databaseId`       | `ID`     | No       | ID of the destination database.                                                          |
+| `sourceDatabaseId` | `ID`     | No       | The database to move from, when the record is in several databases of the workspace.     |
+| `fieldId`          | `ID`     | No       | A single-select or multi-select field of the destination database. Send with `optionId`. |
+| `optionId`         | `ID`     | No       | The option of `fieldId` to set.                                                          |
 
 ## Response
 

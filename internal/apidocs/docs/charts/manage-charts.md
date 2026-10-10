@@ -81,15 +81,22 @@ manual one, whose numbers come from its `chartSegments` instead.
 
 | Parameter    | Type                      | Required | Description                                                                                        |
 | ------------ | ------------------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `databaseId` | `String`                  | No       | The explicit record-table lens for this chart. See [table scope](#table-scope).                    |
 | `dimensions` | `[ChartDimensionInput!]!` | Yes      | What records are grouped into. One entry today.                                                    |
 | `metrics`    | `[ChartMetricInput!]!`    | Yes      | What is measured per group. More than one plots several series over the same grouping.             |
 | `breakout`   | `ChartBreakoutInput`      | No       | A second grouping that splits every bucket into slices. See [stacked charts](#stacked-bar-charts). |
 | `filters`    | `TodoFilterInput`         | No       | Narrows the whole chart. Same filter used by [list records](/api/records/list-records).            |
 
+#### Table scope
+
+Every chart reads the record engine. A chart that pins a table reads that table's rows. A chart that pins no table spans every table of every workspace the filter reaches, with each record counted once at its home. The pin is the first of: a metric's `databaseId`, the dimension's, the breakout's, or the query's. A chart that pins no table counts active and archived records alike.
+
 `ChartDimensionInput`:
 
 | Field                           | Type                    | Required | Description                                                                                                                                                                              |
 | ------------------------------- | ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `databaseId`                    | `String`                | No       | The record table whose mounted field is selected.                                                                                                                                        |
+| `fieldId`                       | `String`                | No       | The mounted field to bucket by.                                                                                                                                                          |
 | `type`                          | `BarChartXAxisType!`    | Yes      | What to bucket records by: `PROJECT`, `ASSIGNEE`, `TAG`, `CUSTOM_FIELD`, `TODO`, `TODO_LIST`, `TODO_STATUS`, `TODO_DUE_DATE`, `TODO_CREATED_AT`, `TODO_UPDATED_AT`, `TODO_COMPLETED_AT`. |
 | `title`                         | `String`                | No       | Optional axis label.                                                                                                                                                                     |
 | `interval`                      | `BarChartXAxisInterval` | No       | Bucket size for date dimensions: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`.                                                                                                              |
@@ -123,6 +130,8 @@ The limit is a display concern: the aggregate still computes and stores every bu
 
 | Field                           | Type                         | Required | Description                                                                                 |
 | ------------------------------- | ---------------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `databaseId`                    | `String`                     | No       | The record table whose mounted field is measured.                                           |
+| `fieldId`                       | `String`                     | No       | The mounted field to measure.                                                               |
 | `key`                           | `String`                     | No       | Unique within the chart. Omit and Blue assigns one from the metric's position.              |
 | `title`                         | `String`                     | No       | Optional series label.                                                                      |
 | `function`                      | `ChartSegmentValueFunctions` | No       | Aggregate applied to the measured records. Omit for a plain record count.                   |
@@ -148,6 +157,8 @@ A `BAR` chart can add a second grouping dimension so each bucket is split into s
 
 | Field                           | Type                  | Required | Description                                                                                                |
 | ------------------------------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `databaseId`                    | `String`              | No       | The record table whose mounted field splits the buckets.                                                   |
+| `fieldId`                       | `String`              | No       | The mounted field to split by.                                                                             |
 | `type`                          | `BarChartSeriesType!` | Yes      | What to split each bucket by: `PROJECT`, `ASSIGNEE`, `TAG`, `TODO_LIST`, `TODO_STATUS`, or `CUSTOM_FIELD`. |
 | `title`                         | `String`              | No       | Optional label for the breakdown.                                                                          |
 | `customFieldName`               | `String`              | No       | Custom-field name when `type` is `CUSTOM_FIELD`.                                                           |

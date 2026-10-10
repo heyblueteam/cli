@@ -85,10 +85,11 @@ Toggling and side effects are driven by the resulting state: completing a record
 
 ## Errors
 
-| Code             | When                                                                         |
-| ---------------- | ---------------------------------------------------------------------------- |
-| `TODO_NOT_FOUND` | No record exists with the given `todoId`.                                    |
-| `FORBIDDEN`      | The caller lacks permission to change the record's status (see Permissions). |
+| Code             | When                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| `TODO_NOT_FOUND` | No record exists with the given `todoId`.                                                         |
+| `FORBIDDEN`      | The caller lacks permission to change the record's status (see Permissions).                      |
+| `BAD_USER_INPUT` | The record's completion state cannot be written right now (no table tracks it in this workspace). |
 
 ## Permissions
 

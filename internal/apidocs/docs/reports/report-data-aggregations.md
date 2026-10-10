@@ -5,9 +5,9 @@ icon: ChartColumn
 order: 3
 ---
 
-A report is a query surface as well as a saved configuration. Once a report has data sources, the `Report` type exposes three read fields — `todos` (the combined record list), `todoCount` (the matching count), and `aggregations` (per-field statistics) — plus the `refreshReportAggregations` mutation, which invalidates the cached aggregation results. Records are `Todo` objects in the API.
+A report is a query surface as well as a saved configuration. Once a report has data sources, the `Report` type exposes five read fields — `records` (the combined record list), `recordCount` (the matching count), `todos` (the record list as `Todo` objects), `todoCount` (the matching count as `Todo` objects), and `aggregations` (per-field statistics) — plus the `refreshReportAggregations` mutation, which invalidates the cached aggregation results.
 
-All three read fields run with the **report creator's** workspace permissions (not the caller's) and combine every data source on the report, so the data you read is identical for every viewer regardless of which workspaces _they_ can see. See [Query Reports](/api/reports/query-reports) for reading a report's metadata and configuration, and [Create a Report](/api/reports/create-report) for setting up its data sources.
+All five read fields run with the **report creator's** workspace permissions (not the caller's) and combine every data source on the report, so the data you read is identical for every viewer regardless of which workspaces _they_ can see. See [Query Reports](/api/reports/query-reports) for reading a report's metadata and configuration, and [Create a Report](/api/reports/create-report) for setting up its data sources.
 
 ## Request
 
@@ -39,7 +39,7 @@ query ReadReportData {
 }
 ```
 
-`report` is identified by the report's `id`. `todos`, `todoCount`, and `aggregations` are fields _on_ the resolved `Report`, so they are always nested under a `report` (or `reports`) query.
+`report` is identified by the report's `id`. `records`, `recordCount`, `todos`, `todoCount`, and `aggregations` are fields _on_ the resolved `Report`, so they are always nested under a `report` (or `reports`) query.
 
 ## Parameters
 
@@ -47,34 +47,82 @@ These fields share the records `TodosFilter` and `TodosSort` inputs rather than 
 
 ### `Report.todos` arguments
 
-| Parameter | Type            | Required | Description                                                                                                    |
-| --------- | --------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
-| `filter`  | `TodosFilter`   | No       | Extra record filter applied on top of each data source's stored filter. Its `projectIds` are ignored — workspace scope comes from the data sources, not from this filter. |
-| `sort`    | `[TodosSort!]`  | No       | Sort order. Accepts the records `TodosSort` enum values (e.g. `duedAt_ASC`, `title_DESC`, `createdAt_DESC`).    |
-| `limit`   | `Int`           | No       | Maximum records to return. Defaults to **100**; capped at a hard maximum of **5000**. Values above 5000 are clamped, not rejected. |
-| `skip`    | `Int`           | No       | Number of records to skip before returning results, for paging through large reports.                          |
+| Parameter | Type           | Required | Description                                                                                                                                                               |
+| --------- | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`  | `TodosFilter`  | No       | Extra record filter applied on top of each data source's stored filter. Its `projectIds` are ignored — workspace scope comes from the data sources, not from this filter. |
+| `sort`    | `[TodosSort!]` | No       | Sort order. Accepts the records `TodosSort` enum values (e.g. `duedAt_ASC`, `title_DESC`, `createdAt_DESC`).                                                              |
+| `limit`   | `Int`          | No       | Maximum records to return. Defaults to **100**; capped at a hard maximum of **5000**. Values above 5000 are clamped, not rejected.                                        |
+| `skip`    | `Int`          | No       | Number of records to skip before returning results, for paging through large reports.                                                                                     |
 
 ### `Report.todoCount` arguments
 
-| Parameter | Type          | Required | Description                                                                              |
-| --------- | ------------- | -------- | ---------------------------------------------------------------------------------------- |
+| Parameter | Type          | Required | Description                                                                                  |
+| --------- | ------------- | -------- | -------------------------------------------------------------------------------------------- |
 | `filter`  | `TodosFilter` | No       | Same extra filter as `todos`. Returns the count of matching records across all data sources. |
+
+### `Report.records` arguments
+
+| Parameter | Type           | Required | Description                                                                                                                                                                        |
+| --------- | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`  | `TodosFilter`  | No       | Extra record filter applied on top of each data source's stored filter. Its `projectIds` are ignored — workspace scope comes from the data sources, not from this filter.          |
+| `sort`    | `[TodosSort!]` | No       | Sort order. Only the first key applies; the default is `createdAt_DESC`. Keys the row projection cannot sort by (for example custom-field keys) fall back to the default order.    |
+| `limit`   | `Int`          | No       | Maximum records to return. Defaults to **100**; capped at a hard maximum of **5000**. Values above 5000 are clamped, not rejected.                                                 |
+| `skip`    | `Int`          | No       | Number of records to skip before returning results, for paging through large reports. The reader walks to `skip` + `limit` before slicing, so paging works past the 5,000-row cap. |
+
+### `ReportRecord`
+
+`ReportRecord` is `Report.records`' flat projection of a record. It carries the same record data as `Todo`, plus the home table: `databaseId` and `databaseName` name the record's table.
+
+| Field                | Type                      | Description                                                                                                 |
+| -------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `id`                 | `ID!`                     | Unique record identifier.                                                                                   |
+| `title`              | `String!`                 | The table's display field's text; the record's ID when it has none.                                         |
+| `text`               | `String!`                 | The description field's text. Empty string when none.                                                       |
+| `html`               | `String`                  | The description field's HTML. `null` when none.                                                             |
+| `done`               | `Boolean!`                | Completion: the completion field is a checked checkbox, or a select value in the table's "complete values". |
+| `startedAt`          | `DateTime`                | Start of the table's bound due-date value. `null` when unset.                                               |
+| `duedAt`             | `DateTime`                | End of the table's bound due-date value. `null` when unset.                                                 |
+| `timezone`           | `String`                  | The due date's timezone. `null` when unset.                                                                 |
+| `dueDateGranularity` | `String`                  | The due date's granularity. `null` when unset.                                                              |
+| `createdAt`          | `DateTime!`               | When the record was created.                                                                                |
+| `updatedAt`          | `DateTime!`               | When the record was last modified.                                                                          |
+| `completedAt`        | `DateTime`                | When the record was completed. `null` when not completed.                                                   |
+| `workspaceId`        | `ID!`                     | The record's workspace.                                                                                     |
+| `workspaceName`      | `String!`                 | The record's workspace name.                                                                                |
+| `workspaceSlug`      | `String!`                 | The record's workspace slug.                                                                                |
+| `databaseId`         | `ID`                      | The record's home table. `null` when there is none.                                                         |
+| `databaseName`       | `String`                  | The home table's name. `null` when there is none.                                                           |
+| `fields`             | `[RecordSnapshotField!]!` | The record's field values on the home table.                                                                |
+| `assignees`          | `[User!]!`                | The assignees from the table's bound assignee field.                                                        |
+| `tags`               | `[ReportRecordTag!]!`     | The tags from the table's bound tags field.                                                                 |
+
+<Callout variant="info" title="One row per record, even across tables">
+
+A record mounted in more than one selected table returns **one** row. The home table supplies the metadata (`title`, `databaseId`, `assignees`, `tags`), and field values from the other mounts are merged in, so a value is not lost because the home table lacks the field.
+
+</Callout>
+
+### `Report.recordCount` arguments
+
+| Parameter | Type          | Required | Description                                                                                                                                                                  |
+| --------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter`  | `TodosFilter` | No       | Same extra filter as `records`. Returns the count of matching records across all data sources, one row per record — a record mounted in several selected tables counts once. |
 
 ### `Report.aggregations` arguments
 
-| Parameter | Type                          | Required | Description                                                            |
-| --------- | ----------------------------- | -------- | --------------------------------------------------------------------- |
-| `fields`  | `[AggregationFieldInput!]!`   | Yes      | The fields to aggregate. One `FieldAggregation` is returned per entry. |
-| `filter`  | `TodosFilter`                 | No       | Extra record filter, applied on top of each data source's filter before aggregating. |
+| Parameter | Type                        | Required | Description                                                                          |
+| --------- | --------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `fields`  | `[AggregationFieldInput!]!` | Yes      | The fields to aggregate. One `FieldAggregation` is returned per entry.               |
+| `filter`  | `TodosFilter`               | No       | Extra record filter, applied on top of each data source's filter before aggregating. |
 
 ### AggregationFieldInput
 
-| Field         | Type         | Required | Description                                                                                                                                  |
-| ------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `field`       | `String!`    | Yes      | The field to aggregate. A custom field's `id`, a default field key (e.g. `timeTracking.totalDuration`), or a `merged_…` key for merged fields. |
-| `originalIds` | `[String!]`  | No       | For a merged/mapped field, the underlying custom field IDs it spans. Each record contributes at most one value across them.                  |
-| `fieldType`   | `String`     | No       | The field's type hint, echoed back on the result as `FieldAggregation.fieldType`.                                                            |
-| `footerType`  | `String`     | No       | Display hint passed through from the app's report footer config. Does not change the computed statistics.                                    |
+| Field         | Type        | Required | Description                                                                                                                                    |
+| ------------- | ----------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`       | `String!`   | Yes      | The field to aggregate. A custom field's `id`, a default field key (e.g. `timeTracking.totalDuration`), or a `merged_…` key for merged fields. |
+| `originalIds` | `[String!]` | No       | For a merged/mapped field, the underlying custom field IDs it spans. Each record contributes at most one value across them.                    |
+| `fieldType`   | `String`    | No       | The field's type hint, echoed back on the result as `FieldAggregation.fieldType`.                                                              |
+| `footerType`  | `String`    | No       | Display hint passed through from the app's report footer config. Does not change the computed statistics.                                      |
 
 <Callout variant="info" title="Aggregations are numeric">
 
@@ -123,25 +171,25 @@ These fields share the records `TodosFilter` and `TodosSort` inputs rather than 
 
 ### FieldAggregation
 
-| Field       | Type      | Description                                                                                            |
-| ----------- | --------- | ------------------------------------------------------------------------------------------------------ |
-| `field`     | `String!` | Echoes the `field` from the matching `AggregationFieldInput`, so you can correlate inputs to results.  |
-| `fieldName` | `String`  | Human-readable name derived from the field. `null` when it cannot be resolved.                         |
-| `fieldType` | `String`  | The `fieldType` hint passed in, echoed back. `null` when not supplied.                                 |
-| `sum`       | `Float`   | Sum of the numeric values. `null` when no numeric values matched.                                      |
-| `avg`       | `Float`   | Mean of the numeric values. `null` when no numeric values matched.                                     |
-| `min`       | `Float`   | Smallest numeric value. `null` when no numeric values matched.                                         |
-| `max`       | `Float`   | Largest numeric value. `null` when no numeric values matched.                                          |
-| `count`     | `Int!`    | Number of records that contributed a numeric value. `0` when none matched.                             |
+| Field       | Type      | Description                                                                                           |
+| ----------- | --------- | ----------------------------------------------------------------------------------------------------- |
+| `field`     | `String!` | Echoes the `field` from the matching `AggregationFieldInput`, so you can correlate inputs to results. |
+| `fieldName` | `String`  | Human-readable name derived from the field. `null` when it cannot be resolved.                        |
+| `fieldType` | `String`  | The `fieldType` hint passed in, echoed back. `null` when not supplied.                                |
+| `sum`       | `Float`   | Sum of the numeric values. `null` when no numeric values matched.                                     |
+| `avg`       | `Float`   | Mean of the numeric values. `null` when no numeric values matched.                                    |
+| `min`       | `Float`   | Smallest numeric value. `null` when no numeric values matched.                                        |
+| `max`       | `Float`   | Largest numeric value. `null` when no numeric values matched.                                         |
+| `count`     | `Int!`    | Number of records that contributed a numeric value. `0` when none matched.                            |
 
-`todos` returns `[Todo!]!` — select any field on `Todo` (see the [Records](/api/records) section for the full type). `todoCount` returns a bare `Int!`. `aggregations` returns `[FieldAggregation!]!`, one entry per requested field, in the same order.
+`todos` returns `[Todo!]!` — select any field on `Todo` (see the [Records](/api/records) section for the full type). `records` returns `[ReportRecord!]!` — a flat projection of each record; see the `ReportRecord` table above. `recordCount` and `todoCount` return a bare `Int!`. `aggregations` returns `[FieldAggregation!]!`, one entry per requested field, in the same order.
 
 ## Empty reports
 
 A report with **no data sources** is valid but has nothing to read:
 
-- `todos` returns an empty list `[]`.
-- `todoCount` returns `0`.
+- `records` and `todos` return an empty list `[]`.
+- `recordCount` and `todoCount` return `0`.
 - `aggregations` returns an empty list `[]`.
 
 No error is raised in any of these cases. Add data sources with [Create a Report](/api/reports/create-report) or [Manage Report Access](/api/reports/manage-report-access) before expecting results.
@@ -184,17 +232,17 @@ mutation RefreshReportAggregations {
 
 ## Errors
 
-| Code               | When                                                                                     |
-| ------------------ | ---------------------------------------------------------------------------------------- |
+| Code               | When                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
 | `REPORT_NOT_FOUND` | The `report`/`reportId` does not exist, or you are neither the creator nor a shared user of the report. |
-| `UNAUTHENTICATED`  | The request has no valid credentials.                                                    |
-| `FORBIDDEN`        | The request is authenticated but carries no organization context.                        |
+| `UNAUTHENTICATED`  | The request has no valid credentials.                                                                   |
+| `FORBIDDEN`        | The request is authenticated but carries no organization context.                                       |
 
-Reading data via `report { todos / todoCount / aggregations }` is gated by the parent `report` query's visibility check, which raises `REPORT_NOT_FOUND` when the report is invisible to you. `refreshReportAggregations` performs the same view-access check before touching the cache.
+Reading data via `report { records / recordCount / todos / todoCount / aggregations }` is gated by the parent `report` query's visibility check, which raises `REPORT_NOT_FOUND` when the report is invisible to you. `refreshReportAggregations` performs the same view-access check before touching the cache.
 
 ## Permissions
 
-- **Reading `todos` / `todoCount` / `aggregations`** — requires view access to the parent report: you must be its `createdBy` or appear in its `reportUsers` (either `EDITOR` or `VIEWER`). The records themselves are resolved with the **report creator's** workspace permissions, so a `VIEWER` who cannot see a given workspace directly still sees its records through the report.
+- **Reading `records` / `recordCount` / `todos` / `todoCount` / `aggregations`** — requires view access to the parent report: you must be its `createdBy` or appear in its `reportUsers` (either `EDITOR` or `VIEWER`). The records themselves are resolved with the **report creator's** workspace permissions, so a `VIEWER` who cannot see a given workspace directly still sees its records through the report.
 - **`refreshReportAggregations`** — requires only **view** access (creator or any shared user, `EDITOR` or `VIEWER`). It is intentionally looser than modifying the report; invalidating the cache is a read-side operation.
 
 Modifying or deleting a report requires higher tiers — see [Manage Report Access](/api/reports/manage-report-access) and [Duplicate & Delete a Report](/api/reports/duplicate-and-delete-report).

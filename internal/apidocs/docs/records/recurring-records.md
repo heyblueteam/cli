@@ -266,6 +266,7 @@ mutation DeleteRecurringRecord {
 - `time` applies uniformly across every cadence and interval type. Omit it to keep the legacy default of creating each occurrence at midnight UTC.
 - `time` only controls when the copy is _created_ (its `createdAt`) — it does not set a due date on the copy. `fields` has no due-date option today, so recurring copies are created without one.
 - When `updateRepeatingRecord` generates a copy, it logs a `REPEAT_TODO` activity, records a todo action, notifies the copy's assignees, and publishes the new record in real time. If creating the copy fails, the mutation clears the schedule to avoid a stuck state and returns `false` instead of throwing — always check the return value.
+- A copy can also be skipped without failing: a destination list at its WIP limit skips just that occurrence, and a destination list whose workspace is gone — or a workspace at its record-creation limit — creates no copy. The mutation still returns `true`, and the schedule stays armed.
 
 ## Errors
 

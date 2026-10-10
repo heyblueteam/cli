@@ -49,11 +49,11 @@ mutation AddComment {
 
 ### CommentCategory
 
-| Value           | Description                       |
-| --------------- | --------------------------------- |
-| `TODO`          | A comment on a record.            |
-| `DISCUSSION`    | A comment on a chat thread. |
-| `STATUS_UPDATE` | A comment on a status update.     |
+| Value           | Description                   |
+| --------------- | ----------------------------- |
+| `TODO`          | A comment on a record.        |
+| `DISCUSSION`    | A comment on a chat thread.   |
+| `STATUS_UPDATE` | A comment on a status update. |
 
 ## Response
 
@@ -91,7 +91,7 @@ mutation AddComment {
 | `user`         | `User!`             | The author of the comment. Select `id`, `fullName`, and `image { … }` (there is no `name` or `avatar` field on `User`). |
 | `activity`     | `Activity`          | The activity-feed entry created for this comment.                                                                       |
 | `todo`         | `Record`            | The record this comment is on, when `category` is `TODO`.                                                               |
-| `chat`   | `Chat`        | The chat, when `category` is `DISCUSSION`.                                                                        |
+| `chat`         | `Chat`              | The chat, when `category` is `DISCUSSION`.                                                                              |
 | `statusUpdate` | `StatusUpdate`      | The status update, when `category` is `STATUS_UPDATE`.                                                                  |
 | `parentId`     | `String`            | ID of the parent comment, or `null` for a top-level comment.                                                            |
 | `parent`       | `Comment`           | The parent comment when this is a threaded reply.                                                                       |
@@ -192,7 +192,7 @@ Posting a comment creates an activity-feed entry, fires any configured project w
 | Code             | When                                                                                                                                                                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FORBIDDEN`      | The user is not a member of the record's workspace, has `VIEW_ONLY` access, holds a custom role with records disabled, or the workspace is archived. The same code is returned when `categoryId` does not resolve to a record the user can access. |
-| `BAD_USER_INPUT` | A required field is missing, `category` is not a valid `CommentCategory`, or the input is otherwise malformed.                                                                                                                                     |
+| `BAD_USER_INPUT` | A required field is missing, `category` is not a valid `CommentCategory`, the input is otherwise malformed, or the record has no live copy in this workspace.                                                                                      |
 
 ```json
 {

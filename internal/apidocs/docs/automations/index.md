@@ -59,11 +59,12 @@ query ListAutomations {
 
 ### AutomationFilterInput
 
-| Field            | Type       | Required | Description                                                                                                                      |
-| ---------------- | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `projectId`      | `String`   | No       | List automations from a specific project by id or slug instead of the header context. Access is re-validated against the caller. |
-| `customFieldIds` | `[String]` | No       | Only return automations whose trigger references one of these custom field ids.                                                  |
-| `customFieldId`  | `String`   | No       | **Deprecated.** Single-field version of `customFieldIds`. Use `customFieldIds` instead.                                          |
+| Field            | Type       | Required | Description                                                                                                                                                                         |
+| ---------------- | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `projectId`      | `String`   | No       | List automations from a specific project by id or slug instead of the header context. Access is re-validated against the caller.                                                    |
+| `customFieldIds` | `[String]` | No       | Only return automations whose trigger references one of these custom field ids.                                                                                                     |
+| `customFieldId`  | `String`   | No       | **Deprecated.** Single-field version of `customFieldIds`. Use `customFieldIds` instead.                                                                                             |
+| `databaseId`     | `ID`       | No       | Only return automations owned by this record table. Must belong to the workspace; a table from another workspace fails with `Automation table must belong to the active workspace.` |
 
 <Callout variant="warning" title="skip and take are ignored when filtering by custom field">
 
@@ -106,119 +107,125 @@ When `customFieldIds` (or the deprecated `customFieldId`) is supplied, the query
 
 ### Automation
 
-| Field       | Type                   | Description                                                                                         |
-| ----------- | ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `id`        | `ID!`                  | Unique identifier.                                                                                  |
-| `trigger`   | `AutomationTrigger!`   | The event that starts this automation.                                                              |
-| `actions`   | `[AutomationAction!]!` | Ordered list of actions to run when the trigger fires.                                              |
-| `isActive`  | `Boolean!`             | Whether the automation is currently enabled.                                                        |
-| `name`      | `String`               | Optional label. Null means the app shows the generated trigger and actions summary.                 |
-| `position`  | `Float`                | Manual order inside the group. Null on automations written before ordering existed; they sort last. |
-| `group`     | `AutomationGroup`      | The group the automation belongs to. Null means ungrouped.                                          |
-| `createdBy` | `User!`                | The user who created the automation.                                                                |
-| `project`   | `Workspace!`           | The workspace this automation belongs to.                                                           |
-| `createdAt` | `DateTime!`            | When the automation was created.                                                                    |
-| `updatedAt` | `DateTime!`            | When the automation was last changed.                                                               |
+| Field            | Type                   | Description                                                                                                                                                                                                                                 |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | `ID!`                  | Unique identifier.                                                                                                                                                                                                                          |
+| `databaseId`     | `ID`                   | The single record table that owns this automation. Null only for unresolved pre-migration rows.                                                                                                                                             |
+| `trigger`        | `AutomationTrigger!`   | The event that starts this automation.                                                                                                                                                                                                      |
+| `actions`        | `[AutomationAction!]!` | Ordered list of actions to run when the trigger fires.                                                                                                                                                                                      |
+| `isActive`       | `Boolean!`             | Whether the automation is currently enabled.                                                                                                                                                                                                |
+| `name`           | `String`               | Optional label. Null means the app shows the generated trigger and actions summary.                                                                                                                                                         |
+| `position`       | `Float`                | Manual order inside the group. Null on automations written before ordering existed; they sort last.                                                                                                                                         |
+| `group`          | `AutomationGroup`      | The group the automation belongs to. Null means ungrouped.                                                                                                                                                                                  |
+| `needsAttention` | `String`               | Null when healthy. Otherwise a short reason the saved field bindings need attention: a missing, deleted, or unmounted field, a stale option, or an unreadable definition. Such rules never silently target another field or widen a filter. |
+| `createdBy`      | `User!`                | The user who created the automation.                                                                                                                                                                                                        |
+| `project`        | `Workspace!`           | The workspace this automation belongs to.                                                                                                                                                                                                   |
+| `createdAt`      | `DateTime!`            | When the automation was created.                                                                                                                                                                                                            |
+| `updatedAt`      | `DateTime!`            | When the automation was last changed.                                                                                                                                                                                                       |
 
 ### AutomationTrigger
 
-| Field                          | Type                          | Description                                                                                             |
-| ------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `id`                           | `ID!`                         | Unique identifier.                                                                                      |
-| `type`                         | `AutomationTriggerType!`      | The kind of event to watch. See [Trigger types](#trigger-types).                                        |
-| `metadata`                     | `AutomationTriggerMetadata`   | Trigger-specific config. Currently `AutomationTriggerMetadataTodoOverdue` (`incompleteOnly`, `offset`). |
-| `customField`                  | `CustomField`                 | The custom field this trigger watches, when applicable.                                                 |
-| `customFieldOptions`           | `[CustomFieldOption!]`        | The select options the trigger reacts to.                                                               |
-| `todos(first: Int, skip: Int)` | `[CustomFieldReferenceTodo!]` | Referenced records, with optional pagination args.                                                      |
-| `todoList`                     | `RecordList`                  | A single related list.                                                                                  |
-| `todoLists`                    | `[RecordList!]!`              | Related lists for the trigger.                                                                          |
-| `tags`                         | `[Tag!]`                      | Related tags.                                                                                           |
-| `assignees`                    | `[User!]`                     | Related assignees.                                                                                      |
-| `color`                        | `String`                      | A single related color (hex).                                                                           |
-| `colors`                       | `[String!]`                   | Related colors (hex).                                                                                   |
-| `dueStart`                     | `DateTime`                    | Start of the due-date window the trigger matches.                                                       |
-| `dueEnd`                       | `DateTime`                    | End of the due-date window the trigger matches.                                                         |
-| `showCompleted`                | `Boolean`                     | Whether completed records are included.                                                                 |
-| `fields`                       | `JSON`                        | Raw field-condition config for filter-based triggers.                                                   |
-| `op`                           | `FilterLogicalOperator`       | How filter conditions combine (`AND` / `OR`).                                                           |
-| `conditionMode`                | `ConditionalAutomationMode`   | For `CONDITIONAL` triggers: `STARTS_MATCHING` or `STOPS_MATCHING`.                                      |
-| `filterGroups`                 | `JSON`                        | Raw grouped filter conditions.                                                                          |
-| `filterGroupLinks`             | `JSON`                        | Raw links between filter groups.                                                                        |
-| `schedule`                     | `AutomationTriggerSchedule`   | Schedule config for `SCHEDULED` triggers. See [AutomationTriggerSchedule](#automationtriggerschedule).  |
-| `createdAt`                    | `DateTime!`                   | When the trigger was created.                                                                           |
-| `updatedAt`                    | `DateTime!`                   | When the trigger was last changed.                                                                      |
+| Field                          | Type                          | Description                                                                                                                                                       |
+| ------------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                           | `ID!`                         | Unique identifier.                                                                                                                                                |
+| `type`                         | `AutomationTriggerType!`      | The kind of event to watch. See [Trigger types](#trigger-types).                                                                                                  |
+| `metadata`                     | `AutomationTriggerMetadata`   | Trigger-specific config. Currently `AutomationTriggerMetadataTodoOverdue` (`incompleteOnly`, `offset`).                                                           |
+| `genericBinding`               | `JSON`                        | Generic field binding carried on the raw metadata (`__generic`): stable Field and option identities plus transition and only-if config. Null on legacy-only rows. |
+| `customField`                  | `CustomField`                 | The custom field this trigger watches, when applicable.                                                                                                           |
+| `customFieldOptions`           | `[CustomFieldOption!]`        | The select options the trigger reacts to.                                                                                                                         |
+| `todos(first: Int, skip: Int)` | `[CustomFieldReferenceTodo!]` | Referenced records, with optional pagination args.                                                                                                                |
+| `todoList`                     | `RecordList`                  | A single related list.                                                                                                                                            |
+| `todoLists`                    | `[RecordList!]!`              | Related lists for the trigger.                                                                                                                                    |
+| `tags`                         | `[Tag!]`                      | Related tags.                                                                                                                                                     |
+| `assignees`                    | `[User!]`                     | Related assignees.                                                                                                                                                |
+| `color`                        | `String`                      | A single related color (hex).                                                                                                                                     |
+| `colors`                       | `[String!]`                   | Related colors (hex).                                                                                                                                             |
+| `dueStart`                     | `DateTime`                    | Start of the due-date window the trigger matches.                                                                                                                 |
+| `dueEnd`                       | `DateTime`                    | End of the due-date window the trigger matches.                                                                                                                   |
+| `showCompleted`                | `Boolean`                     | Whether completed records are included.                                                                                                                           |
+| `fields`                       | `JSON`                        | Raw field-condition config for filter-based triggers.                                                                                                             |
+| `op`                           | `FilterLogicalOperator`       | How filter conditions combine (`AND` / `OR`).                                                                                                                     |
+| `conditionMode`                | `ConditionalAutomationMode`   | For `CONDITIONAL` triggers: `STARTS_MATCHING` or `STOPS_MATCHING`.                                                                                                |
+| `filterGroups`                 | `JSON`                        | Raw grouped filter conditions.                                                                                                                                    |
+| `filterGroupLinks`             | `JSON`                        | Raw links between filter groups.                                                                                                                                  |
+| `schedule`                     | `AutomationTriggerSchedule`   | Schedule config for `SCHEDULED` triggers. See [AutomationTriggerSchedule](#automationtriggerschedule).                                                            |
+| `createdAt`                    | `DateTime!`                   | When the trigger was created.                                                                                                                                     |
+| `updatedAt`                    | `DateTime!`                   | When the trigger was last changed.                                                                                                                                |
 
 ### AutomationAction
 
-| Field                | Type                         | Description                                                                                                        |
-| -------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `id`                 | `ID!`                        | Unique identifier.                                                                                                 |
-| `type`               | `AutomationActionType!`      | The action to perform. See [Action types](#action-types).                                                          |
-| `duedIn`             | `Int`                        | Days from execution to set as the due date (for due-date actions).                                                 |
-| `customField`        | `CustomField`                | The target custom field.                                                                                           |
-| `customFieldOptions` | `[CustomFieldOption!]`       | Select options to set.                                                                                             |
-| `todoList`           | `RecordList`                 | The destination list (for `CHANGE_TODO_LIST`).                                                                     |
-| `metadata`           | `AutomationActionMetadata`   | Action-specific config (email, checklist, copy, or custom-field value).                                            |
-| `tags`               | `[Tag!]`                     | Tags to add or remove.                                                                                             |
-| `assignees`          | `[User!]`                    | Assignees to add or remove.                                                                                        |
-| `projects`           | `[Workspace!]`               | Target workspaces (for `ADD_PROJECT`).                                                                             |
-| `color`              | `String`                     | Color to add or remove (hex).                                                                                      |
-| `assigneeTriggerer`  | `String`                     | Identifier for the user who triggered the automation (for `ADD_ASSIGNEE_TRIGGERER` / `REMOVE_ASSIGNEE_TRIGGERER`). |
-| `portableDocument`   | `PortableDocument`           | The document template used by `GENERATE_PDF`.                                                                      |
-| `httpOption`         | `AutomationActionHttpOption` | Request config for `MAKE_HTTP_REQUEST`.                                                                            |
-| `createdAt`          | `DateTime!`                  | When the action was created.                                                                                       |
-| `updatedAt`          | `DateTime!`                  | When the action was last changed.                                                                                  |
+| Field                | Type                         | Description                                                                                                                                          |
+| -------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | `ID!`                        | Unique identifier.                                                                                                                                   |
+| `type`               | `AutomationActionType!`      | The action to perform. See [Action types](#action-types).                                                                                            |
+| `duedIn`             | `Int`                        | Days from execution to set as the due date (for due-date actions).                                                                                   |
+| `customField`        | `CustomField`                | The target custom field.                                                                                                                             |
+| `genericBinding`     | `JSON`                       | Generic field binding carried on the raw metadata (`__generic`): stable Field and option identities plus set/remove modes. Null on legacy-only rows. |
+| `customFieldOptions` | `[CustomFieldOption!]`       | Select options to set.                                                                                                                               |
+| `todoList`           | `RecordList`                 | The destination list (for `CHANGE_TODO_LIST`).                                                                                                       |
+| `metadata`           | `AutomationActionMetadata`   | Action-specific config (email, checklist, copy, or custom-field value).                                                                              |
+| `tags`               | `[Tag!]`                     | Tags to add or remove.                                                                                                                               |
+| `assignees`          | `[User!]`                    | Assignees to add or remove.                                                                                                                          |
+| `projects`           | `[Workspace!]`               | Target workspaces (for `ADD_PROJECT`).                                                                                                               |
+| `color`              | `String`                     | Color to add or remove (hex).                                                                                                                        |
+| `assigneeTriggerer`  | `String`                     | Identifier for the user who triggered the automation (for `ADD_ASSIGNEE_TRIGGERER` / `REMOVE_ASSIGNEE_TRIGGERER`).                                   |
+| `portableDocument`   | `PortableDocument`           | The document template used by `GENERATE_PDF`.                                                                                                        |
+| `httpOption`         | `AutomationActionHttpOption` | Request config for `MAKE_HTTP_REQUEST`.                                                                                                              |
+| `createdAt`          | `DateTime!`                  | When the action was created.                                                                                                                         |
+| `updatedAt`          | `DateTime!`                  | When the action was last changed.                                                                                                                    |
 
 ### AutomationTriggerSchedule
 
 Returned on `AutomationTrigger.schedule` for `SCHEDULED` triggers.
 
-| Field             | Type                      | Description                                                      |
-| ----------------- | ------------------------- | ---------------------------------------------------------------- |
-| `id`              | `ID!`                     | Unique identifier.                                               |
-| `type`            | `AutomationScheduleType!` | `DAILY`, `WEEKLY`, `WEEKDAYS`, `MONTHLY`, `YEARLY`, or `CUSTOM`. |
-| `hour`            | `Int!`                    | Hour of day (0–23) the schedule fires.                           |
-| `minute`          | `Int!`                    | Minute of the hour the schedule fires.                           |
-| `timezone`        | `String!`                 | IANA timezone the schedule is evaluated in.                      |
-| `days`            | `[Int!]`                  | Specific days the schedule runs.                                 |
-| `dayOfWeek`       | `[Int!]`                  | Days of the week for `WEEKLY` schedules.                         |
-| `dayOfMonth`      | `Int`                     | Day of the month for `MONTHLY` schedules.                        |
-| `month`           | `Int`                     | Month for `YEARLY` schedules.                                    |
-| `cronExpression`  | `String`                  | Cron expression for `CUSTOM` schedules.                          |
-| `lastExecutedAt`  | `DateTime`                | When the schedule last ran.                                      |
-| `nextExecutionAt` | `DateTime`                | When the schedule will next run.                                 |
-| `isActive`        | `Boolean!`                | Whether the schedule is enabled.                                 |
-| `createdAt`       | `DateTime!`               | When the schedule was created.                                   |
-| `updatedAt`       | `DateTime!`               | When the schedule was last changed.                              |
+| Field             | Type                      | Description                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | `ID!`                     | Unique identifier.                                                                                                                                                                                                                                                                                                              |
+| `type`            | `AutomationScheduleType!` | `DAILY`, `WEEKLY`, `WEEKDAYS`, `MONTHLY`, `YEARLY`, or `CUSTOM`.                                                                                                                                                                                                                                                                |
+| `hour`            | `Int!`                    | Hour of day (0–23) the schedule fires.                                                                                                                                                                                                                                                                                          |
+| `minute`          | `Int!`                    | Minute of the hour the schedule fires.                                                                                                                                                                                                                                                                                          |
+| `timezone`        | `String!`                 | IANA timezone the schedule is evaluated in.                                                                                                                                                                                                                                                                                     |
+| `days`            | `[Int!]`                  | Specific days the schedule runs.                                                                                                                                                                                                                                                                                                |
+| `dayOfWeek`       | `[Int!]`                  | Days of the week for `WEEKLY` schedules.                                                                                                                                                                                                                                                                                        |
+| `dayOfMonth`      | `Int`                     | Day of the month for `MONTHLY` schedules.                                                                                                                                                                                                                                                                                       |
+| `month`           | `Int`                     | Month for `YEARLY` schedules.                                                                                                                                                                                                                                                                                                   |
+| `cronExpression`  | `String`                  | Cron expression for `CUSTOM` schedules.                                                                                                                                                                                                                                                                                         |
+| `fieldId`         | `ID`                      | The DATE field the schedule reads each record's date from. A record with no value in this field has no occurrence and is skipped; there is no fallback to the record's native dates. Null on schedules written before the field existed, and on schedules whose pinned field was deleted (they are deactivated and never fire). |
+| `lastExecutedAt`  | `DateTime`                | When the schedule last ran.                                                                                                                                                                                                                                                                                                     |
+| `nextExecutionAt` | `DateTime`                | When the schedule will next run.                                                                                                                                                                                                                                                                                                |
+| `isActive`        | `Boolean!`                | Whether the schedule is enabled.                                                                                                                                                                                                                                                                                                |
+| `createdAt`       | `DateTime!`               | When the schedule was created.                                                                                                                                                                                                                                                                                                  |
+| `updatedAt`       | `DateTime!`               | When the schedule was last changed.                                                                                                                                                                                                                                                                                             |
 
 ## Trigger types
 
 `AutomationTriggerType` enumerates the events that can start an automation.
 
-| Value                                     | Fires when                                                        |
-| ----------------------------------------- | ----------------------------------------------------------------- |
-| `TODO_CREATED`                            | A record is created.                                              |
-| `TODO_LIST_CHANGED`                       | A record moves between lists.                                     |
-| `TODO_MARKED_AS_COMPLETE`                 | A record is marked complete.                                      |
-| `TODO_MARKED_AS_INCOMPLETE`               | A record is marked incomplete.                                    |
-| `ASSIGNEE_ADDED`                          | An assignee is added to a record.                                 |
-| `ASSIGNEE_REMOVED`                        | An assignee is removed from a record.                             |
-| `DUE_DATE_CHANGED`                        | A record's due date is set or changed.                            |
-| `DUE_DATE_REMOVED`                        | A record's due date is cleared.                                   |
-| `DUE_DATE_EXPIRED`                        | A record's due date passes.                                       |
-| `TAG_ADDED`                               | A tag is added to a record.                                       |
-| `TAG_REMOVED`                             | A tag is removed from a record.                                   |
-| `CHECKLIST_ITEM_MARKED_AS_DONE`           | A checklist item is completed.                                    |
-| `CHECKLIST_ITEM_MARKED_AS_UNDONE`         | A checklist item is uncompleted.                                  |
-| `TODO_COPIED_OR_MOVED_FROM_OTHER_PROJECT` | A record is copied or moved in from another project.              |
-| `CUSTOM_FIELD_ADDED`                      | A custom field value is set on a record.                          |
-| `CUSTOM_FIELD_REMOVED`                    | A custom field value is cleared on a record.                      |
-| `CUSTOM_FIELD_BUTTON_CLICKED`             | A button custom field is clicked.                                 |
-| `COLOR_ADDED`                             | A color is applied to a record.                                   |
-| `COLOR_REMOVED`                           | A color is removed from a record.                                 |
-| `PROJECT_ADDED_TO_TODO`                   | A project is added to a record.                                   |
-| `SCHEDULED`                               | A time-based schedule fires. Requires `schedule` config.          |
-| `CONDITIONAL`                             | A record starts or stops matching a filter (see `conditionMode`). |
+| Value                                     | Fires when                                                                                                                                                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TODO_CREATED`                            | A record is created.                                                                                                                                                                                 |
+| `TODO_LIST_CHANGED`                       | A record moves between lists.                                                                                                                                                                        |
+| `TODO_MARKED_AS_COMPLETE`                 | A record is marked complete.                                                                                                                                                                         |
+| `TODO_MARKED_AS_INCOMPLETE`               | A record is marked incomplete.                                                                                                                                                                       |
+| `ASSIGNEE_ADDED`                          | An assignee is added to a record.                                                                                                                                                                    |
+| `ASSIGNEE_REMOVED`                        | An assignee is removed from a record.                                                                                                                                                                |
+| `DUE_DATE_CHANGED`                        | A record's due date is set or changed.                                                                                                                                                               |
+| `DUE_DATE_REMOVED`                        | A record's due date is cleared.                                                                                                                                                                      |
+| `DUE_DATE_EXPIRED`                        | A record's due date passes.                                                                                                                                                                          |
+| `CUSTOM_FIELD_VALUE_CHANGED`              | A watched field's value moves from a From option to a To option. Configured with the trigger's single-select From/To `transition` input; on the generic `fieldId` path the `transition` is required. |
+| `TAG_ADDED`                               | A tag is added to a record.                                                                                                                                                                          |
+| `TAG_REMOVED`                             | A tag is removed from a record.                                                                                                                                                                      |
+| `CHECKLIST_ITEM_MARKED_AS_DONE`           | A checklist item is completed.                                                                                                                                                                       |
+| `CHECKLIST_ITEM_MARKED_AS_UNDONE`         | A checklist item is uncompleted.                                                                                                                                                                     |
+| `TODO_COPIED_OR_MOVED_FROM_OTHER_PROJECT` | A record is copied or moved in from another project.                                                                                                                                                 |
+| `CUSTOM_FIELD_ADDED`                      | A custom field value is set on a record.                                                                                                                                                             |
+| `CUSTOM_FIELD_REMOVED`                    | A custom field value is cleared on a record.                                                                                                                                                         |
+| `CUSTOM_FIELD_BUTTON_CLICKED`             | A button custom field is clicked.                                                                                                                                                                    |
+| `COLOR_ADDED`                             | A color is applied to a record.                                                                                                                                                                      |
+| `COLOR_REMOVED`                           | A color is removed from a record.                                                                                                                                                                    |
+| `PROJECT_ADDED_TO_TODO`                   | A project is added to a record.                                                                                                                                                                      |
+| `SCHEDULED`                               | A time-based schedule fires. Requires `schedule` config.                                                                                                                                             |
+| `CONDITIONAL`                             | A record starts or stops matching a filter (see `conditionMode`).                                                                                                                                    |
 
 ## Action types
 

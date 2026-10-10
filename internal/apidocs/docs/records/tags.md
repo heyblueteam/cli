@@ -275,17 +275,17 @@ To clear all tags from a record, call `setRecordTags` with an empty `tagIds` arr
 
 ## Errors
 
-| Code                | When                                                                                        |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `TAG_NOT_FOUND`     | The `id` passed to `editTag` or `deleteTag` does not match a tag you can access.            |
-| `TODO_NOT_FOUND`    | The `todoId` passed to `setRecordTags` does not match a record you can access.              |
-| `PROJECT_NOT_FOUND` | No valid workspace context — set the `X-Bloo-Project-ID` header.                            |
-| `FORBIDDEN`         | Your access level is too low for the action, or the workspace is archived.                  |
-| `BAD_USER_INPUT`    | A required argument is missing or malformed (for example a missing `color` on `createTag`). |
+| Code                | When                                                                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TAG_NOT_FOUND`     | The `id` passed to `editTag` or `deleteTag` does not match a tag you can access.                                                              |
+| `TODO_NOT_FOUND`    | The `todoId` passed to `setRecordTags` does not match a record you can access.                                                                |
+| `PROJECT_NOT_FOUND` | No valid workspace context — set the `X-Bloo-Project-ID` header.                                                                              |
+| `FORBIDDEN`         | Your access level is too low for the action, or the workspace is archived.                                                                    |
+| `BAD_USER_INPUT`    | A required argument is missing or malformed (for example a missing `color` on `createTag`), or the record's tags cannot be changed right now. |
 
 ## Permissions
 
-Reading tags with `tagList` requires access to the workspace. Creating, editing, deleting, and applying tags require an access level of `OWNER`, `ADMIN`, `MEMBER`, or `CLIENT`; `COMMENT_ONLY` and `VIEW_ONLY` users cannot modify tags. The workspace must be active — tag mutations are rejected on archived workspaces.
+Reading tags with `tagList` requires access to the workspace. Creating, editing, deleting, and applying tags require an access level of `OWNER`, `ADMIN`, `MEMBER`, or `CLIENT`; `COMMENT_ONLY` and `VIEW_ONLY` users cannot modify tags. A custom role whose **Tags** field is not editable can manage the workspace's tags but cannot apply them to records. The workspace must be active — tag mutations are rejected on archived workspaces.
 
 ## Related
 

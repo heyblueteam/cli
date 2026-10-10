@@ -9,10 +9,11 @@ Custom roles let you define precise permission sets for members of a workspace, 
 
 You assign a role when you [invite someone](/api/user-management/invite-user) by passing its `roleId` with `accessLevel: MEMBER`. The role must belong to the same workspace as the invite.
 
-This page covers four operations:
+This page covers five operations:
 
 - `workspaceUserRoles` — list the roles in one or more workspaces.
 - `createWorkspaceUserRole` — create a role.
+- `copyWorkspaceUserRole` — duplicate an existing role.
 - `updateWorkspaceUserRole` — change a role.
 - `deleteWorkspaceUserRole` — delete a role.
 
@@ -72,52 +73,41 @@ The required `filter` argument for `workspaceUserRoles`.
 
 The input for `createWorkspaceUserRole`. Only `projectId` and `name` are required; every other field is optional and falls back to the default shown.
 
-| Parameter                   | Type                                       | Required | Default  | Description                                                         |
-| --------------------------- | ------------------------------------------ | -------- | -------- | ------------------------------------------------------------------- |
-| `projectId`                 | `String!`                                  | Yes      | —        | Workspace the role belongs to (ID or slug).                         |
-| `name`                      | `String!`                                  | Yes      | —        | Display name of the role.                                           |
-| `description`               | `String`                                   | No       | `null`   | Optional description.                                               |
-| **Action permissions**      |                                            |          |          |                                                                     |
-| `allowInviteOthers`         | `Boolean`                                  | No       | `false`  | May invite new users to the workspace.                              |
-| `allowMarkRecordsAsDone`    | `Boolean`                                  | No       | `false`  | May mark records complete.                                          |
-| `canCreateRecords`          | `Boolean`                                  | No       | `true`   | May create records.                                                 |
-| `canDeleteRecords`          | `Boolean`                                  | No       | `true`   | May delete records.                                                 |
-| `canDeleteFiles`            | `Boolean`                                  | No       | `true`   | May delete files.                                                   |
-| `canCreateLists`            | `Boolean`                                  | No       | `true`   | May create lists.                                                   |
-| `canEditLists`              | `Boolean`                                  | No       | `true`   | May rename and reorder lists.                                       |
-| **Section access**          |                                            |          |          |                                                                     |
-| `isRecordsEnabled`          | `Boolean`                                  | No       | `false`  | Access to the records views.                                        |
-| `isActivityEnabled`         | `Boolean`                                  | No       | `false`  | Access to the activity feed.                                        |
-| `isChatEnabled`             | `Boolean`                                  | No       | `false`  | Access to chat.                                                     |
-| `isDocsEnabled`             | `Boolean`                                  | No       | `false`  | Access to docs.                                                     |
-| `isFilesEnabled`            | `Boolean`                                  | No       | `false`  | Access to files.                                                    |
-| `isFormsEnabled`            | `Boolean`                                  | No       | `false`  | Access to forms.                                                    |
-| `isPeopleEnabled`           | `Boolean`                                  | No       | `false`  | Access to the people/members section.                               |
-| **Visibility filters**      |                                            |          |          |                                                                     |
-| `showOnlyAssignedTodos`     | `Boolean`                                  | No       | `false`  | Members see only records assigned to them.                          |
-| `showOnlyMentionedComments` | `Boolean`                                  | No       | `false`  | Members see only comments that mention them.                        |
-| **Field-level scoping**     |                                            |          |          |                                                                     |
-| `recordTagFilter`           | `RecordTagFilterInput`                     | No       | disabled | Restrict visible records by tag (allow/deny lists).                 |
-| `recordFilter`              | `RecordFilterInput`                        | No       | none     | Restrict visible records to those matching a filter.                |
-| `customFields`              | `[CreateProjectUserRoleCustomFieldInput!]` | No       | none     | Per–custom-field view/edit access.                                  |
-| `todoLists`                 | `[CreateProjectUserRoleTodoListInput!]`    | No       | none     | Per-list view/edit/delete access.                                   |
-| `todoFields`                | `[CreateProjectUserRoleTodoFieldInput!]`   | No       | none     | Per built-in record field (assignee, due date, …) view/edit access. |
+| Parameter                   | Type                                       | Required | Default | Description                                                         |
+| --------------------------- | ------------------------------------------ | -------- | ------- | ------------------------------------------------------------------- |
+| `projectId`                 | `String!`                                  | Yes      | —       | Workspace the role belongs to (ID or slug).                         |
+| `name`                      | `String!`                                  | Yes      | —       | Display name of the role.                                           |
+| `description`               | `String`                                   | No       | `null`  | Optional description.                                               |
+| **Action permissions**      |                                            |          |         |                                                                     |
+| `allowInviteOthers`         | `Boolean`                                  | No       | `false` | May invite new users to the workspace.                              |
+| `allowMarkRecordsAsDone`    | `Boolean`                                  | No       | `false` | May mark records complete.                                          |
+| `canCreateRecords`          | `Boolean`                                  | No       | `true`  | May create records.                                                 |
+| `canDeleteRecords`          | `Boolean`                                  | No       | `true`  | May delete records.                                                 |
+| `canDeleteFiles`            | `Boolean`                                  | No       | `true`  | May delete files.                                                   |
+| `canCreateLists`            | `Boolean`                                  | No       | `true`  | May create lists.                                                   |
+| `canEditLists`              | `Boolean`                                  | No       | `true`  | May rename and reorder lists.                                       |
+| **Section access**          |                                            |          |         |                                                                     |
+| `isRecordsEnabled`          | `Boolean`                                  | No       | `false` | Access to the records views.                                        |
+| `isActivityEnabled`         | `Boolean`                                  | No       | `false` | Access to the activity feed.                                        |
+| `isChatEnabled`             | `Boolean`                                  | No       | `false` | Access to chat.                                                     |
+| `isDocsEnabled`             | `Boolean`                                  | No       | `false` | Access to docs.                                                     |
+| `isFilesEnabled`            | `Boolean`                                  | No       | `false` | Access to files.                                                    |
+| `isFormsEnabled`            | `Boolean`                                  | No       | `false` | Access to forms.                                                    |
+| `isPeopleEnabled`           | `Boolean`                                  | No       | `false` | Access to the people/members section.                               |
+| **Visibility filters**      |                                            |          |         |                                                                     |
+| `showOnlyAssignedTodos`     | `Boolean`                                  | No       | `false` | Members see only records assigned to them.                          |
+| `showOnlyMentionedComments` | `Boolean`                                  | No       | `false` | Members see only comments that mention them.                        |
+| **Field-level scoping**     |                                            |          |         |                                                                     |
+| `recordFilter`              | `RecordFilterInput`                        | No       | none    | Restrict visible records to those matching a filter.                |
+| `customFields`              | `[CreateProjectUserRoleCustomFieldInput!]` | No       | none    | Per–custom-field view/edit access.                                  |
+| `todoLists`                 | `[CreateProjectUserRoleTodoListInput!]`    | No       | none    | Per-list view/edit/delete access.                                   |
+| `todoFields`                | `[CreateProjectUserRoleTodoFieldInput!]`   | No       | none    | Per built-in record field (assignee, due date, …) view/edit access. |
 
 <Callout variant="warning" title="Section access defaults to off">
 
 Every `is*Enabled` flag defaults to `false`. A role created with only `projectId` and `name` grants no section access — members assigned to it see nothing until you enable at least one section. The `can*` permissions, by contrast, default to `true`. Set the flags you care about explicitly rather than relying on the mixed defaults.
 
 </Callout>
-
-### RecordTagFilterInput
-
-Limit which records a role can see based on their tags. Tags are `Tag` objects (`Tag.title` in the API).
-
-| Parameter       | Type        | Required | Description                                          |
-| --------------- | ----------- | -------- | ---------------------------------------------------- |
-| `enabled`       | `Boolean`   | No       | Turn tag-based filtering on for the role.            |
-| `allowedTagIds` | `[String!]` | No       | Only records carrying one of these tags are visible. |
-| `deniedTagIds`  | `[String!]` | No       | Records carrying one of these tags are hidden.       |
 
 ### RecordFilterInput
 
@@ -127,6 +117,10 @@ Restrict visible records to those matching a filter, using the same group struct
 | ------------ | -------------------------- | -------- | --------------------------------------------------------------------- |
 | `groups`     | `[TodoFilterGroupInput!]!` | Yes      | One or more filter groups; a record is visible if it matches.         |
 | `groupLinks` | `[FilterLogicalOperator!]` | No       | `AND` / `OR` operators joining the groups. Defaults to an empty list. |
+
+The filter fails closed. A condition whose values are not filled in is ignored while the filter still has real conditions — but if ignoring it would leave the filter restricting nothing, the role sees **no** records, not every record. The same holds for a condition the workspace's records cannot answer: it hides records rather than widening access.
+
+`showOnlyAssignedTodos` combines with a caller-supplied assignee filter: in a list's records read, the role narrows the caller's filter (records must match it **and** be assigned to the member). In the workspace-level record query, it overrides the caller's flat `assigneeIds` with "assigned to the member".
 
 ### CreateProjectUserRoleCustomFieldInput
 
@@ -160,6 +154,15 @@ Per-field access for a built-in record field.
 | `editable`  | `Boolean!`       | Yes      | —       | Members can edit the field.            |
 
 `TodoFieldType` values: `DUE_DATE`, `ASSIGNEE`, `TAG`, `DEPENDENCY`, `CUSTOM_FIELD`, `DESCRIPTION`, `CHECKLIST`, `REFERENCED_BY`, `CUSTOM_FIELD_GROUP`, `TIME_TRACKING`, `CREATED_DATE`, `UPDATED_DATE`, `COMPLETED_DATE`, `PROJECTS`, `LAST_UPDATED_BY`.
+
+### CopyWorkspaceUserRoleInput
+
+The input for `copyWorkspaceUserRole`.
+
+| Parameter   | Type      | Required | Description                        |
+| ----------- | --------- | -------- | ---------------------------------- |
+| `projectId` | `String!` | Yes      | The workspace the role belongs to. |
+| `roleId`    | `String!` | Yes      | The role to duplicate.             |
 
 ### UpdateProjectUserRoleInput
 
@@ -220,40 +223,39 @@ Any flag you omit keeps its existing value (the update merges over the stored ro
 
 ### Returns — ProjectUserRole
 
-| Field                       | Type                           | Description                                                               |
-| --------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
-| `id`                        | `ID!`                          | Unique role identifier.                                                   |
-| `uid`                       | `String!`                      | Stable public identifier.                                                 |
-| `name`                      | `String!`                      | Role name.                                                                |
-| `description`               | `String`                       | Role description.                                                         |
-| `createdAt`                 | `DateTime!`                    | When the role was created.                                                |
-| `updatedAt`                 | `DateTime`                     | When the role was last updated.                                           |
-| `project`                   | `Workspace!`                     | The workspace the role belongs to.                                        |
-| **Action permissions**      |                                |                                                                           |
-| `allowInviteOthers`         | `Boolean`                      | May invite users.                                                         |
-| `allowMarkRecordsAsDone`    | `Boolean`                      | May complete records.                                                     |
-| `canCreateRecords`          | `Boolean`                      | May create records.                                                       |
-| `canDeleteRecords`          | `Boolean`                      | May delete records.                                                       |
-| `canDeleteFiles`            | `Boolean`                      | May delete files.                                                         |
-| `canCreateLists`            | `Boolean`                      | May create lists.                                                         |
-| `canEditLists`              | `Boolean`                      | May edit lists.                                                           |
-| **Section access**          |                                |                                                                           |
-| `isRecordsEnabled`          | `Boolean`                      | Records access.                                                           |
-| `isActivityEnabled`         | `Boolean`                      | Activity access.                                                          |
-| `isChatEnabled`             | `Boolean`                      | Chat access.                                                              |
-| `isDocsEnabled`              | `Boolean`                      | Docs access (every page, legacy wiki pages included).                    |
-| `isFilesEnabled`             | `Boolean`                      | Files access.                                                             |
-| `isFormsEnabled`             | `Boolean`                      | Forms access.                                                             |
-| `isPeopleEnabled`            | `Boolean`                      | People section access.                                                    |
-| **Visibility filters**      |                                |                                                                           |
-| `showOnlyAssignedTodos`     | `Boolean`                      | Restricts records to those assigned to the member.                        |
-| `showOnlyMentionedComments` | `Boolean`                      | Restricts comments to those mentioning the member.                        |
-| **Field-level scoping**     |                                |                                                                           |
-| `recordTagFilter`           | `RecordTagFilter`              | Tag-based record visibility (`enabled`, `allowedTagIds`, `deniedTagIds`). |
-| `recordFilter`              | `ProjectUserRoleRecordFilter`  | Filter-based record visibility (`groups`, `groupLinks`).                  |
-| `customFields`              | `[CustomField!]`               | Custom fields scoped by the role.                                         |
-| `todoLists`                 | `[ProjectUserRoleTodoList!]`   | Per-list access (`viewable`, `editable`, `deletable`).                    |
-| `todoFields`                | `[ProjectUserRoleTodoField!]!` | Per built-in field access (`fieldType`, `viewable`, `editable`).          |
+| Field                       | Type                           | Description                                                      |
+| --------------------------- | ------------------------------ | ---------------------------------------------------------------- |
+| `id`                        | `ID!`                          | Unique role identifier.                                          |
+| `uid`                       | `String!`                      | Stable public identifier.                                        |
+| `name`                      | `String!`                      | Role name.                                                       |
+| `description`               | `String`                       | Role description.                                                |
+| `createdAt`                 | `DateTime!`                    | When the role was created.                                       |
+| `updatedAt`                 | `DateTime`                     | When the role was last updated.                                  |
+| `project`                   | `Workspace!`                   | The workspace the role belongs to.                               |
+| **Action permissions**      |                                |                                                                  |
+| `allowInviteOthers`         | `Boolean`                      | May invite users.                                                |
+| `allowMarkRecordsAsDone`    | `Boolean`                      | May complete records.                                            |
+| `canCreateRecords`          | `Boolean`                      | May create records.                                              |
+| `canDeleteRecords`          | `Boolean`                      | May delete records.                                              |
+| `canDeleteFiles`            | `Boolean`                      | May delete files.                                                |
+| `canCreateLists`            | `Boolean`                      | May create lists.                                                |
+| `canEditLists`              | `Boolean`                      | May edit lists.                                                  |
+| **Section access**          |                                |                                                                  |
+| `isRecordsEnabled`          | `Boolean`                      | Records access.                                                  |
+| `isActivityEnabled`         | `Boolean`                      | Activity access.                                                 |
+| `isChatEnabled`             | `Boolean`                      | Chat access.                                                     |
+| `isDocsEnabled`             | `Boolean`                      | Docs access (every page, legacy wiki pages included).            |
+| `isFilesEnabled`            | `Boolean`                      | Files access.                                                    |
+| `isFormsEnabled`            | `Boolean`                      | Forms access.                                                    |
+| `isPeopleEnabled`           | `Boolean`                      | People section access.                                           |
+| **Visibility filters**      |                                |                                                                  |
+| `showOnlyAssignedTodos`     | `Boolean`                      | Restricts records to those assigned to the member.               |
+| `showOnlyMentionedComments` | `Boolean`                      | Restricts comments to those mentioning the member.               |
+| **Field-level scoping**     |                                |                                                                  |
+| `recordFilter`              | `ProjectUserRoleRecordFilter`  | Filter-based record visibility (`groups`, `groupLinks`).         |
+| `customFields`              | `[CustomField!]`               | Custom fields scoped by the role.                                |
+| `todoLists`                 | `[ProjectUserRoleTodoList!]`   | Per-list access (`viewable`, `editable`, `deletable`).           |
+| `todoFields`                | `[ProjectUserRoleTodoField!]!` | Per built-in field access (`fieldType`, `viewable`, `editable`). |
 
 ## Full example
 
@@ -292,7 +294,7 @@ mutation CreateScopedRole {
       projectId: "project_123"
       name: "Client Reviewer"
       isRecordsEnabled: true
-      recordTagFilter: { enabled: true, allowedTagIds: ["tag_123"] }
+      recordFilter: { groups: [{ tagIds: ["tag_123"] }], groupLinks: [] }
     }
   ) {
     id
@@ -327,6 +329,38 @@ mutation DeleteRole {
   deleteWorkspaceUserRole(input: { roleId: "role_123", projectId: "project_123" })
 }
 ```
+
+## Copy a role
+
+Use `copyWorkspaceUserRole` to duplicate a role inside the same workspace. It returns the new `WorkspaceUserRole!`.
+
+```graphql
+mutation CopyRole {
+  copyWorkspaceUserRole(input: { projectId: "project_123", roleId: "role_123" }) {
+    id
+    name
+    description
+  }
+}
+```
+
+```json
+{
+  "data": {
+    "copyWorkspaceUserRole": {
+      "id": "clm4n8qwx000008l0g4oxdqn7",
+      "name": "Copy of Contractor",
+      "description": "Limited access for external contractors"
+    }
+  }
+}
+```
+
+The copy carries over every permission flag and every scoped grant on the source role: custom-field access, list access, default-field access, saved-view access, tag rules, and the record visibility filter. It does **not** carry over the role's members — the copy starts with nobody assigned.
+
+The new role is named `Copy of <source name>`. Because `name` is a 191-character column, Blue truncates the source name so the prefix fits; it does not fail on a long name. You cannot choose the name in this call — use [`updateWorkspaceUserRole`](#updateprojectuserroleinput) afterwards to rename it.
+
+A copy counts toward the workspace's custom-role limit, so this mutation can return `PLAN_LIMIT_REACHED`.
 
 ## Assigning a role
 
@@ -375,10 +409,11 @@ The custom-role limit is plan-dependent — roughly 1 on starter plans up to ~50
 
 ## Permissions
 
-| Operation               | Required access                                                                                       |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| Operation                 | Required access                                                                                       |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `workspaceUserRoles`      | Any member of the queried workspace (roles for workspaces you don't belong to are silently excluded). |
 | `createWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
+| `copyWorkspaceUserRole`   | Workspace `OWNER` or `ADMIN`.                                                                         |
 | `updateWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
 | `deleteWorkspaceUserRole` | Workspace `OWNER` or `ADMIN`.                                                                         |
 

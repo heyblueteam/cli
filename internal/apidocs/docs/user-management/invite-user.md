@@ -165,6 +165,8 @@ For workspace invites, the access level you can assign is capped by your own rol
 
 Only a workspace `OWNER` may assign `OWNER`. Organization invites (`companyId`) require the caller to be an organization `OWNER`.
 
+The cap also applies when `inviteUser` re-sends an invitation that is already pending for that email and workspace. A re-send keeps the access level stored on the existing invitation, so the cap is checked against that stored level, not against the `accessLevel` you pass. A caller who may assign only `MEMBER` cannot refresh a pending `OWNER` invitation; the call returns `FORBIDDEN`.
+
 ## Related
 
 - [List users](/api/user-management/list-users) — see who already has access.

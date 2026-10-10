@@ -212,7 +212,7 @@ query ListChartsFiltered {
 
 Use the `chartData` query to list the records a chart's numbers are made of. It answers the question "which records is this bar?" — and answers it so the two reconcile exactly.
 
-Rows are **contributions, not records**. A record carrying two tags is behind both tag bars and appears under each, so the row count adds up to the chart rather than to a de-duplicated list of records. Both totals come back: `contributionCount` and `uniqueRecordCount`.
+Rows are **contributions, not records**. A record carrying two tags is behind both tag bars and appears under each, so the row count adds up to the chart rather than to a de-duplicated list of records. Both totals come back: `contributionCount` and `uniqueRecordCount`. Each row carries `databaseId` and `databaseName` — the record table the contribution came through.
 
 ```graphql
 query ChartData {
@@ -232,6 +232,8 @@ query ChartData {
       bucketKey
       bucketLabel
       seriesLabel
+      databaseId
+      databaseName
       record {
         id
         title
@@ -372,34 +374,36 @@ The subscription's `todoFilter` is matched against the `todoFilter` a chart was 
 
 ### Chart
 
-| Field                     | Type               | Description                                                                                                               |
-| ------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `id`                      | `ID!`              | Unique identifier for the chart.                                                                                          |
-| `title`                   | `String!`          | Display name of the chart card.                                                                                           |
-| `position`                | `Float!`           | Sort position within the dashboard. Lower values appear first.                                                            |
-| `type`                    | `ChartType!`       | The card type: `STAT`, `PIE`, or `BAR`.                                                                                   |
-| `chartSegments`           | `[ChartSegment!]!` | The manual segments of the chart. Empty for auto-generated (`metadata`-backed) charts.                                    |
-| `display`                 | `FormulaDisplay`   | How the chart's rolled-up value is formatted (number, currency, or percentage) and rolled up.                             |
-| `metadata`                | `ChartMetadata`    | The auto-generated bar or pie spec. `null` for manual (segment-backed) charts.                                            |
-| `isCalculating`           | `Boolean`          | `true` while a recompute of the saved results is in progress.                                                             |
-| `isCalculatingWithFilter` | `Boolean`          | `true` on items returned by `charts` when a `todoFilter` was supplied; the recomputed values arrive via the subscription. |
-| `needCalculation`         | `Boolean`          | `true` when the saved results are stale and a recalculation is pending.                                                   |
-| `createdAt`               | `DateTime!`        | When the chart was created.                                                                                               |
-| `updatedAt`               | `DateTime!`        | When the chart was last modified.                                                                                         |
+| Field                     | Type               | Description                                                                                                                                                                                                                                                                                                      |
+| ------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                      | `ID!`              | Unique identifier for the chart.                                                                                                                                                                                                                                                                                 |
+| `title`                   | `String!`          | Display name of the chart card.                                                                                                                                                                                                                                                                                  |
+| `position`                | `Float!`           | Sort position within the dashboard. Lower values appear first.                                                                                                                                                                                                                                                   |
+| `type`                    | `ChartType!`       | The card type: `STAT`, `PIE`, or `BAR`.                                                                                                                                                                                                                                                                          |
+| `chartSegments`           | `[ChartSegment!]!` | The manual segments of the chart. Empty for auto-generated (`metadata`-backed) charts.                                                                                                                                                                                                                           |
+| `overall`                 | `Float`            | The chart's measure computed once over every record it draws, ungrouped — the number a pie shows in its centre. For an average it is the average of the records, not of the slices; a record in two slices counts once. Null on display types that draw no overall number, and until the chart's next recompute. |
+| `display`                 | `FormulaDisplay`   | How the chart's rolled-up value is formatted (number, currency, or percentage) and rolled up.                                                                                                                                                                                                                    |
+| `metadata`                | `ChartMetadata`    | The auto-generated bar or pie spec. `null` for manual (segment-backed) charts.                                                                                                                                                                                                                                   |
+| `isCalculating`           | `Boolean`          | `true` while a recompute of the saved results is in progress.                                                                                                                                                                                                                                                    |
+| `isCalculatingWithFilter` | `Boolean`          | `true` on items returned by `charts` when a `todoFilter` was supplied; the recomputed values arrive via the subscription.                                                                                                                                                                                        |
+| `needCalculation`         | `Boolean`          | `true` when the saved results are stale and a recalculation is pending.                                                                                                                                                                                                                                          |
+| `createdAt`               | `DateTime!`        | When the chart was created.                                                                                                                                                                                                                                                                                      |
+| `updatedAt`               | `DateTime!`        | When the chart was last modified.                                                                                                                                                                                                                                                                                |
 
 ### ChartSegment
 
-| Field                | Type                    | Description                                                                                   |
-| -------------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
-| `id`                 | `ID!`                   | Unique identifier for the segment.                                                            |
-| `uid`                | `String!`               | Stable public identifier for the segment.                                                     |
-| `title`              | `String`                | The segment's label.                                                                          |
-| `color`              | `String`                | The segment's display color (hex string).                                                     |
-| `chartSegmentValues` | `[ChartSegmentValue!]!` | The named aggregates the segment's formula draws on.                                          |
-| `formula`            | `Formula!`              | The formula combining the segment's values. `logic.text` / `logic.html` reference value UIDs. |
-| `formulaResult`      | `Float`                 | The computed result of the formula, or `null` until calculated.                               |
-| `createdAt`          | `DateTime!`             | When the segment was created.                                                                 |
-| `updatedAt`          | `DateTime!`             | When the segment was last modified.                                                           |
+| Field                | Type                    | Description                                                                                                  |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `id`                 | `ID!`                   | Unique identifier for the segment.                                                                           |
+| `uid`                | `String!`               | Stable public identifier for the segment.                                                                    |
+| `title`              | `String`                | The segment's label.                                                                                         |
+| `seriesKey`          | `String`                | The raw identity of the breakdown slice. Null when the chart has no breakdown, or the slice is an aggregate. |
+| `color`              | `String`                | The segment's display color (hex string).                                                                    |
+| `chartSegmentValues` | `[ChartSegmentValue!]!` | The named aggregates the segment's formula draws on.                                                         |
+| `formula`            | `Formula!`              | The formula combining the segment's values. `logic.text` / `logic.html` reference value UIDs.                |
+| `formulaResult`      | `Float`                 | The computed result of the formula, or `null` until calculated.                                              |
+| `createdAt`          | `DateTime!`             | When the segment was created.                                                                                |
+| `updatedAt`          | `DateTime!`             | When the segment was last modified.                                                                          |
 
 ### ChartSegmentValue
 
@@ -410,6 +414,8 @@ The subscription's `todoFilter` is matched against the `todoFilter` a chart was 
 | `title`         | `String!`                    | The value's label.                                                                        |
 | `disabled`      | `Boolean!`                   | Whether the value is excluded from its segment's formula.                                 |
 | `projectId`     | `String!`                    | ID of the workspace whose records this value aggregates over.                             |
+| `databaseId`    | `String`                     | The record table the value's field binds to.                                              |
+| `fieldId`       | `String`                     | The mounted field the value aggregates.                                                   |
 | `customFieldId` | `String`                     | ID of the custom field being aggregated, when the function targets one.                   |
 | `function`      | `ChartSegmentValueFunctions` | The aggregate function: `COUNT`, `COUNTA`, `SUM`, `AVERAGE`, `AVERAGEA`, `MIN`, or `MAX`. |
 | `filter`        | `TodoFilter`                 | The record filter scoping which records are aggregated.                                   |

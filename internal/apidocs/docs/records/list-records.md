@@ -7,7 +7,7 @@ order: 1
 
 Use the `recordQueries.todos` query to read records from Blue with filtering, sorting, and pagination. Records are `Record` objects in the API; in the app they appear as the cards inside a workspace's lists. A single call can span one organization, several workspaces, or a precise slice defined by assignees, tags, dates, and custom-field conditions.
 
-This is the only operation that filters records server-side. (In-app search filters client-side after records load, so it can't reach records beyond what the client has fetched.)
+This query filters records by field values. It is not the search operation: full-text search has its own server-side queries, `searchRecords` and `searchGenericRecords`.
 
 ## Request
 
@@ -38,13 +38,13 @@ The `companyIds`, `projectIds`, and `todoListIds` arrays each accept **IDs or sl
 
 ### Arguments
 
-| Argument | Type           | Required | Description                                                                                                                                                  |
-| -------- | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `filter` | `TodosFilter!` | Yes      | Filter criteria (below). `companyIds` is the only required field.                                                                                            |
-| `sort`   | `[TodosSort!]` | No       | Ordering. Defaults to `[]` (the engine's natural order). Multiple keys apply in sequence.                                                                    |
-| `limit`  | `Int`          | No       | Items per page. Omit to get **20**. Any value over 500 — and any value `<= 0` — is coerced to **500** (the max).                                             |
-| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`. Cannot be combined with `filter.rankBefore`.                                                            |
-| `after`  | `String`       | No       | **Removed.** Any value returns a `BAD_USER_INPUT` error — see [Cursor pagination](#cursor-pagination).                                                        |
+| Argument | Type           | Required | Description                                                                                                      |
+| -------- | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `filter` | `TodosFilter!` | Yes      | Filter criteria (below). `companyIds` is the only required field.                                                |
+| `sort`   | `[TodosSort!]` | No       | Ordering. Defaults to `[]` (the engine's natural order). Multiple keys apply in sequence.                        |
+| `limit`  | `Int`          | No       | Items per page. Omit to get **20**. Any value over 500 — and any value `<= 0` — is coerced to **500** (the max). |
+| `skip`   | `Int`          | No       | Items to skip for offset pagination. Defaults to `0`. Cannot be combined with `filter.rankBefore`.               |
+| `after`  | `String`       | No       | **Removed.** Any value returns a `BAD_USER_INPUT` error — see [Cursor pagination](#cursor-pagination).           |
 
 <Callout variant="warning" title="limit: 0 is not the default">
 
@@ -106,27 +106,30 @@ The flat fields below combine with `AND` by default. For mixed AND/OR logic and 
 
 Each value is a `field_DIRECTION` enum member. Pass an array to sort by multiple keys in order.
 
-| Value                                                                  | Sorts by                                           |
-| ---------------------------------------------------------------------- | -------------------------------------------------- |
+| Value                                                                  | Sorts by                                                                                                                           |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `rank_ASC` / `rank_DESC`                                               | Manual (drag) order within the list. `rank_DESC` is the default list order — highest rank first, matching the board top to bottom. |
-| `title_ASC` / `title_DESC`                                             | Record title, alphabetically.                      |
-| `createdAt_ASC` / `createdAt_DESC`                                     | Creation date.                                     |
-| `updatedAt_ASC` / `updatedAt_DESC`                                     | Last-updated date.                                 |
-| `completedAt_ASC` / `completedAt_DESC`                                 | Completion date.                                   |
-| `startedAt_ASC` / `startedAt_DESC`                                     | Start date.                                        |
-| `duedAt_ASC` / `duedAt_DESC`                                           | Due date.                                          |
-| `createdBy_ASC` / `createdBy_DESC`                                     | Creator.                                           |
-| `assignees_ASC` / `assignees_DESC`                                     | Assignees.                                         |
-| `todoTags_ASC` / `todoTags_DESC`                                       | Tags.                                              |
-| `todoListTitle_ASC` / `todoListTitle_DESC`                             | List title.                                        |
-| `projectName_ASC` / `projectName_DESC`                                 | Workspace name.                                    |
-| `checklistTitle_ASC` / `checklistTitle_DESC`                           | Checklist title.                                   |
-| `checklistItemTitle_ASC` / `checklistItemTitle_DESC`                   | Checklist-item title.                              |
-| `todoCustomFieldDate_ASC` / `todoCustomFieldDate_DESC`                 | A date custom field.                               |
-| `todoCustomFieldSelectSingle_ASC` / `todoCustomFieldSelectSingle_DESC` | A single-select custom field.                      |
-| `todoCustomFieldSelectMulti_ASC` / `todoCustomFieldSelectMulti_DESC`   | A multi-select custom field.                       |
-| `todoCustomFieldAssignee_ASC` / `todoCustomFieldAssignee_DESC`         | An assignee custom field.                          |
-| `todoCustomFieldRollup_ASC` / `todoCustomFieldRollup_DESC`             | A rollup custom field.                             |
+| `title_ASC` / `title_DESC`                                             | Record title, alphabetically.                                                                                                      |
+| `createdAt_ASC` / `createdAt_DESC`                                     | Creation date.                                                                                                                     |
+| `updatedAt_ASC` / `updatedAt_DESC`                                     | Last-updated date.                                                                                                                 |
+| `completedAt_ASC` / `completedAt_DESC`                                 | Completion date.                                                                                                                   |
+| `startedAt_ASC` / `startedAt_DESC`                                     | Start date.                                                                                                                        |
+| `duedAt_ASC` / `duedAt_DESC`                                           | Due date.                                                                                                                          |
+| `createdBy_ASC` / `createdBy_DESC`                                     | Creator.                                                                                                                           |
+| `assignees_ASC` / `assignees_DESC`                                     | First name of the record's alphabetically first assignee.                                                                          |
+| `todoTags_ASC` / `todoTags_DESC`                                       | The record's alphabetically first tag.                                                                                             |
+| `todoListTitle_ASC` / `todoListTitle_DESC`                             | List title.                                                                                                                        |
+| `projectName_ASC` / `projectName_DESC`                                 | Workspace name.                                                                                                                    |
+| `checklistTitle_ASC` / `checklistTitle_DESC`                           | The record's alphabetically first checklist title.                                                                                 |
+| `checklistItemTitle_ASC` / `checklistItemTitle_DESC`                   | The record's alphabetically first checklist-item title.                                                                            |
+| `todoCustomFieldDate_ASC` / `todoCustomFieldDate_DESC`                 | Date custom fields, by start date.                                                                                                 |
+| `todoCustomFieldSelectSingle_ASC` / `todoCustomFieldSelectSingle_DESC` | Single-select custom fields, by option order.                                                                                      |
+| `todoCustomFieldSelectMulti_ASC` / `todoCustomFieldSelectMulti_DESC`   | Multi-select custom fields, by the record's first option in option order.                                                          |
+| `todoCustomFieldAssignee_ASC` / `todoCustomFieldAssignee_DESC`         | Assignee custom fields, by the first name that comes first alphabetically.                                                         |
+| `todoCustomFieldRollup_ASC` / `todoCustomFieldRollup_DESC`             | Rollup custom fields, by numeric result. Records with no result sort last in ascending order.                                      |
+| `todoCustomFieldReferencedBy_ASC` / `todoCustomFieldReferencedBy_DESC` | A REFERENCED_BY custom field, by reference count.                                                                                  |
+
+The custom-field sorts take no field ID. They read every field of that type on each record. If a record has values in more than one such field, the smallest value is its sort key in both directions. For example, a record with two date fields sorts by the earlier date. A record appears once however many values it holds.
 
 ### Rank replaces position for manual order
 
@@ -183,17 +186,17 @@ A rank sort must be the only sort and the filter must resolve to exactly one lis
 
 ### PageInfo
 
-| Field             | Type       | Description                                                                                                                                                                                                          |
-| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `totalItems`      | `Int`      | Total records matching the filter, across all pages.                                                                                                                                                                 |
-| `totalPages`      | `Int`      | Total pages at the current `limit`.                                                                                                                                                                                  |
-| `page`            | `Int`      | Current page, derived from `skip` and `limit`.                                                                                                                                                                       |
-| `perPage`         | `Int`      | Page size in effect (the resolved `limit`).                                                                                                                                                                          |
-| `hasNextPage`     | `Boolean!` | Whether a next page exists.                                                                                                                                                                                          |
-| `hasPreviousPage` | `Boolean!` | Whether a previous page exists.                                                                                                                                                                                      |
-| `nextCursor`      | `String`   | Deprecated. Always `null` on this query — the keyset cursor it fed was retired with `position` ordering.                                                                                                              |
-| `startCursor`     | `String`   | Deprecated. See `nextCursor`.                                                                                                                                                                                        |
-| `endCursor`       | `String`   | Deprecated. See `nextCursor`.                                                                                                                                                                                        |
+| Field             | Type       | Description                                                                                              |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------- |
+| `totalItems`      | `Int`      | Total records matching the filter, across all pages.                                                     |
+| `totalPages`      | `Int`      | Total pages at the current `limit`.                                                                      |
+| `page`            | `Int`      | Current page, derived from `skip` and `limit`.                                                           |
+| `perPage`         | `Int`      | Page size in effect (the resolved `limit`).                                                              |
+| `hasNextPage`     | `Boolean!` | Whether a next page exists.                                                                              |
+| `hasPreviousPage` | `Boolean!` | Whether a previous page exists.                                                                          |
+| `nextCursor`      | `String`   | Deprecated. Always `null` on this query — the keyset cursor it fed was retired with `position` ordering. |
+| `startCursor`     | `String`   | Deprecated. See `nextCursor`.                                                                            |
+| `endCursor`       | `String`   | Deprecated. See `nextCursor`.                                                                            |
 
 ### Record
 
@@ -203,7 +206,7 @@ The most useful fields on each returned record. The `Record` type exposes more �
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `id`                      | `ID!`             | Unique identifier.                                                                                                                                                        |
 | `uid`                     | `String!`         | Short, human-facing identifier.                                                                                                                                           |
-| `rank`                    | `String`          | Opaque manual-order key within its list. Compare two records' ranks as strings; do not parse or generate one.                                                              |
+| `rank`                    | `String`          | Opaque manual-order key within its list. Compare two records' ranks as strings; do not parse or generate one.                                                             |
 | `title`                   | `String!`         | Record title.                                                                                                                                                             |
 | `text`                    | `String!`         | Description as plain text.                                                                                                                                                |
 | `html`                    | `String!`         | Description as HTML.                                                                                                                                                      |
@@ -442,14 +445,20 @@ query RankPage {
 
 ## Custom-field filtering
 
-`TodosFilter.fields` is typed `JSON`. Each entry must include a `type` discriminator — entries without one are silently dropped. The query layer routes on `type`:
+`TodosFilter.fields` is typed `JSON`. Each entry must include a `type` discriminator. The query layer routes on `type`:
 
-| `type`             | Filters by                                                    |
-| ------------------ | ------------------------------------------------------------- |
-| `CUSTOM_FIELD`     | A custom field's value.                                       |
-| `FIELD`            | A built-in record field.                                      |
-| `TIME_IN_LIST`     | How long a record has sat in its current list.                |
-| `RELATIVE_DUEDATE` | A due date relative to now (e.g. "overdue", "due this week"). |
+| `type`             | Filters by                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `CUSTOM_FIELD`     | A custom field's value.                                                                                                |
+| `FIELD`            | A built-in record field. Only `field: "id"` with `op: "NIN"` is supported.                                             |
+| `TITLE`            | The record title, with `IS`, `NOT`, `CONTAINS`, or `NOT_CONTAINS` on a non-empty string.                               |
+| `DESCRIPTION`      | The description text, with the same operators as `TITLE`.                                                              |
+| `DUEDATE`          | The record's due date.                                                                                                 |
+| `TIME_IN_LIST`     | Time spent in a named list (by list ID or title). See [Query record time tracking](/api/records/record-time-tracking). |
+| `RELATIVE_DUEDATE` | A due date relative to now (e.g. "overdue", "due this week").                                                          |
+| `RELATIVE_DATE`    | A date value relative to now.                                                                                          |
+
+An entry the API cannot route — a missing or unknown `type`, a type with no filter semantics, an operator the type does not support — contributes a condition that matches nothing: inside an `AND` block it makes the whole block return no records, and inside an `OR` block it is ignored. The entry never disappears from the filter, and it never raises an error.
 
 A `CUSTOM_FIELD` entry has this shape:
 
@@ -475,9 +484,20 @@ A `CUSTOM_FIELD` entry has this shape:
 
 `customFieldType` must be a `CustomFieldType` enum value. These types can be filtered:
 
-`TEXT_SINGLE`, `TEXT_MULTI`, `URL`, `EMAIL`, `PHONE`, `UNIQUE_ID` (text matching), `NUMBER`, `CURRENCY`, `PERCENT`, `RATING`, `FORMULA` (numeric comparison), `CHECKBOX` (`IS true` / `IS false`), `SELECT_SINGLE`, `SELECT_MULTI` (option matching), `COUNTRY`, `DATE`, `ASSIGNEE`, `REFERENCE`, `LOOKUP`, and `ROLLUP`.
+`TEXT_SINGLE`, `TEXT_MULTI`, `URL`, `EMAIL`, `PHONE`, `UNIQUE_ID` (text matching), `NUMBER`, `CURRENCY`, `PERCENT`, `RATING`, `FORMULA` (numeric comparison), `CHECKBOX` (`IS true` / `IS false`), `SELECT_SINGLE`, `SELECT_MULTI` (option matching), `COUNTRY` (see below), `DATE`, `ASSIGNEE`, `REFERENCE`, `LOOKUP`, and `ROLLUP`, plus:
 
-The remaining `CustomFieldType` values are not filterable: `LOCATION`, `FILE`, `TIME_DURATION`, `BUTTON`, `CURRENCY_CONVERSION`, and `REFERENCED_BY`.
+| Type                  | How it filters                                                                                                                                                                                                                    |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REFERENCED_BY`       | Record IDs with `IN`/`NIN`. `IS` with an empty value matches records with no references; `NOT` with an empty value matches records with at least one. An `NIN` whose IDs match nothing (for example `[""]`) matches every record. |
+| `LOCATION`            | `IS`/`NOT` with an empty value (has / has no location), or `WITHIN` with `[latitude, longitude, radiusKm]`.                                                                                                                       |
+| `FILE`                | `IS`/`NOT` with an empty value (has / has no files).                                                                                                                                                                              |
+| `CURRENCY_CONVERSION` | Numeric comparison (`EQ`, `NE`, `GT`, `GTE`, `LT`, `LTE`) on the converted amount.                                                                                                                                                |
+| `TABLE`               | `CONTAINS`/`NOT_CONTAINS` on the table rows' cell text.                                                                                                                                                                           |
+| `TIME_IN_VALUE`       | `GTE`/`LTE` on a time-tracking custom field's duration.                                                                                                                                                                           |
+
+`TIME_DURATION` and `BUTTON` have no filter semantics: an entry with one of these types contributes a condition that matches nothing (see above).
+
+`COUNTRY` values match as a plain substring: `%` and `_` are ordinary characters, not wildcards.
 
 ## Group filtering
 
@@ -526,12 +546,15 @@ The three `lastUpdatedBy*` axes compose with OR — a record matches if it satis
 
 ## Errors
 
-This query degrades gracefully: an inaccessible workspace or a non-existent record ID inside an organization you can access simply contributes no rows, rather than raising an error. Errors are reserved for authentication and authorization.
+This query degrades gracefully: an inaccessible workspace or a non-existent record ID inside an organization you can access simply contributes no rows, rather than raising an error.
 
-| Code              | When                                                                                                   |
-| ----------------- | ------------------------------------------------------------------------------------------------------ |
-| `UNAUTHENTICATED` | The request carries no valid credentials.                                                              |
-| `FORBIDDEN`       | The token is valid but is not a member of the requested organization, or the organization is inactive. |
+| Code                       | When                                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `UNAUTHENTICATED`          | The request carries no valid credentials.                                                                                             |
+| `FORBIDDEN`                | The token is valid but is not a member of the requested organization, or the organization is inactive.                                |
+| `BAD_USER_INPUT`           | A malformed request — an `after` value, an invalid `rankBefore` payload, or a filter shape the API cannot parse.                      |
+| `UNSUPPORTED_RECORD_QUERY` | A condition in scope — for example a role's record filter — is one the record engine cannot evaluate. `extensions.reason` names it.   |
+| `USE_DATABASES_API`        | The workspace's own table is not available to this query. Read that workspace's records through the `/v1/databases` REST API instead. |
 
 ## Permissions
 
@@ -541,6 +564,7 @@ The caller must be authenticated and a member of every organization in `companyI
 - Users restricted to assigned-only records see only their own.
 - Hidden lists (per role configuration) are excluded automatically.
 - Tag-based access rules further narrow results.
+- A record that lives in several workspaces is visible when **at least one** of its workspaces grants the caller access; reading a single record by ID follows the same rule. An edit, by contrast, is judged in the workspace named by the `blue-workspace-id` header, and the record must live there.
 
 This filtering is applied silently — restricted records are absent from `items`, not flagged.
 

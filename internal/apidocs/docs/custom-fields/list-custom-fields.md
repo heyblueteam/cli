@@ -76,34 +76,35 @@ A single enum value (not a list on this query).
 
 The `type` discriminates how a field stores and renders its value. Each value also drives which type-specific fields are populated on the returned `CustomField` (for example `currency` on `CURRENCY`, `customFieldOptions` on the `SELECT_*` types).
 
-| Value                 | Description                                                           |
-| --------------------- | --------------------------------------------------------------------- |
-| `TEXT_SINGLE`         | Single-line text.                                                     |
-| `TEXT_MULTI`          | Multi-line text.                                                      |
-| `SELECT_SINGLE`       | Single-select dropdown (one option).                                  |
-| `SELECT_MULTI`        | Multi-select dropdown (many options).                                 |
-| `CHECKBOX`            | Boolean checkbox.                                                     |
-| `RATING`              | Star rating.                                                          |
-| `PHONE`               | Phone number.                                                         |
-| `NUMBER`              | Numeric value.                                                        |
-| `CURRENCY`            | Monetary amount in a fixed currency.                                  |
-| `PERCENT`             | Percentage value.                                                     |
-| `EMAIL`               | Email address.                                                        |
-| `URL`                 | Web URL, optionally rendered as a button.                             |
-| `UNIQUE_ID`           | Auto-generated identifier with an optional prefix.                    |
-| `LOCATION`            | Geographic point (latitude/longitude).                                |
-| `FILE`                | File attachments.                                                     |
-| `COUNTRY`             | One or more country codes.                                            |
-| `DATE`                | Date or date range.                                                   |
-| `FORMULA`             | Value computed from other fields.                                     |
-| `REFERENCE`           | Links to records in another workspace.                                |
-| `LOOKUP`              | Pulls a value from a referenced record.                               |
-| `TIME_DURATION`       | Elapsed time between two events.                                      |
-| `BUTTON`              | Actionable button.                                                    |
-| `CURRENCY_CONVERSION` | Amount converted between currencies.                                  |
-| `ASSIGNEE`            | One or more assigned users.                                           |
-| `REFERENCED_BY`       | Reverse side of a `REFERENCE` field (records that point at this one). |
-| `ROLLUP`              | Aggregate (sum, count, …) over referenced records.                    |
+| Value                 | Description                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `TEXT_SINGLE`         | Single-line text.                                                                                                                        |
+| `TEXT_MULTI`          | Multi-line text.                                                                                                                         |
+| `SELECT_SINGLE`       | Single-select dropdown (one option).                                                                                                     |
+| `SELECT_MULTI`        | Multi-select dropdown (many options).                                                                                                    |
+| `CHECKBOX`            | Boolean checkbox.                                                                                                                        |
+| `RATING`              | Star rating.                                                                                                                             |
+| `PHONE`               | Phone number.                                                                                                                            |
+| `NUMBER`              | Numeric value.                                                                                                                           |
+| `CURRENCY`            | Monetary amount in a fixed currency.                                                                                                     |
+| `PERCENT`             | Percentage value.                                                                                                                        |
+| `EMAIL`               | Email address.                                                                                                                           |
+| `URL`                 | Web URL, optionally rendered as a button.                                                                                                |
+| `UNIQUE_ID`           | Auto-generated identifier with an optional prefix.                                                                                       |
+| `LOCATION`            | Geographic point (latitude/longitude).                                                                                                   |
+| `FILE`                | File attachments.                                                                                                                        |
+| `COUNTRY`             | One or more country codes.                                                                                                               |
+| `DATE`                | Date or date range.                                                                                                                      |
+| `FORMULA`             | Value computed from other fields.                                                                                                        |
+| `REFERENCE`           | Links to records in another workspace.                                                                                                   |
+| `LOOKUP`              | Pulls a value from a referenced record.                                                                                                  |
+| `TIME_DURATION`       | Elapsed time between two events.                                                                                                         |
+| `BUTTON`              | Actionable button.                                                                                                                       |
+| `CURRENCY_CONVERSION` | Amount converted between currencies.                                                                                                     |
+| `ASSIGNEE`            | One or more assigned users.                                                                                                              |
+| `REFERENCED_BY`       | Reverse side of a `REFERENCE` field (records that point at this one).                                                                    |
+| `ROLLUP`              | Aggregate (sum, count, …) over referenced records.                                                                                       |
+| `TIME_IN_VALUE`       | Elapsed time computed on read from a source field's value history. Created on record tables only — `createCustomField` rejects the type. |
 
 ## Response
 
@@ -165,7 +166,7 @@ The fields below cover the common cases. `CustomField` exposes many more type-sp
 | `customFieldOptions` | `[CustomFieldOption!]` | Selectable options (`SELECT_*`, `BUTTON`).              |
 | `viewable`           | `Boolean`              | Whether the calling user can see this field's values.   |
 | `editable`           | `Boolean`              | Whether the calling user can edit this field's values.  |
-| `workspaceUserRole`    | `ProjectUserRole`      | The role context used to resolve `viewable`/`editable`. |
+| `workspaceUserRole`  | `ProjectUserRole`      | The role context used to resolve `viewable`/`editable`. |
 | `createdAt`          | `DateTime!`            | When the field was created.                             |
 | `updatedAt`          | `DateTime!`            | When the field was last changed.                        |
 | `metadata`           | `JSON`                 | **Deprecated** — no longer in use.                      |
@@ -191,6 +192,7 @@ When you fetch fields in the context of a specific record, these populate with t
 | `referenceMultiple`                                          | `Boolean`                        | Whether a `REFERENCE` field allows multiple records.                   |
 | `customFieldLookupOption`                                    | `CustomFieldLookupOption`        | Lookup configuration (`LOOKUP`).                                       |
 | `rollupValueNumeric` / `rollupValueDate` / `rollupValueText` | `String` / `DateTime` / `String` | Computed rollup value (`ROLLUP`); exactly one is populated per record. |
+| `rollupValueCurrency`                                        | `String`                         | Currency code of a numeric `ROLLUP` result; `null` if not a currency.  |
 | `value`                                                      | `JSON`                           | The record's value as a type-agnostic JSON blob.                       |
 
 ### CustomFieldOption
